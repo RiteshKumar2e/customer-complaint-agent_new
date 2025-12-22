@@ -44,6 +44,13 @@ export default function SideChatBot({ open, onClose }) {
     }
   };
 
+  // Function to handle Enter key press
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  };
+
   return (
     <div className={`side-chat ${open ? "open" : ""}`}>
       <div className="chat-header">
@@ -72,8 +79,10 @@ export default function SideChatBot({ open, onClose }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
+          onKeyDown={handleKeyDown} 
+          disabled={loading} // Optional: Disable input while sending
         />
-        <button onClick={sendMessage}>
+        <button onClick={sendMessage} disabled={loading}>
           {loading ? "…" : "Send"}
         </button>
       </div>
