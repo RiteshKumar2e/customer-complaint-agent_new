@@ -14,7 +14,7 @@ if GEMINI_API_KEY:
     try:
         # ✅ FIX: Updated to 'gemini-2.5-pro' (Current stable version)
         # 'gemini-pro' (1.0) is deprecated and causes the 404 error
-        model = genai.GenerativeModel("gemini-2.5-pro")
+        model = genai.GenerativeModel("gemini-2.5-flash")
     except Exception as e:
         print(f"Error initializing Gemini: {e}") # Optional: Print error for debugging
         model = None
