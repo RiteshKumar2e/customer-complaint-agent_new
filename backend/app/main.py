@@ -8,7 +8,7 @@ app = FastAPI(title="Quickfix Agentic AI")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://customer-complaint-agent-new.vercel.app/",
+        "https://customer-complaint-agent-new.vercel.app",
         "http://localhost:5173",
         "http://localhost:5174",
     ],
