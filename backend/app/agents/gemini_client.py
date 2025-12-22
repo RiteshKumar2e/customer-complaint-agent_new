@@ -10,9 +10,9 @@ if not API_KEY:
 
 genai.configure(api_key=API_KEY)
 
-# ✅ UPDATED MODEL NAME (Gemini 2.5 Flash is the current standard)
-# You can also use "gemini-2.5-pro" if you need higher reasoning capabilities.
-model = genai.GenerativeModel("gemini-2.5-flash") 
+# ✅ UPDATED MODEL NAME (Gemini 2.5 Pro is the current standard)
+# You can also use "gemini-2.5-flash" if you need faster response times.
+model = genai.GenerativeModel("gemini-2.5-pro")
 
 def ask_gemini(prompt: str) -> str:
     try:
