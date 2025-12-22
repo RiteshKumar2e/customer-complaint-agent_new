@@ -1,0 +1,11 @@
+.complaint-list {
+  max-width: 520px;
+  margin: 40px auto 0;
+  animation: fadeIn 0.6s ease;
+}
+
+.complaint-list h2 {
+  margin-bottom: 15px;
+  color: #e5e7eb;
+  font-size: 1.1rem;
+}

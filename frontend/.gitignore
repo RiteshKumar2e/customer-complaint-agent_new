@@ -1,0 +1,90 @@
+# ===============================
+# Environment & Secrets (CRITICAL)
+# ===============================
+.env
+.env.*
+*.env
+*.local
+
+# ===============================
+# Logs
+# ===============================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===============================
+# Node / Frontend
+# ===============================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.eslintcache
+
+# ===============================
+# Python / Backend
+# ===============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+pip-wheel-metadata/
+pytest_cache/
+.coverage
+htmlcov/
+
+# ===============================
+# Build & Deployment
+# ===============================
+build/
+.eggs/
+*.egg-info/
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===============================
+# OS Files
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Editor / IDE
+# ===============================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===============================
+# Temporary / Backup
+# ===============================
+*.tmp
+*.bak
+*.old
+*.orig
+
+# ===============================
+# Database (Local Only)
+# ===============================
+*.sqlite3
+*.db
+
+# ===============================
+# Deployment Platform
+# ===============================
+.vercel/
+.render/
