@@ -74,10 +74,16 @@ class EmailService:
                 "Then set: RESEND_API_KEY environment variable"
             )
         email_mode = os.getenv("EMAIL_MODE", "testing")
-        if email_mode == "testing":
-            to_email = self.admin_email
-        
+        final_recipient = (
+            self.admin_email if email_mode == "testing" else to_email
+        )
 
+        payload = {
+            "from": self.sender_email,
+            "to": [final_recipient],
+            "subject": subject,
+            "html": html_body
+        }
         url = "https://api.resend.com/emails"
         
         response = requests.post(
@@ -86,16 +92,12 @@ class EmailService:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         },
+        
         json=payload,
         timeout=10
     )
         
-        payload = {
-            "from": self.sender_email,
-            "to": [to_email],
-            "subject": subject,
-            "html": html_body
-        }
+
         
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=10)
