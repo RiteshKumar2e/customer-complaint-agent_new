@@ -88,9 +88,9 @@ export default function ComplaintForm({ onResult }) {
       // Also request browser notification permission and show notification
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Quickfix - Problem Solved!", {
-          body: `Your complaint has been resolved by our AI agents. Check your email for details.`,
-          icon: "🤖",
-          tag: "complaint-resolved",
+  body: `Your complaint has been resolved...`,
+  // Remove the 'icon' line if you don't have an image file
+  tag: "complaint-resolved",
           requireInteraction: false,
         });
       } else if ("Notification" in window && Notification.permission !== "denied") {
