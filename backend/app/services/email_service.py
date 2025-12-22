@@ -1,13 +1,14 @@
 import os
 from datetime import datetime
 import requests
+import traceback
 
 class EmailService:
     """Service for sending emails via Resend API - No SMTP network issues!"""
     
     def __init__(self):
         self.api_key = os.getenv("RESEND_API_KEY")
-        self.sender_email = "noreply@quickfix.com"  # Your verified domain # Resend's testing sender
+        self.sender_email = "noreply@quickfix.com"  # Your verified domain / Resend testing sender
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
         
@@ -19,16 +20,19 @@ class EmailService:
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
         """Send confirmation email when complaint is submitted"""
         try:
-            # In testing mode, all emails go to verified email (admin)
-            # Subject shows intended recipient
-            
-            # Send USER confirmation (to admin in testing mode)
+            # Determine subject
             subject = f"✅ Complaint Received - {user_name}"
             if user_email != self.admin_email:
                 subject = f"[TO: {user_email}] " + subject
             
+            # Generate HTML
             html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
-            self._send_email(user_email if os.getenv("EMAIL_MODE") == "production" else self.admin_email,subject,html_body)
+            
+            # Determine recipient (User vs Admin based on mode)
+            recipient = user_email if os.getenv("EMAIL_MODE") == "production" else self.admin_email
+            
+            # Send USER confirmation
+            self._send_email(recipient, subject, html_body)
             print(f"✅ User confirmation sent (intended for: {user_email})")
             
             # Send ADMIN notification
@@ -37,13 +41,10 @@ class EmailService:
             self._send_email(self.admin_email, admin_subject, admin_html)
             print(f"✅ Admin notification sent")
             
-            print(f"\n💡 TIP: To send to actual user emails, verify domain at: https://resend.com/domains")
-            
             return True
             
         except Exception as e:
             print(f"❌ Failed to send emails: {str(e)}")
-            import traceback
             traceback.print_exc()
             return False
     
@@ -61,22 +62,23 @@ class EmailService:
             
         except Exception as e:
             print(f"❌ Failed to send resolution email: {str(e)}")
-            import traceback
             traceback.print_exc()
             return False
     
     def _send_email(self, to_email: str, subject: str, html_body: str):
         """Internal method to send email via Resend API"""
         if not self.api_key:
-            raise Exception(
-                "Resend API key not configured!\n"
-                "Get it from: https://resend.com/api-keys\n"
-                "Then set: RESEND_API_KEY environment variable"
-            )
+            raise Exception("Resend API key not configured!")
+
         email_mode = os.getenv("EMAIL_MODE", "testing")
-        final_recipient = (
-            self.admin_email if email_mode == "testing" else to_email
-        )
+        final_recipient = self.admin_email if email_mode == "testing" else to_email
+
+        url = "https://api.resend.com/emails"
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
 
         payload = {
             "from": self.sender_email,
@@ -84,44 +86,29 @@ class EmailService:
             "subject": subject,
             "html": html_body
         }
-        url = "https://api.resend.com/emails"
-        
-        response = requests.post(
-        "https://api.resend.com/emails",
-         headers={
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        },
-        
-        json=payload,
-        timeout=10
-    )
-        
-
         
         try:
+            # Single request call inside the try block with defined headers
             response = requests.post(url, json=payload, headers=headers, timeout=10)
             
+            # Handle Specific Resend Errors
             if response.status_code == 403:
                 error_data = response.json()
                 if "testing emails" in error_data.get("message", "").lower():
                     raise Exception(
-                        f"Resend Testing Mode Active!\n"
-                        f"Can only send to: {self.admin_email}\n"
-                        f"To send to other emails:\n"
-                        f"1. Verify domain at: https://resend.com/domains\n"
-                        f"2. Update sender_email to: noreply@yourdomain.com"
+                        f"Resend Testing Mode Active! Can only send to: {self.admin_email}. "
+                        f"Verify domain at https://resend.com/domains"
                     )
                 raise Exception(f"403 Forbidden: {error_data.get('message', 'Unknown error')}")
             
-            if response.status_code != 200:
+            if response.status_code not in [200, 201]:
                 raise Exception(f"Email failed: {response.status_code} {response.text}")
 
             return response.json()
             
         except requests.exceptions.RequestException as e:
             raise Exception(f"Network error: {str(e)}")
-    
+
     def _generate_confirmation_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
         """Generate HTML for confirmation email"""
         testing_notice = ""
