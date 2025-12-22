@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 class EmailService:
     """
     Service for sending emails via Gmail SMTP.
-    Allows sending to ANY recipient (Admin & Users) without a verified domain.
+    Updated to use SSL (Port 465) to bypass Cloud/Render firewall restrictions.
     """
     
     def __init__(self):
@@ -21,7 +21,6 @@ class EmailService:
         
         if not self.password:
             print("⚠️ WARNING: GMAIL_APP_PASSWORD not set in .env file!")
-            print("ℹ️  Generate one here: https://myaccount.google.com/apppasswords")
 
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
         """Send confirmation email to the User and notification to Admin"""
@@ -73,7 +72,10 @@ class EmailService:
             return False
 
     def _send_email_via_smtp(self, to_email: str, subject: str, html_body: str):
-        """Core function to send email using Gmail SMTP"""
+        """
+        Core function to send email using Gmail SMTP_SSL (Port 465).
+        This port is more likely to work on cloud hosting than port 587.
+        """
         if not self.password:
             raise Exception("Gmail App Password is missing in .env!")
 
@@ -87,9 +89,11 @@ class EmailService:
         msg.attach(MIMEText(html_body, 'html'))
 
         try:
-            # Connect to Gmail SMTP Server (Port 587 for TLS)
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()  # Secure the connection
+            print(f"🔌 Connecting to Gmail SMTP_SSL on Port 465...")
+            
+            # --- CRITICAL CHANGE FOR RENDER ---
+            # Using SMTP_SSL directly instead of SMTP+starttls
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
             
             # Login
             server.login(self.sender_email, self.password)
@@ -99,11 +103,13 @@ class EmailService:
             
             # Close connection
             server.quit()
+            print(f"✅ Email sent successfully.")
             
         except smtplib.SMTPAuthenticationError:
             raise Exception("❌ Authentication Failed! Check your GMAIL_USER and GMAIL_APP_PASSWORD.")
         except Exception as e:
-            raise Exception(f"❌ SMTP Error: {str(e)}")
+            # If this still fails, Render is blocking ALL SMTP ports.
+            raise Exception(f"❌ SMTP Connection Error: {str(e)}")
 
     # ------------------------------------------------------------------
     # HTML TEMPLATES (Professional Design)
