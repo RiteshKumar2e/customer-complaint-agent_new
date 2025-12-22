@@ -7,7 +7,7 @@ class EmailService:
     
     def __init__(self):
         self.api_key = os.getenv("RESEND_API_KEY")
-        self.sender_email = "onboarding@resend.dev"  # Resend's testing sender
+        self.sender_email = "noreply@quickfix.ai"  # Resend's testing sender
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
         
@@ -28,7 +28,7 @@ class EmailService:
                 subject = f"[TO: {user_email}] " + subject
             
             html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
-            self._send_email(self.admin_email, subject, html_body)
+            self._send_email(user_email, subject, html_body)
             print(f"✅ User confirmation sent (intended for: {user_email})")
             
             # Send ADMIN notification
