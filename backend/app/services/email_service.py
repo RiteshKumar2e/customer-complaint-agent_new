@@ -7,7 +7,7 @@ class EmailService:
     
     def __init__(self):
         self.api_key = os.getenv("RESEND_API_KEY")
-        self.sender_email = "onboarding@resend.dev"  # Resend's testing sender
+        self.sender_email = "noreply@quickfix.com"  # Your verified domain # Resend's testing sender
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
         
