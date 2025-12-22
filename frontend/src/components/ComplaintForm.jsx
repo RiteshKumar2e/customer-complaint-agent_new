@@ -98,7 +98,6 @@ export default function ComplaintForm({ onResult }) {
           if (permission === "granted") {
             new Notification("Quickfix - Problem Solved!", {
               body: `Your complaint has been resolved by our AI agents. Check your email for details.`,
-              icon: "🤖",
             });
           }
         });
