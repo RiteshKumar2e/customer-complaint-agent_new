@@ -259,4 +259,4 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
       </div>
     </div>
   );
-} 
+}
