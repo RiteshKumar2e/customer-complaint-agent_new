@@ -28,7 +28,7 @@ class EmailService:
                 subject = f"[TO: {user_email}] " + subject
             
             html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
-            self._send_email(user_email, subject, html_body)
+            self._send_email(user_email if os.getenv("EMAIL_MODE") == "production" else self.admin_email,subject,html_body)
             print(f"✅ User confirmation sent (intended for: {user_email})")
             
             # Send ADMIN notification
@@ -73,13 +73,22 @@ class EmailService:
                 "Get it from: https://resend.com/api-keys\n"
                 "Then set: RESEND_API_KEY environment variable"
             )
+        email_mode = os.getenv("EMAIL_MODE", "testing")
+        if email_mode == "testing":
+            to_email = self.admin_email
         
+
         url = "https://api.resend.com/emails"
         
-        headers = {
+        response = requests.post(
+        "https://api.resend.com/emails",
+         headers={
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
-        }
+        },
+        json=payload,
+        timeout=10
+    )
         
         payload = {
             "from": self.sender_email,
@@ -104,8 +113,8 @@ class EmailService:
                 raise Exception(f"403 Forbidden: {error_data.get('message', 'Unknown error')}")
             
             if response.status_code != 200:
-                raise Exception(f"{response.status_code} {response.text}")
-            
+                raise Exception(f"Email failed: {response.status_code} {response.text}")
+
             return response.json()
             
         except requests.exceptions.RequestException as e:
