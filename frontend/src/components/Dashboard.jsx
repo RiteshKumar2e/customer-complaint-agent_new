@@ -205,39 +205,58 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
         </div>
 
         {/* Recent Complaints */}
-        <div className="recent-section fade-in" style={{ animationDelay: "0.3s" }}>
-          <h2 className="section-title">📝 Recent Complaints</h2>
-          {complaints.length === 0 ? (
-            <div className="empty-state">
-              <p>📭 No complaints yet</p>
-              <button className="empty-cta" onClick={() => onNavigate("form")}>
-                Submit Your First Complaint
-              </button>
-            </div>
-          ) : (
-            <div className="complaints-list">
-              {complaints.slice(-5).reverse().map((complaint, idx) => (
-                <div key={idx} className="complaint-item">
-                  <div className="complaint-header">
-                    <span className="complaint-category">📂 {complaint.category}</span>
-                    <span className={`complaint-priority priority-${complaint.priority.toLowerCase()}`}>
-                      {complaint.priority} Priority
-                    </span>
-                  </div>
-                  <p className="complaint-text">{(complaint.complaint_text || complaint.text || "").substring(0, 100)}...</p>
-                  <div className="complaint-footer">
-                    <span className="complaint-sentiment">😊 {complaint.sentiment}</span>
-                    <span className="complaint-satisfaction">🎯 {complaint.satisfaction_prediction || complaint.satisfaction}</span>
-                    <span className="complaint-resolution" style={{ marginLeft: "auto", color: "#0066cc", fontWeight: "bold" }}>
-                      ⏱️ {getResolutionTime(complaint.priority)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+<div className="recent-section fade-in" style={{ animationDelay: "0.3s" }}>
+  <h2 className="section-title">📝 Recent Complaints</h2>
+  {complaints.length === 0 ? (
+    <div className="empty-state">
+      <p>📭 No complaints yet</p>
+      <button className="empty-cta" onClick={() => onNavigate("form")}>
+        Submit Your First Complaint
+      </button>
+    </div>
+  ) : (
+    <div className="complaints-list">
+      {complaints.slice(-5).reverse().map((complaint, idx) => (
+        <div key={idx} className="complaint-item" style={{ padding: "15px", border: "1px solid #eee", borderRadius: "8px", marginBottom: "15px", background: "#fff" }}>
+          
+          {/* 1. Subject Section */}
+          <div className="complaint-subject-row" style={{ marginBottom: "8px" }}>
+             <h3 style={{ margin: "0", fontSize: "1.1rem", fontWeight: "bold", color: "#333" }}>
+               {complaint.subject || "No Subject"}
+             </h3>
+          </div>
+
+          {/* 2. Metadata (Category & Priority) */}
+          <div className="complaint-header" style={{ display: "flex", gap: "10px", marginBottom: "12px", fontSize: "0.9rem" }}>
+            <span className="complaint-category" style={{ background: "#f0f0f0", padding: "4px 8px", borderRadius: "4px" }}>
+              📂 {complaint.category}
+            </span>
+            <span className={`complaint-priority priority-${complaint.priority?.toLowerCase()}`} style={{ padding: "4px 8px", borderRadius: "4px" }}>
+              {complaint.priority} Priority
+            </span>
+          </div>
+
+          {/* 3. Full Description (Pura description) */}
+          <div className="complaint-body" style={{ marginBottom: "15px" }}>
+            <p className="complaint-text" style={{ margin: "0", color: "#555", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+              {complaint.complaint_text || complaint.text || "No description provided."}
+            </p>
+          </div>
+
+          {/* 4. Footer (Sentiment & Stats) */}
+          <div className="complaint-footer" style={{ display: "flex", alignItems: "center", gap: "15px", borderTop: "1px solid #eee", paddingTop: "10px", fontSize: "0.9rem" }}>
+            <span className="complaint-sentiment">😊 {complaint.sentiment}</span>
+            <span className="complaint-satisfaction">🎯 {complaint.satisfaction_prediction || complaint.satisfaction}</span>
+            <span className="complaint-resolution" style={{ marginLeft: "auto", color: "#0066cc", fontWeight: "bold" }}>
+              ⏱️ {getResolutionTime(complaint.priority)}
+            </span>
+          </div>
         </div>
+      ))}
+    </div>
+  )}
+</div>
       </div>
     </div>
   );
-}
+} 
