@@ -13,8 +13,8 @@ class EmailService:
     
     def __init__(self):
         # Credentials from .env
-        self.sender_email = os.getenv("GMAIL_USER", "riteshkumar90359@gmail.com")
-        self.password = os.getenv("GMAIL_APP_PASSWORD")
+        self.sender_email = os.getenv("SENDER_EMAIL", "riteshkumar90359@gmail.com")
+        self.password = os.getenv("SENDER_PASSWORD")
         
         # Admin Configuration
         self.admin_email = "riteshkumar90359@gmail.com"
