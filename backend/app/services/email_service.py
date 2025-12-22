@@ -1,70 +1,83 @@
 import os
-import smtplib
-import traceback
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+import traceback
 
 class EmailService:
-    """
-    Service for sending emails via Gmail SMTP.
-    Allows sending to ANY recipient (Admin & Users) without a verified domain.
-    """
+    """Service for sending emails via Resend API - Fixed & Optimized"""
     
     def __init__(self):
-        # Credentials from .env
-        self.sender_email = os.getenv("SENDER_EMAIL", "riteshkumar90359@gmail.com")
-        self.password = os.getenv("SENDER_PASSWORD")
+        self.api_key = os.getenv("RESEND_API_KEY")
         
-        # Admin Configuration
+        # ✅ DOMAIN SET TO QUICKFIX.COM
+        # Make sure this domain is verified at https://resend.com/domains
+        self.sender_email = "noreply@quickfix.com"
+        
         self.admin_email = "riteshkumar90359@gmail.com"
+        self.company_name = "Quickfix"
         
-        if not self.password:
-            print("⚠️ WARNING: GMAIL_APP_PASSWORD not set in .env file!")
-            print("ℹ️  Generate one here: https://myaccount.google.com/apppasswords")
+        if not self.api_key:
+            print("⚠️ CRITICAL: RESEND_API_KEY not set!")
+            print("📝 Get your key from: https://resend.com/api-keys")
+            print("❌ EMAILS WILL NOT BE SENT WITHOUT THIS KEY")
 
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
-        """Send confirmation email to the User and notification to Admin"""
+        """Send confirmation email when complaint is submitted - sends to BOTH user and admin"""
         try:
-            # 1. Send to USER
-            subject = f"✅ Complaint Received - {user_name}"
-            html_body = self._generate_confirmation_html(user_name, complaint_data)
+            # Validate API key first
+            if not self.api_key:
+                raise Exception("RESEND_API_KEY not configured. Check .env file.")
             
-            print(f"📧 Sending confirmation to User: {user_email}...")
-            self._send_email_via_smtp(user_email, subject, html_body)
-            print(f"✅ User confirmation sent.")
-
-            # 2. Send to ADMIN (Internal Alert)
+            # 1. Send to User Email
+            subject = f"✅ Complaint Received - {user_name}"
+            html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
+            print(f"📧 Sending confirmation to USER: {user_email}...")
+            
+            self._send_email(user_email, subject, html_body)
+            print(f"✅ User confirmation email sent successfully to {user_email}.")
+            
+            # 2. Send to Admin Email (Always)
             self._send_admin_notification(user_name, user_email, complaint_data)
             
             return True
-
+            
         except Exception as e:
-            print(f"❌ Failed to send confirmation emails: {str(e)}")
+            print(f"❌ Failed to send emails: {str(e)}")
             traceback.print_exc()
             return False
 
     def _send_admin_notification(self, user_name: str, user_email: str, complaint_data: dict):
         """Helper to send the internal admin alert"""
         try:
-            subject = f"🚨 NEW: {user_name} - {complaint_data.get('category', 'General')}"
-            html_body = self._generate_admin_notification_html(user_name, user_email, complaint_data)
-            
-            print(f"📧 Sending notification to Admin...")
-            self._send_email_via_smtp(self.admin_email, subject, html_body)
-            print(f"✅ Admin alert sent.")
+            admin_subject = f"🚨 NEW: {user_name} - {complaint_data.get('category', 'General')}"
+            admin_html = self._generate_admin_notification_html(user_name, user_email, complaint_data)
+            self._send_email(self.admin_email, admin_subject, admin_html)
+            print(f"✅ Admin notification sent.")
         except Exception as e:
             print(f"⚠️ Failed to send admin notification: {e}")
 
     def send_resolution_email(self, user_name: str, user_email: str, complaint_data: dict):
-        """Send resolution email when complaint is solved"""
+        """Send resolution email when complaint is solved - sends to BOTH user and admin"""
         try:
+            # Validate API key first
+            if not self.api_key:
+                raise Exception("RESEND_API_KEY not configured. Check .env file.")
+                
+            # 1. Send to User Email
             subject = f"✅ RESOLVED - {user_name}'s Complaint"
-            html_body = self._generate_resolution_html(user_name, complaint_data)
+            html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
             
-            print(f"📧 Sending resolution to User: {user_email}...")
-            self._send_email_via_smtp(user_email, subject, html_body)
-            print(f"✅ Resolution email sent.")
+            print(f"📧 Sending resolution to USER: {user_email}...")
+            self._send_email(user_email, subject, html_body)
+            print(f"✅ Resolution email sent successfully to {user_email}")
+            
+            # 2. Send Admin Notification (Always)
+            print(f"📧 Sending resolution notification to ADMIN: {self.admin_email}...")
+            admin_subject = f"✅ RESOLVED: {user_name} - {complaint_data.get('category', 'General')}"
+            admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
+            self._send_email(self.admin_email, admin_subject, admin_html)
+            print(f"✅ Admin resolution notification sent.")
+            
             return True
             
         except Exception as e:
@@ -72,115 +85,174 @@ class EmailService:
             traceback.print_exc()
             return False
 
-    def _send_email_via_smtp(self, to_email: str, subject: str, html_body: str):
-        """Core function to send email using Gmail SMTP"""
-        if not self.password:
-            raise Exception("Gmail App Password is missing in .env!")
+    def _send_email(self, to_email: str, subject: str, html_body: str):
+        """Internal method to send email via Resend API"""
+        if not self.api_key:
+            raise Exception("Resend API key not configured!")
 
-        # Create the email object
-        msg = MIMEMultipart()
-        msg['From'] = f"Quickfix Support <{self.sender_email}>"
-        msg['To'] = to_email
-        msg['Subject'] = subject
+        url = "https://api.resend.com/emails"
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
 
-        # Attach HTML content
-        msg.attach(MIMEText(html_body, 'html'))
-
+        payload = {
+            "from": self.sender_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        }
+        
         try:
-            # Connect to Gmail SMTP Server (Port 587 for TLS)
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()  # Secure the connection
+            # FIXED: Single request call with correct headers
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
             
-            # Login
-            server.login(self.sender_email, self.password)
+            # Handle Specific Resend Errors
+            if response.status_code == 403:
+                error_data = response.json()
+                msg = error_data.get("message", "").lower()
+                if "domain" in msg or "verified" in msg:
+                    raise Exception(
+                        f"⛔ DOMAIN ERROR: Resend rejected email from '{self.sender_email}'.\n"
+                        f"You explicitly set the domain to 'quickfix.com'.\n"
+                        f"You MUST verify this domain at https://resend.com/domains"
+                    )
+                if "testing" in msg:
+                    raise Exception(
+                        f"⛔ TESTING MODE RESTRICTION: You cannot send to {to_email}.\n"
+                        f"In testing, you can only send to yourself ({self.admin_email})."
+                    )
+
+            if response.status_code not in [200, 201, 202]:
+                raise Exception(f"Email failed: {response.status_code} {response.text}")
+
+            return response.json()
             
-            # Send
-            server.sendmail(self.sender_email, to_email, msg.as_string())
-            
-            # Close connection
-            server.quit()
-            
-        except smtplib.SMTPAuthenticationError:
-            raise Exception("❌ Authentication Failed! Check your GMAIL_USER and GMAIL_APP_PASSWORD.")
-        except Exception as e:
-            raise Exception(f"❌ SMTP Error: {str(e)}")
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Network error: {str(e)}")
 
     # ------------------------------------------------------------------
-    # HTML TEMPLATES (Professional Design)
+    # HTML GENERATION METHODS (Preserved from your original code)
     # ------------------------------------------------------------------
 
-    def _generate_confirmation_html(self, user_name: str, complaint_data: dict) -> str:
+    def _generate_confirmation_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
+        """Generate HTML for confirmation email"""
         return f"""
         <html>
             <head>
                 <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }}
-                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
-                    .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; text-align: center; }}
-                    .content {{ padding: 30px; color: #333; }}
-                    .info-box {{ background: #f8f9fa; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; border-radius: 4px; }}
-                    .footer {{ background: #eee; text-align: center; padding: 15px; font-size: 12px; color: #777; }}
+                    body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
+                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                    .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
+                    .header h1 {{ margin: 0; font-size: 24px; font-weight: 600; }}
+                    .content {{ padding: 30px; }}
+                    .info-box {{ background: #f0f4ff; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; border-radius: 6px; }}
+                    .info-box h3 {{ margin: 0 0 15px 0; color: #667eea; font-size: 16px; }}
+                    .info-box p {{ margin: 8px 0; font-size: 14px; }}
+                    .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }}
+                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e0e0e0; }}
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1 style="margin:0; font-size:24px;">Complaint Received</h1>
+                        <h1>🎯 Thank You for Contacting Quickfix</h1>
+                        <p style="margin: 10px 0 0 0; opacity: 0.9;">Your complaint has been received</p>
                     </div>
                     <div class="content">
                         <p>Hi <strong>{user_name}</strong>,</p>
-                        <p>We have received your complaint. Our AI system is analyzing it now.</p>
+                        
+                        <p>We have successfully received your complaint. Our AI-powered system is analyzing your issue to provide the best solution.</p>
                         
                         <div class="info-box">
-                            <p><strong>Category:</strong> {complaint_data.get('category', 'General')}</p>
-                            <p><strong>Priority:</strong> {complaint_data.get('priority', 'Medium')}</p>
-                            <p><strong>Description:</strong> {complaint_data.get('complaint_text', '')}</p>
+                            <h3>📋 Your Complaint Details</h3>
+                            <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>
+                            <p><strong>Priority:</strong> <span style="color: #ff6b6b; font-weight: 600;">{complaint_data.get('priority', 'N/A')}</span></p>
+                            <p><strong>Description:</strong> {complaint_data.get('complaint_text', 'N/A')[:150]}{"..." if len(complaint_data.get('complaint_text', '')) > 150 else ''}</p>
                         </div>
-
-                        <p><strong>AI Initial Analysis:</strong><br>
-                        {complaint_data.get('response', 'Processing...')}</p>
                         
-                        <p style="margin-top:20px;">We will update you shortly.</p>
+                        <div class="info-box">
+                            <h3>🤖 AI Analysis Results</h3>
+                            <p><strong>Sentiment:</strong> {complaint_data.get('sentiment', 'Analyzing...')}</p>
+                            <p><strong>Our Response:</strong> {complaint_data.get('response', 'Processing...')}</p>
+                            <p><strong>Proposed Solution:</strong> {complaint_data.get('solution', 'Generating solution...')}</p>
+                        </div>
+                        
+                        <p style="background: #fff9e6; padding: 15px; border-left: 4px solid #ffc107; border-radius: 4px; margin: 20px 0;">
+                            <strong>⏱️ Expected Resolution:</strong> We typically resolve {complaint_data.get('priority', 'Medium')} priority complaints within 24-48 hours.
+                        </p>
+                        
+                        <center>
+                            <a href="http://localhost:5173/dashboard" class="button">📊 View Dashboard</a>
+                        </center>
+                        
+                        <p style="margin-top: 30px;">Need help? Contact us directly.</p>
+                        
+                        <p style="margin-top: 20px;">Best regards,<br><strong style="color: #667eea;">The Quickfix Support Team</strong></p>
                     </div>
                     <div class="footer">
-                        &copy; {datetime.now().year} Quickfix Support
+                        <p style="margin: 5px 0;"><strong>Quickfix</strong> - AI-Powered Complaint Resolution</p>
+                        <p style="margin: 5px 0;">📧 riteshkumar90359@gmail.com | 📱 +91 62062 69895</p>
+                        <p style="margin: 10px 0 5px 0; color: #999;">© {datetime.now().year} Quickfix. All rights reserved.</p>
                     </div>
                 </div>
             </body>
         </html>
         """
 
-    def _generate_resolution_html(self, user_name: str, complaint_data: dict) -> str:
+    def _generate_resolution_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
+        """Generate HTML for resolution email"""
         return f"""
         <html>
             <head>
                 <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }}
-                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
-                    .header {{ background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 25px; text-align: center; }}
-                    .content {{ padding: 30px; color: #333; }}
-                    .success-box {{ background: #f0fff4; padding: 20px; border-left: 4px solid #38ef7d; margin: 20px 0; border-radius: 4px; }}
-                    .footer {{ background: #eee; text-align: center; padding: 15px; font-size: 12px; color: #777; }}
+                    body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
+                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                    .header {{ background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 30px 20px; text-align: center; }}
+                    .content {{ padding: 30px; }}
+                    .success-box {{ background: #f0fff4; padding: 20px; margin: 20px 0; border-left: 4px solid #38ef7d; border-radius: 6px; }}
+                    .success-box h3 {{ margin: 0 0 15px 0; color: #11998e; font-size: 16px; }}
+                    .button {{ display: inline-block; background: #38ef7d; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }}
+                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e0e0e0; }}
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1 style="margin:0; font-size:24px;">✅ Issue Resolved</h1>
+                        <h1>✅ Complaint Resolved Successfully!</h1>
+                        <p style="margin: 10px 0 0 0; opacity: 0.9;">Your issue has been addressed</p>
                     </div>
                     <div class="content">
+                        <div style="font-size: 48px; color: #38ef7d; text-align: center; margin: 20px 0;">✓</div>
+                        
                         <p>Hi <strong>{user_name}</strong>,</p>
-                        <p>Good news! Your complaint has been successfully resolved.</p>
+                        
+                        <p>Great news! Our AI system has successfully analyzed and resolved your complaint.</p>
                         
                         <div class="success-box">
-                            <h3 style="margin-top:0; color:#11998e;">Solution Provided:</h3>
-                            <p>{complaint_data.get('solution', 'Check your dashboard for details.')}</p>
+                            <h3>📋 Complaint Summary</h3>
+                            <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>
+                            <p><strong>Status:</strong> <span style="color: #38ef7d; font-weight: 600;">✅ RESOLVED</span></p>
                         </div>
-
-                        <p>Thank you for using Quickfix!</p>
+                        
+                        <div class="success-box">
+                            <h3>🎯 Solution Provided</h3>
+                            <p>{complaint_data.get('solution', 'Check dashboard for details')}</p>
+                        </div>
+                        
+                        <center>
+                            <a href="http://localhost:5173/dashboard" class="button">📊 View Full Details</a>
+                        </center>
+                        
+                        <p style="margin-top: 30px;">Thank you for choosing Quickfix!</p>
+                        
+                        <p style="margin-top: 20px;">Best regards,<br><strong style="color: #11998e;">The Quickfix Support Team</strong></p>
                     </div>
                     <div class="footer">
-                        &copy; {datetime.now().year} Quickfix Support
+                        <p style="margin: 5px 0;"><strong>Quickfix</strong> - AI-Powered Complaint Resolution</p>
+                        <p style="margin: 5px 0;">📧 riteshkumar90359@gmail.com | 📱 +91 62062 69895</p>
+                        <p style="margin: 10px 0 5px 0; color: #999;">© {datetime.now().year} Quickfix. All rights reserved.</p>
                     </div>
                 </div>
             </body>
@@ -188,44 +260,134 @@ class EmailService:
         """
 
     def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
+        """Generate HTML for admin notification email"""
+        priority_colors = {"High": "#ff4444", "Medium": "#ff9900", "Low": "#00cc66"}
         priority = complaint_data.get('priority', 'Medium')
-        color = "#ff4444" if priority == "High" else "#ff9900"
+        color = priority_colors.get(priority, "#0066cc")
         
         return f"""
         <html>
-            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-                <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; border-top: 5px solid {color};">
-                    <h2 style="color: {color}; margin-top:0;">🚨 New Complaint Alert</h2>
-                    
-                    <table style="width:100%; border-collapse: collapse; margin-top: 15px;">
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>User:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{user_name}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Email:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{user_email}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Category:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{complaint_data.get('category')}</td>
-                        </tr>
-                         <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Priority:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd; color: {color}; font-weight:bold;">{priority}</td>
-                        </tr>
-                    </table>
-
-                    <div style="background: #f9f9f9; padding: 15px; margin-top: 15px; border-radius: 4px;">
-                        <strong>Complaint:</strong><br>
-                        {complaint_data.get('complaint_text')}
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
+                    .container {{ max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                    .header {{ background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 12px 12px 0 0; }}
+                    .content {{ padding: 30px; }}
+                    .priority-badge {{ background: {color}; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold; }}
+                    .section {{ background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }}
+                    table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+                    table td {{ padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }}
+                    table td:first-child {{ font-weight: 600; width: 35%; background: #f8f9fa; }}
+                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1 style="margin: 0;">🚨 New Complaint Alert</h1>
+                        <p style="margin: 10px 0 0 0;">Immediate attention required</p>
                     </div>
-
-                    <p style="font-size: 12px; color: #888; margin-top: 20px;">Sent from Quickfix System</p>
+                    <div class="content">
+                        <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 6px; margin: 20px 0; text-align: center;">
+                            Priority: <span class="priority-badge">{priority}</span>
+                        </div>
+                        
+                        <div class="section">
+                            <h3 style="margin: 0 0 15px 0;">👤 Customer Information</h3>
+                            <table>
+                                <tr><td>Name:</td><td><strong>{user_name}</strong></td></tr>
+                                <tr><td>Email:</td><td><strong>{user_email}</strong></td></tr>
+                                <tr><td>Time:</td><td>{datetime.now().strftime('%d %B %Y, %I:%M %p')}</td></tr>
+                            </table>
+                        </div>
+                        
+                        <div class="section">
+                            <h3 style="margin: 0 0 15px 0;">📋 Complaint Details</h3>
+                            <table>
+                                <tr><td>Category:</td><td><strong>{complaint_data.get('category', 'N/A')}</strong></td></tr>
+                                <tr><td>Priority:</td><td><span class="priority-badge">{priority}</span></td></tr>
+                                <tr><td>Description:</td><td>{complaint_data.get('complaint_text', 'N/A')}</td></tr>
+                            </table>
+                        </div>
+                        
+                        <div class="section" style="border-left-color: #38ef7d;">
+                            <h3 style="margin: 0 0 15px 0;">🤖 AI Analysis</h3>
+                            <table>
+                                <tr><td>Sentiment:</td><td>{complaint_data.get('sentiment', 'N/A')}</td></tr>
+                                <tr><td>Response:</td><td>{complaint_data.get('response', 'Processing...')}</td></tr>
+                                <tr><td>Solution:</td><td>{complaint_data.get('solution', 'Generating...')}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        <p style="margin: 5px 0;"><strong>Quickfix Admin Panel</strong></p>
+                        <p style="margin: 5px 0; color: #999;">© {datetime.now().year} Quickfix</p>
+                    </div>
                 </div>
             </body>
         </html>
         """
 
-# Initialize singleton
+    def _generate_admin_resolution_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
+        """Generate HTML for admin resolution notification email"""
+        return f"""
+        <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
+                    .container {{ max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                    .header {{ background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 12px 12px 0 0; }}
+                    .content {{ padding: 30px; }}
+                    .success-badge {{ background: #38ef7d; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold; }}
+                    .section {{ background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #38ef7d; }}
+                    table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+                    table td {{ padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-size: 14px; }}
+                    table td:first-child {{ font-weight: 600; width: 35%; background: #f8f9fa; }}
+                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1 style="margin: 0;">✅ Complaint Resolved</h1>
+                        <p style="margin: 10px 0 0 0;">Customer issue has been resolved</p>
+                    </div>
+                    <div class="content">
+                        <div style="text-align: center; margin: 20px 0;">
+                            <div style="font-size: 48px; color: #38ef7d;">✓</div>
+                            <span class="success-badge">RESOLVED</span>
+                        </div>
+                        
+                        <div class="section">
+                            <h3 style="margin: 0 0 15px 0;">👤 Customer Information</h3>
+                            <table>
+                                <tr><td>Name:</td><td><strong>{user_name}</strong></td></tr>
+                                <tr><td>Email:</td><td><strong>{user_email}</strong></td></tr>
+                                <tr><td>Resolution Time:</td><td>{datetime.now().strftime('%d %B %Y, %I:%M %p')}</td></tr>
+                            </table>
+                        </div>
+                        
+                        <div class="section">
+                            <h3 style="margin: 0 0 15px 0;">📋 Complaint Details</h3>
+                            <table>
+                                <tr><td>Category:</td><td><strong>{complaint_data.get('category', 'N/A')}</strong></td></tr>
+                                <tr><td>Status:</td><td><span class="success-badge">RESOLVED</span></td></tr>
+                            </table>
+                        </div>
+                        
+                        <div class="section">
+                            <h3 style="margin: 0 0 15px 0;">💡 Solution Provided</h3>
+                            <p>{complaint_data.get('solution', 'Check dashboard for details')}</p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        <p style="margin: 5px 0;"><strong>Quickfix Admin Panel</strong></p>
+                        <p style="margin: 5px 0; color: #999;">© {datetime.now().year} Quickfix</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+        """
+
+# Initialize email service
 email_service = EmailService()
