@@ -15,7 +15,7 @@ class EmailService:
     def __init__(self):
         # Configuration
         self.api_key = os.getenv("BREVO_API_KEY")
-        self.sender_email = os.getenv("SENDER_EMAIL", "noreply@quickfix.com")
+        self.sender_email = os.getenv("SENDER_EMAIL", "www.quickfix.com")
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
         
