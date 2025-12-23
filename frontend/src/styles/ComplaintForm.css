@@ -277,20 +277,39 @@
 @media (max-width: 768px) {
   .complaint-form-container {
     padding: 30px 20px;
-    max-width: 100%;
+    max-width: calc(100% - 20px);
     margin: 20px 10px;
+    border-radius: 20px;
+  }
+
+  .form-header {
+    margin-bottom: 30px;
   }
 
   .form-header h2 {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .form-header p {
     font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .complaint-form {
+    gap: 20px;
   }
 
   .form-section {
-    padding: 16px;
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .form-section legend {
+    font-size: 15px;
+  }
+
+  .form-group {
+    gap: 6px;
   }
 
   .form-input,
@@ -298,44 +317,131 @@
   .form-textarea {
     font-size: 16px;
     /* Prevents zoom on iOS */
+    padding: 14px;
+  }
+
+  .form-textarea {
+    min-height: 120px;
+  }
+
+  .submit-btn {
+    padding: 15px;
+    font-size: 15px;
+  }
+
+  .alert {
+    padding: 12px 14px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 480px) {
   .complaint-form-container {
-    padding: 20px 16px;
+    padding: 24px 16px;
+    margin: 15px 8px;
+    max-width: calc(100% - 16px);
+    border-radius: 16px;
+  }
+
+  .form-header {
+    margin-bottom: 24px;
+  }
+
+  .form-header h2 {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .form-header p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .complaint-form {
+    gap: 16px;
+  }
+
+  .form-section {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .form-section legend {
+    font-size: 14px;
+    padding: 0 6px;
+  }
+
+  .form-group {
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .required-hint {
+    font-size: 11px;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .form-textarea {
+    min-height: 100px;
+  }
+
+  .char-count {
+    font-size: 11px;
+  }
+
+  .submit-btn {
+    padding: 14px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .alert {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .form-actions {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .form-note {
+    font-size: 11px;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .complaint-form-container {
+    padding: 20px 12px;
+    margin: 10px 5px;
   }
 
   .form-header h2 {
     font-size: 20px;
   }
 
-  .form-header p {
-    font-size: 13px;
-  }
-
   .form-section {
-    padding: 12px;
-  }
-
-  .form-section legend {
-    font-size: 14px;
-  }
-
-  .form-group label {
-    font-size: 13px;
+    padding: 14px;
   }
 
   .form-input,
   .form-select,
   .form-textarea {
-    padding: 10px 12px;
-    font-size: 16px;
-  }
-
-  .submit-btn {
-    padding: 14px;
-    font-size: 14px;
+    padding: 11px 12px;
   }
 }
 
