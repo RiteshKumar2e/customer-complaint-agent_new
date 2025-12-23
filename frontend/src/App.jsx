@@ -4,6 +4,7 @@ import ComplaintForm from "./components/ComplaintForm";
 import ComplaintCard from "./components/ComplaintCard";
 import Dashboard from "./components/Dashboard";
 import SideChatBot from "./components/SideChatBot";
+import Feedback from "./components/Feedback";
 import NotificationCenter from "./components/NotificationCenter";
 import { getAllComplaints } from "./api";
 import "./App.css";
@@ -12,6 +13,7 @@ export default function App() {
   const [page, setPage] = useState("landing");
   const [result, setResult] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -58,11 +60,17 @@ export default function App() {
   if (page === "landing") {
     return (
       <>
-        <Landing 
-          onStart={() => navigateTo("form")} 
-          onDashboard={() => navigateTo("dashboard")} 
+        <Landing
+          onStart={() => navigateTo("form")}
+          onDashboard={() => navigateTo("dashboard")}
+          onFeedback={() => setFeedbackOpen(true)}
         />
         <NotificationCenter />
+
+        {/* Feedback Modal */}
+        {feedbackOpen && (
+          <Feedback onClose={() => setFeedbackOpen(false)} />
+        )}
       </>
     );
   }
@@ -71,31 +79,37 @@ export default function App() {
   if (page === "dashboard") {
     return (
       <>
-        <Dashboard 
-          onNavigate={navigateTo} 
-          complaints={complaints} 
+        <Dashboard
+          onNavigate={navigateTo}
+          onFeedback={() => setFeedbackOpen(true)}
+          complaints={complaints}
           setComplaints={setComplaints}
           loading={loading}
         />
-        
+
         {/* Floating AI Chat Button */}
-        <button 
+        <button
           type="button"
-          className="chat-fab" 
+          className="chat-fab"
           onClick={handleChatToggle}
           aria-label="Toggle AI Chat Assistant"
           title="AI Assistant"
         >
           🤖
         </button>
-        
+
         {/* Side Chatbot Panel */}
-        <SideChatBot 
-          open={chatOpen} 
-          onClose={() => setChatOpen(false)} 
+        <SideChatBot
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
         />
-        
+
         <NotificationCenter />
+
+        {/* Feedback Modal */}
+        {feedbackOpen && (
+          <Feedback onClose={() => setFeedbackOpen(false)} />
+        )}
       </>
     );
   }
@@ -110,15 +124,15 @@ export default function App() {
           <p className="header-subtitle">AI-Powered Complaint Resolution</p>
         </div>
         <nav className="header-buttons">
-          <button 
+          <button
             type="button"
-            className={`header-btn ${page === 'form' ? 'active' : ''}`}
-            onClick={() => navigateTo("form")}
-            aria-label="Report Complaint"
+            className="header-btn"
+            onClick={() => setFeedbackOpen(true)}
+            aria-label="Send Feedback"
           >
-            📝 Report
+            � Feedback
           </button>
-          <button 
+          <button
             type="button"
             className={`header-btn ${page === 'dashboard' ? 'active' : ''}`}
             onClick={() => navigateTo("dashboard")}
@@ -126,7 +140,7 @@ export default function App() {
           >
             📊 Dashboard
           </button>
-          <button 
+          <button
             type="button"
             className="header-btn"
             onClick={() => navigateTo("landing")}
@@ -148,9 +162,9 @@ export default function App() {
       </main>
 
       {/* Floating AI Chat Button */}
-      <button 
+      <button
         type="button"
-        className="chat-fab" 
+        className="chat-fab"
         onClick={handleChatToggle}
         aria-label="Toggle AI Chat Assistant"
         title="AI Assistant"
@@ -159,13 +173,18 @@ export default function App() {
       </button>
 
       {/* Side Chatbot Panel */}
-      <SideChatBot 
-        open={chatOpen} 
-        onClose={() => setChatOpen(false)} 
+      <SideChatBot
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
       />
-      
+
       {/* Notification System */}
       <NotificationCenter />
+
+      {/* Feedback Modal */}
+      {feedbackOpen && (
+        <Feedback onClose={() => setFeedbackOpen(false)} />
+      )}
     </div>
   );
 }

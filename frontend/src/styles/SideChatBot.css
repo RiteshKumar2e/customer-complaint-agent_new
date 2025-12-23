@@ -247,7 +247,8 @@
 /* Mobile View */
 @media (max-width: 480px) {
   .side-chat {
-    width: 100%;
+    width: 85%;
+    max-width: 360px;
     right: -100%;
     border-left: none;
   }
