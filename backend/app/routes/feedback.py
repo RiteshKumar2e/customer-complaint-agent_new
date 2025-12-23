@@ -9,7 +9,6 @@ class FeedbackRequest(BaseModel):
     name: str
     email: EmailStr
     rating: int
-    category: str
     message: str
 
 @router.post("/feedback")
@@ -22,7 +21,7 @@ async def submit_feedback(feedback: FeedbackRequest):
         admin_email = os.getenv("SENDER_EMAIL", "riteshkumar90359@gmail.com")
         
         # Create feedback email subject
-        subject = f"🌟 Quickfix Feedback - {feedback.category} ({feedback.rating}⭐)"
+        subject = f"🌟 Quickfix Feedback - New Rating ({feedback.rating}⭐)"
         
         # Create detailed HTML email body
         html_body = f"""
@@ -89,12 +88,6 @@ async def submit_feedback(feedback: FeedbackRequest):
                                                 <td style="padding: 8px 0;">
                                                     <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Email:</p>
                                                     <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{feedback.email}</p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 8px 0;">
-                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Category:</p>
-                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{feedback.category}</p>
                                                 </td>
                                             </tr>
                                         </table>

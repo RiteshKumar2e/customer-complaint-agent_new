@@ -7,14 +7,12 @@ export default function Feedback({ onClose }) {
         name: "",
         email: "",
         rating: "5",
-        category: "General",
         message: ""
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
 
-    const categories = ["General", "Bug Report", "Feature Request", "UI/UX", "Performance", "Other"];
     const ratings = ["1", "2", "3", "4", "5"];
 
     const handleChange = (e) => {
@@ -43,7 +41,6 @@ export default function Feedback({ onClose }) {
                 name: formData.name,
                 email: formData.email,
                 rating: parseInt(formData.rating),
-                category: formData.category,
                 message: formData.message
             });
 
@@ -55,7 +52,6 @@ export default function Feedback({ onClose }) {
                     name: "",
                     email: "",
                     rating: "5",
-                    category: "General",
                     message: ""
                 });
                 setSuccess(false);
@@ -131,21 +127,6 @@ export default function Feedback({ onClose }) {
                             >
                                 {ratings.map(r => (
                                     <option key={r} value={r}>{r} ⭐</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="category">Category *</label>
-                            <select
-                                id="category"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                disabled={loading}
-                            >
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
                                 ))}
                             </select>
                         </div>
