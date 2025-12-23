@@ -1,8 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./../styles/Landing.css";
 
-export default function Landing({ onStart, onDashboard }) {
+export default function Landing({ onStart, onDashboard, onFeedback }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
+  const heroRef = useRef(null);
+
+  // 3D Tilt Effect for Hero
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const handleMouseMove = (e) => {
+      const { clientX, clientY } = e;
+      const { left, top, width, height } = hero.getBoundingClientRect();
+      const x = (clientX - left) / width - 0.5;
+      const y = (clientY - top) / height - 0.5;
+
+      hero.style.transform = `rotateY(${x * 10}deg) rotateX(${y * -10}deg)`;
+    };
+
+    const handleMouseLeave = () => {
+      hero.style.transform = `rotateY(0deg) rotateX(0deg)`;
+    };
+
+    hero.addEventListener("mousemove", handleMouseMove);
+    hero.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      hero.removeEventListener("mousemove", handleMouseMove);
+      hero.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
 
   const features = [
     {
@@ -70,15 +97,17 @@ export default function Landing({ onStart, onDashboard }) {
 
 
         <div className="navbar-links">
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#stats" className="nav-link">About</a>
-          <a href="#cta" className="nav-link">Contact</a>
+          <a href="#features" className="nav-link">Solutions</a>
+          <a href="#stats" className="nav-link">Intelligence</a>
+          <button onClick={onFeedback} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Feedback
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
       <div className="landing-hero">
-        <div className="hero-content">
+        <div className="hero-content" ref={heroRef}>
           <div className="badge slide-in-down">
             ✨ Enterprise-Grade AI Solution
           </div>
@@ -130,8 +159,8 @@ export default function Landing({ onStart, onDashboard }) {
       {/* Features Section */}
       <div className="features-section" id="features">
         <div className="features-container">
-          <h2 className="section-title">Powered by 6 Specialized AI Agents</h2>
-          <p className="section-subtitle">Each agent specializes in a different aspect of complaint resolution</p>
+          <h2 className="section-title">Precision-Engineered Support Intelligence</h2>
+          <p className="section-subtitle">A multi-agent ecosystem designed to orchestrate complex customer journeys with absolute precision.</p>
 
           <div className="features-grid">
             {features.map((feature, index) => (
@@ -139,7 +168,16 @@ export default function Landing({ onStart, onDashboard }) {
                 key={feature.id}
                 className={`feature-card ${hoveredFeature === feature.id ? 'hovered' : ''}`}
                 onMouseEnter={() => setHoveredFeature(feature.id)}
-                onMouseLeave={() => setHoveredFeature(null)}
+                onMouseLeave={(e) => {
+                  setHoveredFeature(null);
+                  e.currentTarget.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                }}
+                onMouseMove={(e) => {
+                  const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+                  const x = (e.clientX - left) / width - 0.5;
+                  const y = (e.clientY - top) / height - 0.5;
+                  e.currentTarget.style.transform = `rotateY(${x * 15}deg) rotateX(${y * -15}deg) translateY(-10px)`;
+                }}
                 style={{
                   animationDelay: `${index * 0.1}s`,
                   '--feature-color': feature.color
