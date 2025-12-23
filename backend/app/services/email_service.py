@@ -15,7 +15,13 @@ class EmailService:
     def __init__(self):
         # Configuration
         self.api_key = os.getenv("BREVO_API_KEY")
-        self.sender_email = os.getenv("SENDER_EMAIL", "www.quickfix.com")
+        self.sender_email = os.getenv("SENDER_EMAIL", "noreply@quickfix.com")
+        
+        # 🛡️ Anti-Error Validation: If sender_email looks like a URL (no @), force a valid format
+        if "@" not in self.sender_email:
+            print(f"⚠️  INVALID SENDER_EMAIL: '{self.sender_email}' is not a valid email. Falling back to default.")
+            self.sender_email = "noreply@quickfix.com"
+            
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
         
