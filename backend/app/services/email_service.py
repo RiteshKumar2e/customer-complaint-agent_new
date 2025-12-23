@@ -58,31 +58,28 @@ class EmailService:
     def _worker_send_notification(self, type: str, user_name: str, user_email: str, complaint_data: dict):
         """Background logic to dispatch both emails"""
         try:
-            ticket_id = complaint_data.get('id', 'N/A')
-            category = complaint_data.get('category', 'General')
-            
             if type == "complaint":
                 # 1. Send to User
-                subject = f"✅ Complaint Received - Ticket #{ticket_id}"
+                subject = f"✅ Complaint Received - Ticket #{complaint_data.get('id', 'N/A')}"
                 html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending confirmation to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"🚨 NEW TICKET #{ticket_id} - {category}"
+                admin_subject = f"🚨 NEW TICKET #{complaint_data.get('id', 'N/A')} - {complaint_data.get('category', 'General')}"
                 admin_html = self._generate_admin_notification_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending notification to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
                 
             elif type == "resolution":
                 # 1. Send to User
-                subject = f"✅ Ticket #{ticket_id} Resolved - Quickfix"
+                subject = f"✅ Ticket #{complaint_data.get('id', 'N/A')} Resolved - Quickfix"
                 html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending resolution to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"✅ RESOLVED: Ticket #{ticket_id} - {user_name}"
+                admin_subject = f"✅ RESOLVED: Ticket #{complaint_data.get('id', 'N/A')} - {user_name}"
                 admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending resolution alert to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
@@ -148,92 +145,153 @@ class EmailService:
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">🎯 Quickfix Support</h1>
-                            <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 14px;">Your Complaint Has Been Received</p>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
+                                🎯 Quickfix Support
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 14px;">
+                                Your Complaint Has Been Received
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- Ticket Badge -->
                     <tr>
                         <td style="padding: 0 30px;">
                             <div style="background-color: #f9fafb; border: 2px dashed #e5e7eb; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;">
-                                <p style="margin: 0; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Ticket Number</p>
-                                <h2 style="margin: 8px 0 0 0; color: #1f2937; font-size: 32px; font-weight: 700;">#{ticket_id}</h2>
+                                <p style="margin: 0; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                    Ticket Number
+                                </p>
+                                <h2 style="margin: 8px 0 0 0; color: #1f2937; font-size: 32px; font-weight: 700;">
+                                    #{ticket_id}
+                                </h2>
                             </div>
                         </td>
                     </tr>
+                    
+                    <!-- Greeting -->
                     <tr>
                         <td style="padding: 0 30px;">
-                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">Hello {user_name},</h3>
-                            <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">Thank you for reaching out to Quickfix. We've successfully received your complaint and our advanced AI system is already analyzing your issue to provide the most effective solution.</p>
+                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">
+                                Hello {user_name},
+                            </h3>
+                            <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                Thank you for reaching out to Quickfix. We've successfully received your complaint and our advanced AI system is already analyzing your issue to provide the most effective solution.
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- Complaint Details -->
                     <tr>
                         <td style="padding: 25px 30px;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden;">
                                 <tr>
                                     <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
-                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Category</p>
-                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">{category}</p>
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Category
+                                        </p>
+                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">
+                                            {category}
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
-                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Priority Level</p>
-                                        <span style="display: inline-block; background-color: {priority_color}; color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">{priority}</span>
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Priority Level
+                                        </p>
+                                        <span style="display: inline-block; background-color: {priority_color}; color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                                            {priority}
+                                        </span>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
-                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Submitted On</p>
-                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">{timestamp}</p>
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Submitted On
+                                        </p>
+                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">
+                                            {timestamp}
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 20px;">
-                                        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Your Message</p>
-                                        <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">"{complaint_text[:200]}{'...' if len(complaint_text) > 200 else ''}"</p>
+                                        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Your Message
+                                        </p>
+                                        <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">
+                                            "{complaint_text[:200]}{'...' if len(complaint_text) > 200 else ''}"
+                                        </p>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
+                    
+                    <!-- AI Analysis -->
                     <tr>
                         <td style="padding: 25px 30px;">
                             <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px;">
-                                <h4 style="margin: 0 0 15px 0; color: #92400e; font-size: 16px; font-weight: 600;">🤖 AI-Powered Analysis</h4>
+                                <h4 style="margin: 0 0 15px 0; color: #92400e; font-size: 16px; font-weight: 600;">
+                                    🤖 AI-Powered Analysis
+                                </h4>
+                                
                                 <table width="100%" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td style="padding-bottom: 12px;">
-                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Sentiment Analysis:</p>
-                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{sentiment}</p>
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">
+                                                Sentiment Analysis:
+                                            </p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                                                {sentiment}
+                                            </p>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding-bottom: 12px;">
-                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Automated Response:</p>
-                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{response}</p>
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">
+                                                Automated Response:
+                                            </p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                                                {response}
+                                            </p>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>
-                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Proposed Solution:</p>
-                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{solution}</p>
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">
+                                                Proposed Solution:
+                                            </p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                                                {solution}
+                                            </p>
                                         </td>
                                     </tr>
                                 </table>
                             </div>
                         </td>
                     </tr>
+                    
+                    <!-- CTA Button -->
                     <tr>
                         <td style="padding: 10px 30px 30px 30px; text-align: center;">
-                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">View Complete Dashboard</a>
+                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+                                View Complete Dashboard
+                            </a>
                         </td>
                     </tr>
+                    
+                    <!-- What's Next -->
                     <tr>
                         <td style="padding: 0 30px 30px 30px;">
                             <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px;">
-                                <h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 15px; font-weight: 600;">📌 What Happens Next?</h4>
+                                <h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 15px; font-weight: 600;">
+                                    📌 What Happens Next?
+                                </h4>
                                 <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.8;">
                                     <li>Our AI system is analyzing your complaint in real-time</li>
                                     <li>You'll receive updates via email as we progress</li>
@@ -243,10 +301,16 @@ class EmailService:
                             </div>
                         </td>
                     </tr>
+                    
+                    <!-- Footer -->
                     <tr>
                         <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">Need immediate assistance? Reply to this email or visit our help center.</p>
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix. All rights reserved.</p>
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+                                Need immediate assistance? Reply to this email or visit our help center.
+                            </p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">
+                                © {datetime.now().year} Quickfix. All rights reserved.
+                            </p>
                             <div style="margin-top: 15px;">
                                 <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Help Center</a>
                                 <span style="color: #d1d5db;">|</span>
@@ -256,6 +320,7 @@ class EmailService:
                             </div>
                         </td>
                     </tr>
+                    
                 </table>
             </td>
         </tr>
@@ -283,43 +348,89 @@ class EmailService:
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
                             <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Issue Resolved Successfully!</h1>
-                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Ticket #{ticket_id}</p>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
+                                Issue Resolved Successfully!
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">
+                                Ticket #{ticket_id}
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- Content -->
                     <tr>
                         <td style="padding: 40px 30px;">
-                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">Dear {user_name},</h3>
-                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">Great news! Your complaint has been successfully resolved by our AI-powered support system. We've implemented a comprehensive solution tailored to address your specific concern.</p>
+                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">
+                                Dear {user_name},
+                            </h3>
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                Great news! Your complaint has been successfully resolved by our AI-powered support system. We've implemented a comprehensive solution tailored to address your specific concern.
+                            </p>
+                            
+                            <!-- Resolution Details -->
                             <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                                <h4 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px; font-weight: 600;">💡 Resolution Details</h4>
-                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Category:</strong> {category}</p>
-                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Resolved On:</strong> {timestamp}</p>
-                                <p style="margin: 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Solution:</strong><br>{solution}</p>
+                                <h4 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px; font-weight: 600;">
+                                    💡 Resolution Details
+                                </h4>
+                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;">
+                                    <strong>Category:</strong> {category}
+                                </p>
+                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;">
+                                    <strong>Resolved On:</strong> {timestamp}
+                                </p>
+                                <p style="margin: 0; color: #047857; font-size: 14px; line-height: 1.6;">
+                                    <strong>Solution:</strong><br>
+                                    {solution}
+                                </p>
                             </div>
+                            
+                            <!-- Feedback Request -->
                             <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                                <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📊 How Was Your Experience?</h4>
-                                <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">Your feedback helps us improve our service. Please take a moment to rate your experience.</p>
+                                <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                    📊 How Was Your Experience?
+                                </h4>
+                                <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                                    Your feedback helps us improve our service. Please take a moment to rate your experience.
+                                </p>
                                 <div style="text-align: center;">
-                                    <a href="{self.app_url}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 0 5px;">Rate Experience</a>
+                                    <a href="{self.app_url}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 0 5px;">
+                                        Rate Experience
+                                    </a>
                                 </div>
                             </div>
+                            
+                            <p style="margin: 25px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                                If you have any additional questions or concerns, please don't hesitate to reach out. We're here to help!
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- CTA -->
                     <tr>
                         <td style="padding: 0 30px 30px 30px; text-align: center;">
-                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px;">View Ticket History</a>
+                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                                View Ticket History
+                            </a>
                         </td>
                     </tr>
+                    
+                    <!-- Footer -->
                     <tr>
                         <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">Thank you for choosing Quickfix!</p>
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix. All rights reserved.</p>
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+                                Thank you for choosing Quickfix!
+                            </p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">
+                                © {datetime.now().year} Quickfix. All rights reserved.
+                            </p>
                         </td>
                     </tr>
+                    
                 </table>
             </td>
         </tr>
@@ -354,61 +465,174 @@ class EmailService:
         <tr>
             <td align="center">
                 <table width="650" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center;">
                             <div style="font-size: 42px; margin-bottom: 10px;">🚨</div>
-                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">New Complaint Received</h1>
-                            <p style="margin: 10px 0 0 0; color: #fecaca; font-size: 14px;">Immediate Action May Be Required</p>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">
+                                New Complaint Received
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #fecaca; font-size: 14px;">
+                                Immediate Action May Be Required
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- Priority Badge -->
                     <tr>
                         <td style="padding: 25px 30px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">Ticket ID</p>
-                                    <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">#{ticket_id}</h2>
-                                </div>
-                                <span style="background-color: {priority_color}; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">{priority} Priority</span>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="width: 50%;">
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">
+                                            Ticket ID
+                                        </p>
+                                        <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">
+                                            #{ticket_id}
+                                        </h2>
+                                    </td>
+                                    <td style="width: 50%; text-align: right;">
+                                        <span style="display: inline-block; background-color: {priority_color}; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                                            {priority} Priority
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Customer Info -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            👤 Customer Information
+                                        </h3>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Email:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{user_email}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Submitted:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{timestamp}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Complaint Summary -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 20px;">
+                                <h3 style="margin: 0 0 15px 0; color: #991b1b; font-size: 16px; font-weight: 600;">
+                                    📋 Complaint Details
+                                </h3>
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
+                                                Category:
+                                            </p>
+                                            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.5;">
+                                                {category}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
+                                                Customer Message:
+                                            </p>
+                                            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6; font-style: italic;">
+                                                "{complaint_text}"
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         </td>
                     </tr>
+                    
+                    <!-- AI Analysis -->
                     <tr>
                         <td style="padding: 0 30px 25px 30px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
-                                <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">👤 Customer Information</h3>
-                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Name:</strong> {user_name}</p>
-                                        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 13px;"><strong>Email:</strong> {user_email}</p>
-                                    </td>
-                                </tr>
-                            </table>
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
-                                <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📝 Complaint Details</h3>
-                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Category:</strong> {category}</p>
-                                        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;"><strong>Time:</strong> {timestamp}</p>
-                                        <p style="margin: 10px 0 0 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">"{complaint_text}"</p>
-                                    </td>
-                                </tr>
-                            </table>
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-radius: 8px; overflow: hidden; border-left: 4px solid #10b981;">
-                                <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #065f46; font-size: 16px; font-weight: 600;">🤖 AI Preliminary Analysis</h3>
-                                        <p style="margin: 0; color: #047857; font-size: 13px;"><strong>Sentiment:</strong> {sentiment}</p>
-                                        <p style="margin: 5px 0 0 0; color: #047857; font-size: 13px;"><strong>Proposed Solution:</strong> {solution}</p>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px;">
+                                <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 16px; font-weight: 600;">
+                                    🤖 AI Analysis Results
+                                </h3>
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 13px; font-weight: 600;">
+                                                Sentiment Detected:
+                                            </p>
+                                            <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
+                                                {sentiment}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 13px; font-weight: 600;">
+                                                AI Response:
+                                            </p>
+                                            <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
+                                                {response}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 13px; font-weight: 600;">
+                                                Proposed Solution:
+                                            </p>
+                                            <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
+                                                {solution}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </td>
                     </tr>
+                    
+                    <!-- Action Required -->
                     <tr>
-                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix Admin Panel. All rights reserved.</p>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #fef9c3; border-radius: 8px; padding: 20px; text-align: center;">
+                                <p style="margin: 0 0 15px 0; color: #854d0e; font-size: 14px; font-weight: 600;">
+                                    ⚠️ Please review this ticket and take action if necessary
+                                </p>
+                                <a href="{self.app_url}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+                                    View in Dashboard
+                                </a>
+                            </div>
                         </td>
                     </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                                This is an automated notification from Quickfix Admin System
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 11px;">
+                                © {datetime.now().year} Quickfix Admin Portal
+                            </p>
+                        </td>
+                    </tr>
+                    
                 </table>
             </td>
         </tr>
@@ -416,11 +640,11 @@ class EmailService:
 </body>
 </html>
 """
-
+    
     def _generate_admin_resolution_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
         ticket_id = complaint_data.get('id', 'N/A')
         category = complaint_data.get('category', 'General')
-        solution = complaint_data.get('solution', 'N/A')
+        solution = complaint_data.get('solution', 'Issue resolved')
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
         return f"""
@@ -429,48 +653,139 @@ class EmailService:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint Resolved Notification</title>
+    <title>Complaint Resolved - Admin</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
         <tr>
             <td align="center">
                 <table width="650" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
                             <div style="font-size: 42px; margin-bottom: 10px;">✅</div>
-                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">Ticket Resolved</h1>
-                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Ticket #{ticket_id} has been closed</p>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">
+                                Ticket Resolved Successfully
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">
+                                Admin Notification
+                            </p>
                         </td>
                     </tr>
+                    
+                    <!-- Ticket Info -->
                     <tr>
                         <td style="padding: 25px 30px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">👥 Customer Info</h3>
-                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Name:</strong> {user_name}</p>
-                                        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 13px;"><strong>Email:</strong> {user_email}</p>
+                                    <td style="width: 50%;">
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">
+                                            Ticket ID
+                                        </p>
+                                        <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">
+                                            #{ticket_id}
+                                        </h2>
                                     </td>
-                                </tr>
-                            </table>
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
-                                <tr>
-                                    <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📋 Resolution Summary</h3>
-                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Category:</strong> {category}</p>
-                                        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;"><strong>Closed On:</strong> {timestamp}</p>
-                                        <p style="margin: 10px 0 0 0; color: #4b5563; font-size: 14px; line-height: 1.6;"><strong>Final Solution:</strong><br>{solution}</p>
+                                    <td style="width: 50%; text-align: right;">
+                                        <span style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                                            RESOLVED
+                                        </span>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
+                    
+                    <!-- Customer Info -->
                     <tr>
-                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix Admin Panel. All rights reserved.</p>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            👤 Customer Details
+                                        </h3>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Name:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{user_name}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Email:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{user_email}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Resolved On:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{timestamp}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
+                    
+                    <!-- Resolution Summary -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: 8px; padding: 20px;">
+                                <h3 style="margin: 0 0 15px 0; color: #065f46; font-size: 16px; font-weight: 600;">
+                                    📋 Resolution Summary
+                                </h3>
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #064e3b; font-size: 13px; font-weight: 600;">
+                                                Category:
+                                            </p>
+                                            <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5;">
+                                                {category}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p style="margin: 0 0 5px 0; color: #064e3b; font-size: 13px; font-weight: 600;">
+                                                Solution Provided:
+                                            </p>
+                                            <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.6;">
+                                                {solution}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Action Button -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px; text-align: center;">
+                            <a href="{self.app_url}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+                                View Full Details
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                                Automated notification from Quickfix Admin System
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 11px;">
+                                © {datetime.now().year} Quickfix Admin Portal
+                            </p>
+                        </td>
+                    </tr>
+                    
                 </table>
             </td>
         </tr>
@@ -478,6 +793,7 @@ class EmailService:
 </body>
 </html>
 """
+
 
 # Initialize email service
 email_service = EmailService()
