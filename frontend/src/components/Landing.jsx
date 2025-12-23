@@ -1,35 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import "./../styles/Landing.css";
 
 export default function Landing({ onStart, onDashboard, onFeedback }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
-  const heroRef = useRef(null);
-
-  // 3D Tilt Effect for Hero
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-
-    const handleMouseMove = (e) => {
-      const { clientX, clientY } = e;
-      const { left, top, width, height } = hero.getBoundingClientRect();
-      const x = (clientX - left) / width - 0.5;
-      const y = (clientY - top) / height - 0.5;
-
-      hero.style.transform = `rotateY(${x * 10}deg) rotateX(${y * -10}deg)`;
-    };
-
-    const handleMouseLeave = () => {
-      hero.style.transform = `rotateY(0deg) rotateX(0deg)`;
-    };
-
-    hero.addEventListener("mousemove", handleMouseMove);
-    hero.addEventListener("mouseleave", handleMouseLeave);
-    return () => {
-      hero.removeEventListener("mousemove", handleMouseMove);
-      hero.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, []);
 
   const features = [
     {
@@ -95,11 +68,14 @@ export default function Landing({ onStart, onDashboard, onFeedback }) {
           <span className="logo-text">Quickfix</span>
         </div>
 
-
         <div className="navbar-links">
-          <a href="#features" className="nav-link">Solutions</a>
-          <a href="#stats" className="nav-link">Intelligence</a>
-          <button onClick={onFeedback} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <a href="#features" className="nav-link">Features</a>
+          <a href="#stats" className="nav-link">About</a>
+          <button
+            onClick={onFeedback}
+            className="nav-link"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
             Feedback
           </button>
         </div>
@@ -107,7 +83,7 @@ export default function Landing({ onStart, onDashboard, onFeedback }) {
 
       {/* Hero Section */}
       <div className="landing-hero">
-        <div className="hero-content" ref={heroRef}>
+        <div className="hero-content">
           <div className="badge slide-in-down">
             ✨ Enterprise-Grade AI Solution
           </div>
@@ -151,16 +127,14 @@ export default function Landing({ onStart, onDashboard, onFeedback }) {
               <span className="stat-label">Accuracy</span>
             </div>
           </div>
-
-
         </div>
       </div>
 
       {/* Features Section */}
       <div className="features-section" id="features">
         <div className="features-container">
-          <h2 className="section-title">Precision-Engineered Support Intelligence</h2>
-          <p className="section-subtitle">A multi-agent ecosystem designed to orchestrate complex customer journeys with absolute precision.</p>
+          <h2 className="section-title">Powered by 6 Specialized AI Agents</h2>
+          <p className="section-subtitle">Each agent specializes in a different aspect of complaint resolution</p>
 
           <div className="features-grid">
             {features.map((feature, index) => (
@@ -168,16 +142,7 @@ export default function Landing({ onStart, onDashboard, onFeedback }) {
                 key={feature.id}
                 className={`feature-card ${hoveredFeature === feature.id ? 'hovered' : ''}`}
                 onMouseEnter={() => setHoveredFeature(feature.id)}
-                onMouseLeave={(e) => {
-                  setHoveredFeature(null);
-                  e.currentTarget.style.transform = `rotateY(0deg) rotateX(0deg)`;
-                }}
-                onMouseMove={(e) => {
-                  const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-                  const x = (e.clientX - left) / width - 0.5;
-                  const y = (e.clientY - top) / height - 0.5;
-                  e.currentTarget.style.transform = `rotateY(${x * 15}deg) rotateX(${y * -15}deg) translateY(-10px)`;
-                }}
+                onMouseLeave={() => setHoveredFeature(null)}
                 style={{
                   animationDelay: `${index * 0.1}s`,
                   '--feature-color': feature.color
@@ -279,8 +244,14 @@ export default function Landing({ onStart, onDashboard, onFeedback }) {
             <h4>Quick Links</h4>
             <ul>
               <li><a href="#features">Features</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li><a href="#stats">About</a></li>
+              <li><button
+                onClick={onFeedback}
+                style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit' }}
+              >
+                Feedback
+              </button>
+              </li>
               <li>
                 <a
                   href="https://github.com/RiteshKumar2e"
