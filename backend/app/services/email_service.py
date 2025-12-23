@@ -16,20 +16,21 @@ class EmailService:
         self.sender_email = os.getenv("SENDER_EMAIL", "noreply@quickfix.com")
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
+        self.app_url = "https://customer-complaint-agent-new.vercel.app"
         
         # 🛡️ Safety Validation: Force valid email format if .env is wrong
         if "@" not in self.sender_email:
             self.sender_email = "noreply@quickfix.com"
-
+        
         if not self.api_key:
-            print("\n⚠️  CRITICAL: BREVO_API_KEY not set in .env!")
+            print("\n⚠️ CRITICAL: BREVO_API_KEY not set in .env!")
             print("📝 Get one at: https://www.brevo.com/")
             print("❌ Emails will print to console instead of sending.\n")
-
+    
     # ------------------------------------------------------------------
     # PUBLIC METHODS (Threaded for Speed)
     # ------------------------------------------------------------------
-
+    
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
         """Send confirmation email to BOTH User and Admin in background"""
         thread = threading.Thread(
@@ -39,7 +40,7 @@ class EmailService:
         thread.daemon = True
         thread.start()
         return True
-
+    
     def send_resolution_email(self, user_name: str, user_email: str, complaint_data: dict):
         """Send resolution email to BOTH User and Admin in background"""
         thread = threading.Thread(
@@ -49,50 +50,53 @@ class EmailService:
         thread.daemon = True
         thread.start()
         return True
-
+    
     # ------------------------------------------------------------------
     # BACKGROUND WORKER
     # ------------------------------------------------------------------
-
+    
     def _worker_send_notification(self, type: str, user_name: str, user_email: str, complaint_data: dict):
         """Background logic to dispatch both emails"""
         try:
+            ticket_id = complaint_data.get('id', 'N/A')
+            category = complaint_data.get('category', 'General')
+            
             if type == "complaint":
                 # 1. Send to User
-                subject = f"✅ Complaint Received - {user_name}"
+                subject = f"✅ Complaint Received - Ticket #{ticket_id}"
                 html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending confirmation to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"🚨 NEW: {user_name} - {complaint_data.get('category', 'General')}"
+                admin_subject = f"🚨 NEW TICKET #{ticket_id} - {category}"
                 admin_html = self._generate_admin_notification_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending notification to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
-
+                
             elif type == "resolution":
                 # 1. Send to User
-                subject = f"✅ RESOLVED - {user_name}'s Complaint"
+                subject = f"✅ Ticket #{ticket_id} Resolved - Quickfix"
                 html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending resolution to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"✅ RESOLVED: {user_name} - {complaint_data.get('category', 'General')}"
+                admin_subject = f"✅ RESOLVED: Ticket #{ticket_id} - {user_name}"
                 admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending resolution alert to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
-
+                
         except Exception as e:
             print(f"❌ Background Email Error: {str(e)}")
             traceback.print_exc()
-
+    
     def _dispatch_api(self, to_email: str, subject: str, html_body: str):
         """Internal dispatcher using Brevo HTTPS API"""
         if not self.api_key:
             print(f"\n📢 [MOCKED EMAIL] To: {to_email} | Subject: {subject}\n")
             return
-
+        
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
             "api-key": self.api_key,
@@ -104,7 +108,7 @@ class EmailService:
             "subject": subject,
             "htmlContent": html_body
         }
-
+        
         try:
             response = requests.post(url, headers=headers, json=data, timeout=10)
             if response.status_code not in [200, 201, 202]:
@@ -113,141 +117,367 @@ class EmailService:
                 print(f"✅ Success: Email delivered to {to_email}")
         except Exception as e:
             print(f"❌ Error connecting to Brevo: {str(e)}")
-
+    
     # ------------------------------------------------------------------
-    # HTML GENERATION METHODS (Your Preferred Rich Templates)
+    # ADVANCED PROFESSIONAL HTML TEMPLATES
     # ------------------------------------------------------------------
-
+    
     def _generate_confirmation_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
-        return f"""
-        <html>
-            <head>
-                <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
-                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                    .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
-                    .header h1 {{ margin: 0; font-size: 24px; font-weight: 600; }}
-                    .content {{ padding: 30px; }}
-                    .info-box {{ background: #f0f4ff; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; border-radius: 6px; }}
-                    .info-box h3 {{ margin: 0 0 15px 0; color: #667eea; font-size: 16px; }}
-                    .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }}
-                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e0e0e0; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🎯 Thank You for Contacting Quickfix</h1>
-                        <p style="margin: 10px 0 0 0; opacity: 0.9;">Your complaint has been received</p>
-                    </div>
-                    <div class="content">
-                        <p>Hi <strong>{user_name}</strong>,</p>
-                        <p>We have successfully received your complaint. Our AI-powered system is analyzing your issue to provide the best solution.</p>
-                        
-                        <div class="info-box">
-                            <h3>📋 Your Complaint Details</h3>
-                            <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>
-                            <p><strong>Priority:</strong> <span style="color: #ff6b6b; font-weight: 600;">{complaint_data.get('priority', 'N/A')}</span></p>
-                            <p><strong>Description:</strong> {complaint_data.get('complaint_text', 'N/A')[:150]}...</p>
-                        </div>
-                        
-                        <div class="info-box">
-                            <h3>🤖 AI Analysis Results</h3>
-                            <p><strong>Sentiment:</strong> {complaint_data.get('sentiment', 'Analyzing...')}</p>
-                            <p><strong>Our Response:</strong> {complaint_data.get('response', 'Processing...')}</p>
-                            <p><strong>Proposed Solution:</strong> {complaint_data.get('solution', 'Generating solution...')}</p>
-                        </div>
-                        
-                        <center>
-                            <a href="http://localhost:5173/dashboard" class="button">📊 View Dashboard</a>
-                        </center>
-                        
-                        <p style="margin-top: 30px;">Best regards,<br>The Quickfix Support Team</p>
-                    </div>
-                    <div class="footer">
-                        <p>© {datetime.now().year} Quickfix. All rights reserved.</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-        """
-
-    def _generate_resolution_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
-        return f"""
-        <html>
-            <head>
-                <style>
-                    body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
-                    .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                    .header {{ background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 30px 20px; text-align: center; }}
-                    .content {{ padding: 30px; }}
-                    .success-box {{ background: #f0fff4; padding: 20px; margin: 20px 0; border-left: 4px solid #38ef7d; border-radius: 6px; }}
-                    .button {{ display: inline-block; background: #38ef7d; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }}
-                    .footer {{ background: #f8f9fa; text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e0e0e0; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>✅ Complaint Resolved Successfully!</h1>
-                    </div>
-                    <div class="content">
-                        <p>Hi <strong>{user_name}</strong>,</p>
-                        <p>Great news! Our AI system has successfully analyzed and resolved your complaint.</p>
-                        <div class="success-box">
-                            <h3>📋 Complaint Summary</h3>
-                            <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>
-                            <p><strong>Solution:</strong> {complaint_data.get('solution', 'N/A')}</p>
-                        </div>
-                        <center>
-                            <a href="http://localhost:5173/dashboard" class="button">📊 View Full Details</a>
-                        </center>
-                    </div>
-                </div>
-            </body>
-        </html>
-        """
-
-    def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
-        priority_colors = {"High": "#ff4444", "Medium": "#ff9900", "Low": "#00cc66"}
+        ticket_id = complaint_data.get('id', 'N/A')
+        category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
-        color = priority_colors.get(priority, "#0066cc")
+        complaint_text = complaint_data.get('complaint_text', 'N/A')
+        sentiment = complaint_data.get('sentiment', 'Analyzing...')
+        response = complaint_data.get('response', 'Processing your request...')
+        solution = complaint_data.get('solution', 'Generating solution...')
+        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        
+        priority_colors = {"High": "#dc2626", "Medium": "#f59e0b", "Low": "#10b981"}
+        priority_color = priority_colors.get(priority, "#3b82f6")
+        
         return f"""
-        <html>
-            <body style="font-family: Arial, sans-serif;">
-                <div style="max-width: 700px; border: 1px solid #ddd; border-radius: 8px;">
-                    <h2 style="background: #ff6b6b; color: white; padding: 20px; margin: 0;">🚨 New Complaint Alert</h2>
-                    <div style="padding: 20px;">
-                        <p><strong>Customer:</strong> {user_name} ({user_email})</p>
-                        <p><strong>Priority:</strong> <span style="color: {color}; font-weight: bold;">{priority}</span></p>
-                        <hr>
-                        <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>                        
-                        <p><strong>Description:</strong><br>{complaint_data.get('complaint_text', 'N/A')}</p>
-                        <hr>
-                        <h4>🤖 AI Analysis</h4>
-                        <p><strong>Response:</strong> {complaint_data.get('response', '-')}</p>
-                        <p><strong>Solution:</strong> {complaint_data.get('solution', '-')}</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-        """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Confirmation</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">🎯 Quickfix Support</h1>
+                            <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 14px;">Your Complaint Has Been Received</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 30px;">
+                            <div style="background-color: #f9fafb; border: 2px dashed #e5e7eb; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;">
+                                <p style="margin: 0; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Ticket Number</p>
+                                <h2 style="margin: 8px 0 0 0; color: #1f2937; font-size: 32px; font-weight: 700;">#{ticket_id}</h2>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 30px;">
+                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">Hello {user_name},</h3>
+                            <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">Thank you for reaching out to Quickfix. We've successfully received your complaint and our advanced AI system is already analyzing your issue to provide the most effective solution.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Category</p>
+                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">{category}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Priority Level</p>
+                                        <span style="display: inline-block; background-color: {priority_color}; color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">{priority}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                                        <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Submitted On</p>
+                                        <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 500;">{timestamp}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Your Message</p>
+                                        <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">"{complaint_text[:200]}{'...' if len(complaint_text) > 200 else ''}"</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 25px 30px;">
+                            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px;">
+                                <h4 style="margin: 0 0 15px 0; color: #92400e; font-size: 16px; font-weight: 600;">🤖 AI-Powered Analysis</h4>
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Sentiment Analysis:</p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{sentiment}</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding-bottom: 12px;">
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Automated Response:</p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{response}</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p style="margin: 0 0 5px 0; color: #78350f; font-size: 13px; font-weight: 600;">Proposed Solution:</p>
+                                            <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">{solution}</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 30px 30px 30px; text-align: center;">
+                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">View Complete Dashboard</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px;">
+                                <h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 15px; font-weight: 600;">📌 What Happens Next?</h4>
+                                <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.8;">
+                                    <li>Our AI system is analyzing your complaint in real-time</li>
+                                    <li>You'll receive updates via email as we progress</li>
+                                    <li>A dedicated support agent will review if needed</li>
+                                    <li>Track your ticket status anytime on our dashboard</li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">Need immediate assistance? Reply to this email or visit our help center.</p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix. All rights reserved.</p>
+                            <div style="margin-top: 15px;">
+                                <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Help Center</a>
+                                <span style="color: #d1d5db;">|</span>
+                                <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Privacy Policy</a>
+                                <span style="color: #d1d5db;">|</span>
+                                <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Contact Us</a>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+    
+    def _generate_resolution_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
+        ticket_id = complaint_data.get('id', 'N/A')
+        category = complaint_data.get('category', 'General')
+        solution = complaint_data.get('solution', 'Your issue has been resolved.')
+        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        
+        return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Resolved</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Issue Resolved Successfully!</h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Ticket #{ticket_id}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">Dear {user_name},</h3>
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">Great news! Your complaint has been successfully resolved by our AI-powered support system. We've implemented a comprehensive solution tailored to address your specific concern.</p>
+                            <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                                <h4 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px; font-weight: 600;">💡 Resolution Details</h4>
+                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Category:</strong> {category}</p>
+                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Resolved On:</strong> {timestamp}</p>
+                                <p style="margin: 0; color: #047857; font-size: 14px; line-height: 1.6;"><strong>Solution:</strong><br>{solution}</p>
+                            </div>
+                            <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                                <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📊 How Was Your Experience?</h4>
+                                <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">Your feedback helps us improve our service. Please take a moment to rate your experience.</p>
+                                <div style="text-align: center;">
+                                    <a href="{self.app_url}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 0 5px;">Rate Experience</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px; text-align: center;">
+                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px;">View Ticket History</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">Thank you for choosing Quickfix!</p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+    
+    def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
+        ticket_id = complaint_data.get('id', 'N/A')
+        category = complaint_data.get('category', 'General')
+        priority = complaint_data.get('priority', 'Medium')
+        complaint_text = complaint_data.get('complaint_text', 'N/A')
+        sentiment = complaint_data.get('sentiment', 'N/A')
+        response = complaint_data.get('response', 'N/A')
+        solution = complaint_data.get('solution', 'N/A')
+        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        
+        priority_colors = {"High": "#dc2626", "Medium": "#f59e0b", "Low": "#10b981"}
+        priority_color = priority_colors.get(priority, "#3b82f6")
+        
+        return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Complaint Alert</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center;">
+                            <div style="font-size: 42px; margin-bottom: 10px;">🚨</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">New Complaint Received</h1>
+                            <p style="margin: 10px 0 0 0; color: #fecaca; font-size: 14px;">Immediate Action May Be Required</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 25px 30px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">Ticket ID</p>
+                                    <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">#{ticket_id}</h2>
+                                </div>
+                                <span style="background-color: {priority_color}; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">{priority} Priority</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">👤 Customer Information</h3>
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Name:</strong> {user_name}</p>
+                                        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 13px;"><strong>Email:</strong> {user_email}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📝 Complaint Details</h3>
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Category:</strong> {category}</p>
+                                        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;"><strong>Time:</strong> {timestamp}</p>
+                                        <p style="margin: 10px 0 0 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">"{complaint_text}"</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-radius: 8px; overflow: hidden; border-left: 4px solid #10b981;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #065f46; font-size: 16px; font-weight: 600;">🤖 AI Preliminary Analysis</h3>
+                                        <p style="margin: 0; color: #047857; font-size: 13px;"><strong>Sentiment:</strong> {sentiment}</p>
+                                        <p style="margin: 5px 0 0 0; color: #047857; font-size: 13px;"><strong>Proposed Solution:</strong> {solution}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix Admin Panel. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
 
     def _generate_admin_resolution_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
+        ticket_id = complaint_data.get('id', 'N/A')
+        category = complaint_data.get('category', 'General')
+        solution = complaint_data.get('solution', 'N/A')
+        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        
         return f"""
-        <html>
-            <body style="font-family: Arial, sans-serif;">
-                <div style="max-width: 700px; border: 1px solid #ddd; border-radius: 8px;">
-                    <h2 style="background: #38ef7d; color: white; padding: 20px; margin: 0;">✅ Complaint Resolved</h2>
-                    <div style="padding: 20px;">
-                        <p><strong>Customer:</strong> {user_name} ({user_email})</p>
-                        <p><strong>Category:</strong> {complaint_data.get('category', 'N/A')}</p>
-                        <p><strong>Solution Provided:</strong><br>{complaint_data.get('solution', 'N/A')}</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-        """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Resolved Notification</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+                            <div style="font-size: 42px; margin-bottom: 10px;">✅</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">Ticket Resolved</h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Ticket #{ticket_id} has been closed</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">👥 Customer Info</h3>
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Name:</strong> {user_name}</p>
+                                        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 13px;"><strong>Email:</strong> {user_email}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">📋 Resolution Summary</h3>
+                                        <p style="margin: 0; color: #6b7280; font-size: 13px;"><strong>Category:</strong> {category}</p>
+                                        <p style="margin: 5px 0; color: #6b7280; font-size: 13px;"><strong>Closed On:</strong> {timestamp}</p>
+                                        <p style="margin: 10px 0 0 0; color: #4b5563; font-size: 14px; line-height: 1.6;"><strong>Final Solution:</strong><br>{solution}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">© {datetime.now().year} Quickfix Admin Panel. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
 
 # Initialize email service
 email_service = EmailService()
