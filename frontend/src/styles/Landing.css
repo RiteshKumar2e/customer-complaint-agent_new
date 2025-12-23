@@ -488,6 +488,31 @@ h4,
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+.connect-title {
+  font-size: 1.2rem;     
+  font-weight: 400;        
+  text-align: center;     
+  margin-bottom: 0.5rem;
+  margin-left: -76%;
+
+  background: linear-gradient(90deg, #ffffff 0%, #fbbf24 100%); 
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text; 
+  letter-spacing: 0.5px;  
+}
+.social-links-premium1 {
+  display: flex;
+  align-items: center;
+  gap: 20px; 
+  justify-content: center;
+}
+.social-links-premium2 {
+  display: flex;
+  align-items: center;
+  gap: 20px; 
+}
+
 /* Updated Features Grid Style */
 .features-grid-mini {
   display: grid;
