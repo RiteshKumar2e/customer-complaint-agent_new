@@ -180,17 +180,17 @@ export default function Landing({ onStart, onDashboard }) {
             Bridging autonomous intelligence and human oversight to create absolute precision and thriving customer success.
           </p>
 
-      <div className="hero-cta">
-  {/* Primary Button: Starts the main action */}
-  <button className="btn-primary" onClick={onStart}>
-    Explore Solutions <span className="arrow">→</span>
-  </button>
+          <div className="hero-cta">
+            {/* Primary Button: Starts the main action */}
+            <button className="btn-primary" onClick={onStart}>
+              Explore Solutions <span className="arrow">→</span>
+            </button>
 
-  {/* Secondary Button: Scrolls to features section using ID */}
-  <button className="btn-secondary" onClick={() => scrollToSection('features')}>
-    Learn More
-  </button>
-</div>
+            {/* Secondary Button: Scrolls to features section using ID */}
+            <button className="btn-secondary" onClick={() => scrollToSection('features')}>
+              Learn More
+            </button>
+          </div>
 
           <div className="features-grid-mini">
             <div className="feature-mini">
@@ -315,11 +315,21 @@ export default function Landing({ onStart, onDashboard }) {
       <footer className="footer" id="contact">
         <div className="footer-content">
           <div className="footer-section brand-info">
-            <div className="navbar-brand ecohealth-logo" style={{ marginBottom: '1rem', padding: 0 }}>
-              <div className="logo-orb" style={{ width: '32px', height: '32px' }}>
-                <svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="18" cy="18" r="18" fill="#7c9aff" fillOpacity="0.2" />
-                  <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="#7c9aff" />
+            <div className="navbar-brand ecohealth-logo" onClick={scrollToTop} style={{ marginBottom: '1.5rem', padding: 0 }}>
+              <div className="logo-orb" style={{ width: '36px', height: '36px' }}>
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="18" cy="18" r="18" fill="url(#footer-orb-grad)" fillOpacity="0.15" />
+                  <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="url(#footer-shield-grad)" />
+                  <defs>
+                    <linearGradient id="footer-orb-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#6366f1" />
+                      <stop offset="1" stopColor="#818cf8" />
+                    </linearGradient>
+                    <linearGradient id="footer-shield-grad" x1="10" y1="8" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#6366f1" />
+                      <stop offset="1" stopColor="#4f46e5" />
+                    </linearGradient>
+                  </defs>
                 </svg>
               </div>
               <span className="logo-text">Quickfix</span>
