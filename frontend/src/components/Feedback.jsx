@@ -37,26 +37,26 @@ export default function Feedback({ onClose }) {
         setError("");
 
         try {
-            // Create mailto link with feedback details
-            const subject = `Quickfix Feedback - ${formData.category} (${formData.rating}⭐)`;
-            const body = `
-Name: ${formData.name}
-Email: ${formData.email}
-Rating: ${formData.rating}/5 ⭐
-Category: ${formData.category}
+            // Send feedback to backend API
+            const response = await fetch("http://localhost:8000/feedback", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    rating: parseInt(formData.rating),
+                    category: formData.category,
+                    message: formData.message
+                })
+            });
 
-Message:
-${formData.message}
+            if (!response.ok) {
+                throw new Error("Failed to submit feedback");
+            }
 
----
-Sent from Quickfix Feedback System
-      `.trim();
-
-            const mailtoLink = `mailto:riteshkumar90359@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-            // Open email client
-            window.location.href = mailtoLink;
-
+            const data = await response.json();
             setSuccess(true);
 
             // Reset form after 2 seconds
@@ -73,6 +73,7 @@ Sent from Quickfix Feedback System
             }, 2000);
 
         } catch (err) {
+            console.error("Feedback error:", err);
             setError("Failed to send feedback. Please try again.");
         } finally {
             setLoading(false);
