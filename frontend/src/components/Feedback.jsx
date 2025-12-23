@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { submitFeedback } from "../api";
 import "../styles/Feedback.css";
 
 export default function Feedback({ onClose }) {
@@ -38,25 +39,14 @@ export default function Feedback({ onClose }) {
 
         try {
             // Send feedback to backend API
-            const response = await fetch("http://localhost:8000/feedback", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    email: formData.email,
-                    rating: parseInt(formData.rating),
-                    category: formData.category,
-                    message: formData.message
-                })
+            const data = await submitFeedback({
+                name: formData.name,
+                email: formData.email,
+                rating: parseInt(formData.rating),
+                category: formData.category,
+                message: formData.message
             });
 
-            if (!response.ok) {
-                throw new Error("Failed to submit feedback");
-            }
-
-            const data = await response.json();
             setSuccess(true);
 
             // Reset form after 2 seconds
@@ -74,7 +64,17 @@ export default function Feedback({ onClose }) {
 
         } catch (err) {
             console.error("Feedback error:", err);
-            setError("Failed to send feedback. Please try again.");
+            let errorMessage = "Failed to send feedback. Please try again.";
+
+            if (err.response?.status === 404) {
+                errorMessage = "Backend server is not running. Please start the server.";
+            } else if (err.code === 'ERR_NETWORK' || !err.response) {
+                errorMessage = "Cannot connect to the server. Please make sure the backend is running.";
+            } else if (err.response?.data?.detail) {
+                errorMessage = err.response.data.detail;
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }

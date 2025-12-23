@@ -26,4 +26,9 @@ export const deleteAllComplaints = async () => {
   return response.data;
 };
 
+export const submitFeedback = async (feedbackData) => {
+  const response = await api.post("/feedback", feedbackData);
+  return response.data;
+};
+
 export default api;
