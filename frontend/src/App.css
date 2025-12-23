@@ -29,6 +29,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -116,13 +117,16 @@
 
 /* Pulse Animation */
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(34, 197, 94, 0.4),
-                0 20px 50px rgba(34, 197, 94, 0.4);
+      0 20px 50px rgba(34, 197, 94, 0.4);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(34, 197, 94, 0.6),
-                0 20px 60px rgba(34, 197, 94, 0.5);
+      0 20px 60px rgba(34, 197, 94, 0.5);
   }
 }
 
@@ -130,13 +134,106 @@
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
-/* Responsive */
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet View */
 @media (max-width: 768px) {
+  .app-header {
+    padding: 14px 20px;
+  }
+
+  .header-brand h1 {
+    font-size: 18px;
+  }
+
+  .header-buttons {
+    gap: 10px;
+  }
+
+  .header-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .form-content {
+    padding: 24px 16px;
+  }
+
   .chat-fab {
     width: 56px;
     height: 56px;
     bottom: 24px;
     right: 24px;
     font-size: 24px;
+  }
+}
+
+/* Mobile View */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-brand {
+    gap: 8px;
+  }
+
+  .header-brand h1 {
+    font-size: 16px;
+  }
+
+  .header-buttons {
+    gap: 8px;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .form-content {
+    padding: 20px 12px;
+  }
+
+  .chat-fab {
+    width: 52px;
+    height: 52px;
+    bottom: 20px;
+    right: 20px;
+    font-size: 22px;
+  }
+}
+
+/* Extra Small Devices */
+@media (max-width: 360px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  .header-brand h1 {
+    font-size: 15px;
+  }
+
+  .header-btn {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .form-content {
+    padding: 16px 10px;
+  }
+
+  .chat-fab {
+    width: 48px;
+    height: 48px;
+    bottom: 16px;
+    right: 16px;
+    font-size: 20px;
   }
 }

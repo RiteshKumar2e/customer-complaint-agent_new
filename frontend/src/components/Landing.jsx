@@ -208,7 +208,7 @@ export default function Landing({ onStart, onDashboard }) {
             </div>
             <div className="stat-card premium">
               <div className="stat-number">100%</div>
-              <p>Uptime<br />Guaranteed</p>
+              <p>Uptime<br /></p>
             </div>
           </div>
         </div>
