@@ -19,7 +19,7 @@ async def submit_feedback(feedback: FeedbackRequest):
     """
     try:
         # Get admin email from environment or use default
-        admin_email = os.getenv("ADMIN_EMAIL", "riteshkumar90359@gmail.com")
+        admin_email = os.getenv("SENDER_EMAIL", "riteshkumar90359@gmail.com")
         
         # Create feedback email subject
         subject = f"🌟 Quickfix Feedback - {feedback.category} ({feedback.rating}⭐)"
