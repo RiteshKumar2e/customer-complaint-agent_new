@@ -23,28 +23,37 @@ class EmailService:
 
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
         """Send confirmation email when complaint is submitted - sends to BOTH user and admin"""
+        # Flag to track partial success
+        emails_sent = False
+
+        # 1. Send to User Email (Might fail in test mode if not verified)
         try:
             # Validate API key first
             if not self.api_key:
-                raise Exception("RESEND_API_KEY not configured. Check .env file.")
-            
-            # 1. Send to User Email
+                print("⚠️ RESEND_API_KEY not set. Skipping emails.")
+                return False
+
             subject = f"✅ Complaint Received - {user_name}"
             html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
             print(f"📧 Sending confirmation to USER: {user_email}...")
             
             self._send_email(user_email, subject, html_body)
             print(f"✅ User confirmation email sent successfully to {user_email}.")
-            
-            # 2. Send to Admin Email (Always)
-            self._send_admin_notification(user_name, user_email, complaint_data)
-            
-            return True
-            
+            emails_sent = True
         except Exception as e:
-            print(f"❌ Failed to send emails: {str(e)}")
-            traceback.print_exc()
-            return False
+            print(f"⚠️ Could not send email to User ({user_email}).")
+            print(f"   Reason: {str(e)}")
+            if "domain" in str(e).lower() or "verified" in str(e).lower():
+                print("   ℹ️ NOTE: In 'onboarding@resend.dev' mode, you can ONLY send to your own registered email.")
+        
+        # 2. Send to Admin Email (Critical - should always try to send)
+        try:
+            self._send_admin_notification(user_name, user_email, complaint_data)
+            emails_sent = True
+        except Exception as e:
+            print(f"❌ Failed to send Admin notification: {str(e)}")
+            
+        return emails_sent
 
     def _send_admin_notification(self, user_name: str, user_email: str, complaint_data: dict):
         """Helper to send the internal admin alert"""
@@ -58,32 +67,39 @@ class EmailService:
 
     def send_resolution_email(self, user_name: str, user_email: str, complaint_data: dict):
         """Send resolution email when complaint is solved - sends to BOTH user and admin"""
+        # Flag to track partial success
+        emails_sent = False
+
+        # 1. Send to User Email
         try:
             # Validate API key first
             if not self.api_key:
-                raise Exception("RESEND_API_KEY not configured. Check .env file.")
-                
-            # 1. Send to User Email
+                print("⚠️ RESEND_API_KEY not set. Skipping emails.")
+                return False
+
             subject = f"✅ RESOLVED - {user_name}'s Complaint"
             html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
             
             print(f"📧 Sending resolution to USER: {user_email}...")
             self._send_email(user_email, subject, html_body)
             print(f"✅ Resolution email sent successfully to {user_email}")
-            
-            # 2. Send Admin Notification (Always)
+            emails_sent = True
+        except Exception as e:
+            print(f"⚠️ Could not send resolution to User ({user_email}).")
+            print(f"   Reason: {str(e)}")
+
+        # 2. Send Admin Notification (Critical)
+        try:
             print(f"📧 Sending resolution notification to ADMIN: {self.admin_email}...")
             admin_subject = f"✅ RESOLVED: {user_name} - {complaint_data.get('category', 'General')}"
             admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
             self._send_email(self.admin_email, admin_subject, admin_html)
             print(f"✅ Admin resolution notification sent.")
-            
-            return True
-            
+            emails_sent = True
         except Exception as e:
-            print(f"❌ Failed to send resolution email: {str(e)}")
-            traceback.print_exc()
-            return False
+            print(f"❌ Failed to send Admin resolution status: {str(e)}")
+
+        return emails_sent
 
     def _send_email(self, to_email: str, subject: str, html_body: str):
         """Internal method to send email via Resend API"""
