@@ -58,15 +58,15 @@ export default function Landing({ onStart, onDashboard }) {
         <div className="gradient-orb orb-3"></div>
       </div>
 
-   {/* Navigation Bar */}
-<nav className="landing-navbar">
-   <div className="navbar-brand">
-    <span className="logo-icon agent-logo">
-      <span className="agent-core"></span>
-      <span className="agent-ring"></span>
-    </span>
-    <span className="logo-text">Quickfix</span>
-  </div>
+      {/* Navigation Bar */}
+      <nav className="landing-navbar">
+        <div className="navbar-brand">
+          <span className="logo-icon agent-logo">
+            <span className="agent-core"></span>
+            <span className="agent-ring"></span>
+          </span>
+          <span className="logo-text">Quickfix</span>
+        </div>
 
 
         <div className="navbar-links">
@@ -83,30 +83,25 @@ export default function Landing({ onStart, onDashboard }) {
             ✨ Enterprise-Grade AI Solution
           </div>
 
-        <h1 className="hero-title">
-          AI Complaint Resolver
-        </h1>
-        <p className="hero-subtitle">
-          Smart classification, prioritization, and resolution powered by AI agents
-        </p>
-
-
+          <h1 className="hero-title">
+            <span className="gradient-text">AI Complaint</span> Resolver
+          </h1>
           <p className="hero-subtitle fade-in-up" style={{ animationDelay: "0.2s" }}>
-            Transform customer complaints into actionable insights. Our agentic AI system intelligently classifies, prioritizes, and resolves customer issues with unprecedented accuracy and speed.
+            Revolutionize your customer support with <strong>Quickfix</strong>. Our agentic AI system intelligently classifies, prioritizes, and resolves issues with 98% accuracy, transforming complaints into actionable insights instantly.
           </p>
 
           <div className="hero-cta-group fade-in-up" style={{ animationDelay: "0.4s" }}>
             <button className="cta-button primary-btn glow-button" onClick={onStart}>
               <span>🚀 Submit Complaint</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </button>
 
             <button className="cta-button secondary-btn" onClick={onDashboard}>
               <span>📊 View Dashboard</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12h18M3 6h18M3 18h18"/>
+                <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
           </div>
@@ -128,7 +123,7 @@ export default function Landing({ onStart, onDashboard }) {
             </div>
           </div>
 
-        
+
         </div>
       </div>
 
@@ -164,7 +159,7 @@ export default function Landing({ onStart, onDashboard }) {
       <div className="stats-section" id="stats">
         <div className="stats-container">
           <h2 className="section-title">Why Choose Quickfix</h2>
-          
+
           <div className="benefits-grid">
             <div className="benefit-card">
               <div className="benefit-icon">⚡</div>
@@ -201,19 +196,19 @@ export default function Landing({ onStart, onDashboard }) {
           <div className="stats-boxes" id="cta">
             <div className="stat-card premium">
               <div className="stat-number">6</div>
-              <p>Specialized<br/>AI Agents</p>
+              <p>Specialized<br />AI Agents</p>
             </div>
             <div className="stat-card premium">
               <div className="stat-number">5</div>
-              <p>Complaint<br/>Categories</p>
+              <p>Complaint<br />Categories</p>
             </div>
             <div className="stat-card premium">
               <div className="stat-number">3</div>
-              <p>Priority<br/>Levels</p>
+              <p>Priority<br />Levels</p>
             </div>
             <div className="stat-card premium">
               <div className="stat-number">100%</div>
-              <p>Uptime<br/>Guaranteed</p>
+              <p>Uptime<br />Guaranteed</p>
             </div>
           </div>
         </div>
@@ -230,98 +225,98 @@ export default function Landing({ onStart, onDashboard }) {
         </div>
       </div>
 
-{/* Footer Section */}
-<footer className="landing-footer">
-  <div className="footer-content">
-    <div className="footer-section">
-      <h4>About Quickfix</h4>
-      <p>
-        Enterprise-grade agentic AI platform for intelligent complaint
-        classification, prioritization, automated responses, and smart
-        escalation.
-      </p>
-    </div>
+      {/* Footer Section */}
+      <footer className="landing-footer">
+        <div className="footer-content">
+          <div className="footer-section">
+            <h4>About Quickfix</h4>
+            <p>
+              Enterprise-grade agentic AI platform for intelligent complaint
+              classification, prioritization, automated responses, and smart
+              escalation.
+            </p>
+          </div>
 
-    <div className="footer-section">
-      <h4>Quick Links</h4>
-      <ul>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li>
-          <a
-            href="https://github.com/RiteshKumar2e"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
-        </li>
-      </ul>
-    </div>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+              <li>
+                <a
+                  href="https://github.com/RiteshKumar2e"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub
+                </a>
+              </li>
+            </ul>
+          </div>
 
-    <div className="footer-section">
-      <h4>Contact Information</h4>
-      <div className="contact-info">
-        <p>
-          <span className="contact-icon">📧</span>
-          <a href="mailto:riteshkumar90359@gmail.com">
-            riteshkumar90359@gmail.com
-          </a>
-        </p>
-        <p>
-          <span className="contact-icon">📱</span>
-          <a href="tel:+916206269895">+91 62062 69895</a>
-        </p>
-        <p>
-          <span className="contact-icon">🐙</span>
-          <a
-            href="https://github.com/RiteshKumar2e"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            github.com/RiteshKumar2e
-          </a>
-        </p>
-      </div>
-    </div>
+          <div className="footer-section">
+            <h4>Contact Information</h4>
+            <div className="contact-info">
+              <p>
+                <span className="contact-icon">📧</span>
+                <a href="mailto:riteshkumar90359@gmail.com">
+                  riteshkumar90359@gmail.com
+                </a>
+              </p>
+              <p>
+                <span className="contact-icon">📱</span>
+                <a href="tel:+916206269895">+91 62062 69895</a>
+              </p>
+              <p>
+                <span className="contact-icon">🐙</span>
+                <a
+                  href="https://github.com/RiteshKumar2e"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  github.com/RiteshKumar2e
+                </a>
+              </p>
+            </div>
+          </div>
 
-    <div className="footer-section">
-      <h4>Connect</h4>
-      <div className="social-links">
-        <a
-          href="https://www.linkedin.com/in/ritesh-kumar-b3a654253"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="social-icon"
-          title="LinkedIn"
-        >
-          in
-        </a>
-        <a
-          href="https://github.com/RiteshKumar2e"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="social-icon"
-          title="GitHub"
-        >
-          ⭐
-        </a>
-      </div>
-    </div>
-  </div>
+          <div className="footer-section">
+            <h4>Connect</h4>
+            <div className="social-links">
+              <a
+                href="https://www.linkedin.com/in/ritesh-kumar-b3a654253"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-icon"
+                title="LinkedIn"
+              >
+                in
+              </a>
+              <a
+                href="https://github.com/RiteshKumar2e"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-icon"
+                title="GitHub"
+              >
+                ⭐
+              </a>
+            </div>
+          </div>
+        </div>
 
-  <div className="footer-bottom">
-    <p>&copy; 2025 Quickfix. All rights reserved.</p>
-    <div className="footer-links">
-      <a href="#">Privacy Policy</a>
-      <span className="separator">|</span>
-      <a href="#">Terms of Service</a>
-      <span className="separator">|</span>
-      <a href="#">Cookie Policy</a>
-    </div>
-  </div>
-</footer>
+        <div className="footer-bottom">
+          <p>&copy; 2025 Quickfix. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="#">Privacy Policy</a>
+            <span className="separator">|</span>
+            <a href="#">Terms of Service</a>
+            <span className="separator">|</span>
+            <a href="#">Cookie Policy</a>
+          </div>
+        </div>
+      </footer>
     </section>
   );
 }
