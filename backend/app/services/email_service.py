@@ -9,9 +9,9 @@ class EmailService:
     def __init__(self):
         self.api_key = os.getenv("RESEND_API_KEY")
         
-        # ✅ DOMAIN SET TO QUICKFIX.COM
-        # Make sure this domain is verified at https://resend.com/domains
-        self.sender_email = "noreply@quickfix.com"
+        # ✅ Using Resend's default testing domain (no verification needed)
+        # For production, add your own verified domain at https://resend.com/domains
+        self.sender_email = "onboarding@resend.dev"
         
         self.admin_email = "riteshkumar90359@gmail.com"
         self.company_name = "Quickfix"
@@ -105,8 +105,8 @@ class EmailService:
         }
         
         try:
-            # FIXED: Single request call with correct headers
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            # Send request with longer timeout and better error handling
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
             
             # Handle Specific Resend Errors
             if response.status_code == 403:
@@ -115,8 +115,8 @@ class EmailService:
                 if "domain" in msg or "verified" in msg:
                     raise Exception(
                         f"⛔ DOMAIN ERROR: Resend rejected email from '{self.sender_email}'.\n"
-                        f"You explicitly set the domain to 'quickfix.com'.\n"
-                        f"You MUST verify this domain at https://resend.com/domains"
+                        f"Using default domain 'resend.dev' which should work without verification.\n"
+                        f"For production, verify your domain at https://resend.com/domains"
                     )
                 if "testing" in msg:
                     raise Exception(
@@ -129,8 +129,12 @@ class EmailService:
 
             return response.json()
             
+        except requests.exceptions.Timeout:
+            raise Exception(f"⚠️ Network timeout: Email service took too long to respond. Check your internet connection.")
+        except requests.exceptions.ConnectionError:
+            raise Exception(f"⚠️ Connection error: Cannot reach email service. Check your internet connection and firewall settings.")
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Network error: {str(e)}")
+            raise Exception(f"⚠️ Network error: {str(e)}. Please check your internet connection.")
 
     # ------------------------------------------------------------------
     # HTML GENERATION METHODS (Preserved from your original code)
