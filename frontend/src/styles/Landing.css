@@ -715,13 +715,13 @@ h4,
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
 .impact-label {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.5);
-  margin-left: 30px;
 }
 
 .impact-value {
@@ -1203,8 +1203,22 @@ h4,
 
   .solutions-section,
   .about-section,
+  .demo-section,
   .faq-section {
     padding: 4rem 1.5rem;
+  }
+
+  .demo-container {
+    margin: 2rem auto;
+    gap: 1.5rem;
+  }
+
+  .demo-scenario-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .demo-process-line {
+    padding: 1rem;
   }
 
   .section-header {
