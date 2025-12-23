@@ -637,7 +637,104 @@ h4,
   color: white;
 }
 
-/* Solutions Section */
+/* Demo Section Styles */
+.demo-section {
+  padding: 6rem 8%;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.demo-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
+  max-width: 1200px;
+  margin: 3rem auto;
+}
+
+.demo-scenario-card {
+  padding: 2.5rem;
+  background: var(--demo-accent, rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-scenario-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.demo-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.demo-type-badge {
+  padding: 0.4rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.demo-icon-mini {
+  font-size: 1.5rem;
+}
+
+.demo-scenario-card h4 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.demo-process-line {
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border-left: 3px solid #6366f1;
+}
+
+.demo-process-line p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.demo-impact-footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.impact-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 30px;
+}
+
+.impact-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.demo-action-footer {
+  text-align: center;
+  margin-top: 4rem;
+}
+
 .solutions-section {
   padding: 4.5rem 8%;
 }
@@ -1099,6 +1196,7 @@ h4,
 
   .about-content,
   .solutions-grid,
+  .demo-container,
   .testimonials-grid {
     grid-template-columns: 1fr;
   }

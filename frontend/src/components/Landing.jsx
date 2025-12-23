@@ -181,8 +181,8 @@ export default function Landing({ onStart, onDashboard }) {
           </p>
 
           <div className="hero-cta">
-            {/* Primary Button: Starts the main action */}
-            <button className="btn-primary" onClick={onStart}>
+            {/* Primary Button: Scrolls to demo solutions section */}
+            <button className="btn-cta btn-primary" onClick={() => scrollToSection('solutions-demo')}>
               Explore Solutions <span className="arrow">→</span>
             </button>
 
@@ -253,6 +253,59 @@ export default function Landing({ onStart, onDashboard }) {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Demo Solutions / Use Cases Section */}
+      <section className="demo-section" id="solutions-demo">
+        <div className="section-header">
+          <h2 className="section-title">Intelligence <span>In Action</span></h2>
+          <p className="section-subtitle">Real-world scenarios handled by our multi-agent architecture.</p>
+        </div>
+
+        <div className="demo-container">
+          {[
+            {
+              type: "Billing",
+              case: "Unexpected Overcharge",
+              process: "Agent identifies billing error → Cross-references history → Generates refund proposal → Alerts Team.",
+              impact: "Reduction in resolution time",
+              icon: "💳",
+              color: "rgba(99, 102, 241, 0.15)"
+            },
+            {
+              type: "Technical",
+              case: "System Latency Issue",
+              process: "Monitors logs → Classifies root cause → Provides troubleshooting steps → Predicts fix probability.",
+              impact: "Approx surgical accuracy",
+              icon: "⚙️",
+              color: "rgba(34, 197, 94, 0.15)"
+            },
+            {
+              type: "Security",
+              case: "Suspicious Login Attempt",
+              process: "Detects anomaly → Triggers immediate lockdown → Notifies security agents → Initiates identity verification.",
+              impact: "Real-time threat mitigation",
+              icon: "🛡️",
+              color: "rgba(239, 68, 68, 0.15)"
+            }
+          ].map((demo, idx) => (
+            <div key={idx} className="demo-scenario-card" style={{ '--demo-accent': demo.color }}>
+              <div className="demo-card-head">
+                <span className="demo-type-badge">{demo.type}</span>
+                <span className="demo-icon-mini">{demo.icon}</span>
+              </div>
+              <h4>{demo.case}</h4>
+              <div className="demo-process-line">
+                <p>{demo.process}</p>
+              </div>
+              <div className="demo-impact-footer">
+                <span className="impact-label">Impact:</span>
+                <span className="impact-value">{demo.impact}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </section>
 
 
@@ -361,7 +414,7 @@ export default function Landing({ onStart, onDashboard }) {
             <h4>Legal</h4>
             <button onClick={() => setActiveModal('privacy')} className="footer-btn">Privacy Policy</button>
             <button onClick={() => setActiveModal('terms')} className="footer-btn">Terms of Service</button>
-            <button className="footer-btn">Cookie Policy</button>
+            <button onClick={() => setActiveModal('cookie')} className="footer-btn">Cookie Policy</button>
           </div>
         </div>
         <div className="footer-bottom">
@@ -376,7 +429,7 @@ export default function Landing({ onStart, onDashboard }) {
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <button className="modal-close" onClick={() => setActiveModal(null)}>&times;</button>
 
-              {activeModal === 'privacy' ? (
+              {activeModal === 'privacy' && (
                 <div className="modal-body">
                   <h2>Privacy Policy</h2>
                   <p className="last-updated">Last Updated: October 12, 2025</p>
@@ -403,7 +456,9 @@ export default function Landing({ onStart, onDashboard }) {
                   </section>
                   <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
                 </div>
-              ) : (
+              )}
+
+              {activeModal === 'terms' && (
                 <div className="modal-body">
                   <h2>Terms of Service</h2>
                   <p className="last-updated">Last Updated: October 12, 2025</p>
@@ -428,6 +483,30 @@ export default function Landing({ onStart, onDashboard }) {
                   <section>
                     <h3>4. Limitation of Liability</h3>
                     <p>Quickfix AI shall not be liable for any indirect, incidental, or consequential damages resulting from your use of our neural support clusters.</p>
+                  </section>
+                  <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
+                </div>
+              )}
+
+              {activeModal === 'cookie' && (
+                <div className="modal-body">
+                  <h2>Cookie Policy</h2>
+                  <p className="last-updated">Last Updated: October 12, 2025</p>
+                  <section>
+                    <h3>1. What are Cookies?</h3>
+                    <p>Cookies are small text files stored on your device that help us improve your experience and understand how our agentic platform is used.</p>
+                  </section>
+                  <section>
+                    <h3>2. How We Use Cookies</h3>
+                    <ul>
+                      <li><strong>Essential:</strong> Required for the platform to function securely.</li>
+                      <li><strong>Performance:</strong> Help us measure how agents interact with the interface.</li>
+                      <li><strong>Functionality:</strong> Remember your preferences and dashboard layout.</li>
+                    </ul>
+                  </section>
+                  <section>
+                    <h3>3. Managing Cookies</h3>
+                    <p>Most browsers allow you to control cookies through their settings. However, disabling essential cookies may impact the performance of our neural resolution clusters.</p>
                   </section>
                   <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
                 </div>
