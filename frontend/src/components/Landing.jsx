@@ -142,6 +142,7 @@ export default function Landing({ onStart, onDashboard }) {
           </div>
           <div className="brand-text-stack">
             <span className="logo-text">Quickfix</span>
+
           </div>
         </div>
 
