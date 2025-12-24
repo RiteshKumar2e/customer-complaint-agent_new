@@ -50,6 +50,16 @@ class EmailService:
         thread.daemon = True
         thread.start()
         return True
+
+    def send_otp(self, user_email: str, otp: str):
+        """Send OTP to user in background"""
+        thread = threading.Thread(
+            target=self._worker_send_otp,
+            args=(user_email, otp)
+        )
+        thread.daemon = True
+        thread.start()
+        return True
     
     # ------------------------------------------------------------------
     # BACKGROUND WORKER
@@ -87,7 +97,67 @@ class EmailService:
         except Exception as e:
             print(f"❌ Background Email Error: {str(e)}")
             traceback.print_exc()
+
+    def _worker_send_otp(self, user_email: str, otp: str):
+        """Background logic to send OTP"""
+        try:
+            subject = f"🔐 {otp} is your Quickfix Verification Code"
+            html_body = self._generate_otp_html(otp)
+            print(f"📧 Sending OTP to: {user_email}...")
+            self._dispatch_api(user_email, subject, html_body)
+        except Exception as e:
+            print(f"❌ OTP Email Error: {str(e)}")
+            traceback.print_exc()
     
+    def _generate_otp_html(self, otp: str) -> str:
+        return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Code</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="400" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Quickfix Auth</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px; text-align: center;">
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px;">
+                                Use the code below to sign in to your account. This code will expire in 10 minutes.
+                            </p>
+                            <div style="background-color: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                                <h2 style="margin: 0; color: #1f2937; font-size: 36px; font-weight: 700; letter-spacing: 5px;">
+                                    {otp}
+                                </h2>
+                            </div>
+                            <p style="margin: 0; color: #9ca3af; font-size: 13px;">
+                                If you didn't request this code, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                                © {datetime.now().year} Quickfix. Secure Multi-Agent Intelligence.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
     def _dispatch_api(self, to_email: str, subject: str, html_body: str):
         """Internal dispatcher using Brevo HTTPS API"""
         if not self.api_key:

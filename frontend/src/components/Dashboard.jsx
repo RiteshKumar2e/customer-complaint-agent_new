@@ -6,7 +6,7 @@ import {
 
 import "../styles/Dashboard.css";
 
-export default function Dashboard({ onNavigate, complaints = [], setComplaints }) {
+export default function Dashboard({ onNavigate, onLogout, user, complaints = [], setComplaints }) {
   const [stats, setStats] = useState({
     total: 0,
     highPriority: 0,
@@ -27,7 +27,7 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
 
   // Function to get estimated resolution time based on priority
   const getResolutionTime = (priority) => {
-    switch(priority) {
+    switch (priority) {
       case "High":
         return "24-48 hours";
       case "Medium":
@@ -43,7 +43,7 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
     if (complaints.length > 0) {
       const highCount = complaints.filter(c => c.priority === "High").length;
       const categories = { Billing: 0, Technical: 0, Delivery: 0, Service: 0, Security: 0, Other: 0 };
-      
+
       complaints.forEach(c => {
         if (categories.hasOwnProperty(c.category)) {
           categories[c.category]++;
@@ -88,11 +88,19 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
           <h1>📊 Complaint Dashboard</h1>
         </div>
         <div className="nav-buttons">
+          {user && (
+            <div className="user-info-chip" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+              <span style={{ width: '24px', height: '24px', background: '#6366f1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '10px', color: 'white' }}>
+                {user.full_name?.charAt(0) || 'U'}
+              </span>
+              {user.full_name || user.email}
+            </div>
+          )}
           <button className="nav-btn new-complaint" onClick={() => onNavigate("form")}>
             <span>➕</span> New Complaint
           </button>
-          <button 
-            className="nav-btn delete-all-btn" 
+          <button
+            className="nav-btn delete-all-btn"
             onClick={handleDeleteAll}
             style={{
               backgroundColor: showDeleteConfirm ? "#ff4444" : "#ff6b6b",
@@ -100,6 +108,9 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
             }}
           >
             <span>🗑️</span> {showDeleteConfirm ? "Confirm Delete All?" : "Delete All"}
+          </button>
+          <button className="nav-btn" onClick={onLogout} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+            <span>🚪</span> Logout
           </button>
           <button className="nav-btn back-home" onClick={() => {
             setShowDeleteConfirm(false);
@@ -165,9 +176,9 @@ export default function Dashboard({ onNavigate, complaints = [], setComplaints }
                     <span className="category-count">{count}</span>
                   </div>
                   <div className="category-bar">
-                    <div 
+                    <div
                       className="category-fill"
-                      style={{ 
+                      style={{
                         width: `${stats.total > 0 ? (count / stats.total) * 100 : 0}%`,
                         animation: `slideRight 0.8s ease-out ${0.1 + Object.keys(categoryBreakdown).indexOf(category) * 0.05}s forwards`
                       }}

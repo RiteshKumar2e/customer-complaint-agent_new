@@ -31,4 +31,25 @@ export const submitFeedback = async (feedbackData) => {
   return response.data;
 };
 
+// Auth API
+export const registerUser = async (email, fullName) => {
+  const response = await api.post("/auth/register", { email, full_name: fullName });
+  return response.data;
+};
+
+export const requestOTP = async (email) => {
+  const response = await api.post("/auth/request-otp", { email });
+  return response.data;
+};
+
+export const verifyOTP = async (email, otp) => {
+  const response = await api.post("/auth/verify-otp", { email, otp });
+  return response.data;
+};
+
+export const googleAuth = async (token) => {
+  const response = await api.post("/auth/google", { token });
+  return response.data;
+};
+
 export default api;

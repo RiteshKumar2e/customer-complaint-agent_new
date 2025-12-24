@@ -6,7 +6,7 @@ Run this to create all tables in the database
 
 import os
 from app.db.database import engine, Base
-from app.db.models import Complaint
+from app.db.models import Complaint, User
 
 def init_db():
     """Initialize database with all tables"""
@@ -23,6 +23,7 @@ def init_db():
     print("✅ Database initialized successfully!")
     print("\nTables created:")
     print("  • complaints - Stores customer complaints and AI analysis")
+    print("  • users - Stores user authentication data")
     
     # Print sample query
     print("\n📊 Sample query:")

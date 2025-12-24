@@ -9,15 +9,19 @@ load_dotenv()
 # SQLite as fallback for development
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite:///./complaints.db"  # Local SQLite for development
+    "sqlite:///./complaints.db"
 )
+
+# If using MySQL, ensure the driver is specified
+if DATABASE_URL.startswith("mysql://"):
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
 
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,      # Verify connection before using
-    pool_size=10,            # Connection pool size
-    max_overflow=20,         # Max overflow connections
-    echo=False,              # Set True for SQL debugging
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    echo=False,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 )
 

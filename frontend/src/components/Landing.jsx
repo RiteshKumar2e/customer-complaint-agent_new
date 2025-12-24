@@ -149,6 +149,7 @@ export default function Landing({ onStart, onDashboard }) {
         <nav className="nav-links">
           <button onClick={scrollToTop} className="nav-btn-home">Home</button>
           <button onClick={() => scrollToSection('features')}>About</button>
+          <button onClick={() => scrollToSection('goals')}>Goals</button>
           <button onClick={() => scrollToSection('team')}>Team</button>
           <button onClick={() => scrollToSection('contact')}>Contact</button>
         </nav>
@@ -250,6 +251,57 @@ export default function Landing({ onStart, onDashboard }) {
               </div>
               <h3 className="solution-title">{feature.title}</h3>
               <p className="solution-description">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Strategic Goals Section */}
+      <section className="goals-section" id="goals">
+        <div className="section-header">
+          <h2 className="section-title">Strategic <span>Goals</span></h2>
+          <p className="section-subtitle">Our mission: Redefining the future of autonomous support.</p>
+        </div>
+        <div className="goals-grid">
+          {[
+            {
+              title: "Absolute Efficiency",
+              desc: "Reducing resolution cycles from days to seconds using high-frequency agentic reasoning.",
+              icon: "🚀",
+              metric: "< 2s Response"
+            },
+            {
+              title: "User Empowerment",
+              desc: "Giving every user a transparent, AI-backed voice that ensures fair and consistent resolution.",
+              icon: "⚖️",
+              metric: "100% Transparency"
+            },
+            {
+              title: "Emotional Resonance",
+              desc: "Deploying sentiment-aware agents that understand the human context behind every complaint.",
+              icon: "🧠",
+              metric: "99% Empathy Rate"
+            },
+            {
+              title: "Seamless Scaling",
+              desc: "Architecture designed to handle millions of concurrent resolutions without degradation.",
+              icon: "📈",
+              metric: "Infinite Scale"
+            }
+          ].map((goal, idx) => (
+            <div key={idx} className="goal-card">
+              <div className="goal-icon-wrapper">
+                <span className="goal-icon">{goal.icon}</span>
+              </div>
+              <div className="goal-content">
+                <h3>{goal.title}</h3>
+                <p>{goal.desc}</p>
+                <div className="goal-metric">
+                  <span className="metric-dot"></span>
+                  <span className="metric-text">{goal.metric}</span>
+                </div>
+              </div>
+              <div className="goal-card-bg"></div>
             </div>
           ))}
         </div>

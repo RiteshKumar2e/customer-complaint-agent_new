@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as complaint_router
 from app.api.chat import router as chat_router
 from app.routes.feedback import router as feedback_router
+from app.routes.auth import router as auth_router
 
 app = FastAPI(title="Quickfix Agentic AI")
 
@@ -21,6 +22,7 @@ app.add_middleware(
 app.include_router(complaint_router)
 app.include_router(chat_router)
 app.include_router(feedback_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def root():
