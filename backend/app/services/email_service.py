@@ -190,7 +190,6 @@ class EmailService:
     # ------------------------------------------------------------------
     
     def _generate_confirmation_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
-        ticket_id = complaint_data.get('id', 'N/A')
         category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
         complaint_text = complaint_data.get('complaint_text', 'N/A')
@@ -227,20 +226,7 @@ class EmailService:
                             </p>
                         </td>
                     </tr>
-                    
-                    <!-- Ticket Badge -->
-                    <tr>
-                        <td style="padding: 0 30px;">
-                            <div style="background-color: #f9fafb; border: 2px dashed #e5e7eb; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;">
-                                <p style="margin: 0; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
-                                    Ticket Number
-                                </p>
-                                <h2 style="margin: 8px 0 0 0; color: #1f2937; font-size: 32px; font-weight: 700;">
-                                    #{ticket_id}
-                                </h2>
-                            </div>
-                        </td>
-                    </tr>
+
                     
                     <!-- Greeting -->
                     <tr>
@@ -366,7 +352,7 @@ class EmailService:
                                     <li>Our AI system is analyzing your complaint in real-time</li>
                                     <li>You'll receive updates via email as we progress</li>
                                     <li>A dedicated support agent will review if needed</li>
-                                    <li>Track your ticket status anytime on our dashboard</li>
+                                
                                 </ul>
                             </div>
                         </td>
@@ -400,7 +386,6 @@ class EmailService:
 """
     
     def _generate_resolution_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
-        ticket_id = complaint_data.get('id', 'N/A')
         category = complaint_data.get('category', 'General')
         solution = complaint_data.get('solution', 'Your issue has been resolved.')
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
@@ -419,18 +404,6 @@ class EmailService:
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     
-                    <!-- Header -->
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
-                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
-                                Issue Resolved Successfully!
-                            </h1>
-                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">
-                                Ticket #{ticket_id}
-                            </p>
-                        </td>
-                    </tr>
                     
                     <!-- Content -->
                     <tr>
@@ -510,7 +483,7 @@ class EmailService:
 """
     
     def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
-        ticket_id = complaint_data.get('id', 'N/A')
+        user_name = user_name or "Valued Customer"
         category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
         complaint_text = complaint_data.get('complaint_text', 'N/A')
@@ -559,7 +532,6 @@ class EmailService:
                                             Ticket ID
                                         </p>
                                         <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">
-                                            #{ticket_id}
                                         </h2>
                                     </td>
                                     <td style="width: 50%; text-align: right;">
@@ -681,9 +653,7 @@ class EmailService:
                     <tr>
                         <td style="padding: 0 30px 30px 30px;">
                             <div style="background-color: #fef9c3; border-radius: 8px; padding: 20px; text-align: center;">
-                                <p style="margin: 0 0 15px 0; color: #854d0e; font-size: 14px; font-weight: 600;">
-                                    ⚠️ Please review this ticket and take action if necessary
-                                </p>
+
                                 <a href="{self.app_url}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px;">
                                     View in Dashboard
                                 </a>
@@ -712,7 +682,6 @@ class EmailService:
 """
     
     def _generate_admin_resolution_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
-        ticket_id = complaint_data.get('id', 'N/A')
         category = complaint_data.get('category', 'General')
         solution = complaint_data.get('solution', 'Issue resolved')
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
@@ -753,9 +722,6 @@ class EmailService:
                                         <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">
                                             Ticket ID
                                         </p>
-                                        <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">
-                                            #{ticket_id}
-                                        </h2>
                                     </td>
                                     <td style="width: 50%; text-align: right;">
                                         <span style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">

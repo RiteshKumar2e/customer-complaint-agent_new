@@ -8,14 +8,15 @@ load_dotenv()
 # ✅ Read DATABASE_URL from environment (Render / Local)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite:///quickfix.db"   # fallback
+    "sqlite:///complaints.db"   # fallback
 )
 
 # ✅ Fix MySQL driver if needed
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///quickfix.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
 
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+
 
 
 # ✅ Create engine
