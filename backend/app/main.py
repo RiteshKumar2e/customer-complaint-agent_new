@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.database import engine
+from app.db import models
 from app.api.routes import router as complaint_router
 from app.api.chat import router as chat_router
 from app.routes.feedback import router as feedback_router
 from app.routes.auth import router as auth_router
+
+# Create database tables
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Quickfix Agentic AI")
 
