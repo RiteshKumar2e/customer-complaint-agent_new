@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.db.models import Complaint
 from app.schemas.complaint import ComplaintRequest, ComplaintResponse
 from app.services.email_service import email_service
+import datetime
 import random
 import string
 
@@ -36,7 +37,7 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
         similar = result.get("similar_issues", "")
 
         # Generate Professional Ticket ID (e.g. QX-20231027-A1B2)
-        date_str = datetime.now().strftime("%Y%m%d")
+        date_str = datetime.datetime.now().strftime("%Y%m%d")
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
         ticket_id = f"QX-{date_str}-{random_str}"
 
