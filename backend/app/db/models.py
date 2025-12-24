@@ -11,7 +11,7 @@ class User(Base):
     full_name = Column(String(100))
     hashed_password = Column(String(255), nullable=True)  # Nullable for Google/OTP users
     google_id = Column(String(255), unique=True, index=True, nullable=True)
-    otp = Column(String(6), nullable=True)
+    otp = Column(String(255), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)

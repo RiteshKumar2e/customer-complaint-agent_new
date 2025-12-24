@@ -24,6 +24,7 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
   });
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Function to get estimated resolution time based on priority
   const getResolutionTime = (priority) => {
@@ -83,38 +84,43 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
   return (
     <div className="dashboard-container">
       {/* Navigation */}
-      <nav className="dashboard-nav">
+      <nav className={`dashboard-nav ${isMenuOpen ? 'menu-open' : ''}`}>
         <div className="nav-brand">
           <h1>📊 Complaint Dashboard</h1>
         </div>
-        <div className="nav-buttons">
+
+        <button className="dashboard-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
+        </button>
+
+        <div className={`nav-buttons ${isMenuOpen ? 'is-open' : ''}`}>
           {user && (
-            <div className="user-info-chip" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-              <span style={{ width: '24px', height: '24px', background: '#6366f1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '10px', color: 'white' }}>
+            <div className="user-info-chip">
+              <span className="user-avatar">
                 {user.full_name?.charAt(0) || 'U'}
               </span>
-              {user.full_name || user.email}
+              <span className="user-name">{user.full_name || user.email}</span>
             </div>
           )}
-          <button className="nav-btn new-complaint" onClick={() => onNavigate("form")}>
+          <button className="nav-btn new-complaint" onClick={() => { onNavigate("form"); setIsMenuOpen(false); }}>
             <span>➕</span> New Complaint
           </button>
           <button
             className="nav-btn delete-all-btn"
             onClick={handleDeleteAll}
             style={{
-              backgroundColor: showDeleteConfirm ? "#ff4444" : "#ff6b6b",
-              transition: "background-color 0.3s"
+              backgroundColor: showDeleteConfirm ? "#ff4444" : "#ff6b6b"
             }}
           >
             <span>🗑️</span> {showDeleteConfirm ? "Confirm Delete All?" : "Delete All"}
           </button>
-          <button className="nav-btn" onClick={onLogout} style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+          <button className="nav-btn logout-btn" onClick={() => { onLogout(); setIsMenuOpen(false); }}>
             <span>🚪</span> Logout
           </button>
           <button className="nav-btn back-home" onClick={() => {
             setShowDeleteConfirm(false);
             onNavigate("landing");
+            setIsMenuOpen(false);
           }}>
             <span>🏠</span> Home
           </button>

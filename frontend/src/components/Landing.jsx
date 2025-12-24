@@ -6,6 +6,7 @@ export default function Landing({ onStart, onDashboard }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'privacy' or 'terms'
   const [activeFaq, setActiveFaq] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mouseGlowRef = useRef(null);
 
   // Mouse Glow Effect Logic
@@ -120,7 +121,7 @@ export default function Landing({ onStart, onDashboard }) {
       <div ref={mouseGlowRef} className="mouse-glow" />
 
       {/* Header */}
-      <header className="landing-header">
+      <header className={`landing-header ${isMenuOpen ? 'menu-open' : ''}`}>
         <div className="navbar-brand ecohealth-logo" onClick={scrollToTop}>
           <div className="logo-orb">
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -142,20 +143,26 @@ export default function Landing({ onStart, onDashboard }) {
           </div>
           <div className="brand-text-stack">
             <span className="logo-text">Quickfix</span>
-
           </div>
         </div>
 
-        <nav className="nav-links">
-          <button onClick={scrollToTop} className="nav-btn-home">Home</button>
-          <button onClick={() => scrollToSection('features')}>About</button>
-          <button onClick={() => scrollToSection('goals')}>Goals</button>
-          <button onClick={() => scrollToSection('team')}>Team</button>
-          <button onClick={() => scrollToSection('contact')}>Contact</button>
+        <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
+        </button>
+
+        <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
+          <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
+          <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
+          <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
+          <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
+          <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
+          <div className="mobile-auth-buttons">
+            <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>Sign in</button>
+          </div>
         </nav>
 
         <div className="auth-buttons">
-          <button className="btn-admin" onClick={onStart}>Launch AI</button>
+          <button className="btn-admin" onClick={onStart}>Sign in</button>
         </div>
       </header>
 

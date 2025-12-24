@@ -61,6 +61,16 @@ class EmailService:
         thread.start()
         return True
     
+    def send_password_reset(self, user_email: str, user_name: str, reset_token: str):
+        """Send password reset link to user in background"""
+        thread = threading.Thread(
+            target=self._worker_send_password_reset,
+            args=(user_email, user_name, reset_token)
+        )
+        thread.daemon = True
+        thread.start()
+        return True
+    
     # ------------------------------------------------------------------
     # BACKGROUND WORKER
     # ------------------------------------------------------------------
@@ -109,6 +119,17 @@ class EmailService:
             print(f"❌ OTP Email Error: {str(e)}")
             traceback.print_exc()
     
+    def _worker_send_password_reset(self, user_email: str, user_name: str, reset_token: str):
+        """Background logic to send password reset link"""
+        try:
+            subject = "🔑 Reset Your Quickfix Password"
+            html_body = self._generate_password_reset_html(user_name, reset_token, user_email)
+            print(f"📧 Sending password reset link to: {user_email}...")
+            self._dispatch_api(user_email, subject, html_body)
+        except Exception as e:
+            print(f"❌ Password Reset Email Error: {str(e)}")
+            traceback.print_exc()
+    
     def _generate_otp_html(self, otp: str) -> str:
         return f"""
 <!DOCTYPE html>
@@ -140,6 +161,60 @@ class EmailService:
                             </div>
                             <p style="margin: 0; color: #9ca3af; font-size: 13px;">
                                 If you didn't request this code, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                                © {datetime.now().year} Quickfix. Secure Multi-Agent Intelligence.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+    def _generate_password_reset_html(self, user_name: str, reset_token: str, user_email: str) -> str:
+        reset_link = f"{self.app_url}/reset-password?token={reset_token}&email={user_email}"
+        return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Password</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="500" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Reset Your Password</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px; text-align: center;">
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px;">
+                                Hello {user_name},
+                            </p>
+                            <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                We received a request to reset your password for your Quickfix account. Click the button below to create a new password.
+                            </p>
+                            <a href="{reset_link}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+                                Reset Password
+                            </a>
+                            <p style="margin: 30px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.6;">
+                                This link will expire in 1 hour for security reasons.
+                            </p>
+                            <p style="margin: 20px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.6;">
+                                If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
                             </p>
                         </td>
                     </tr>

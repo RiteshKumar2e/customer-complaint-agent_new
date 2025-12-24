@@ -149,6 +149,14 @@ h4,
   animation: slideDown 0.8s ease-out;
 }
 
+.mobile-menu-toggle {
+  display: none;
+}
+
+.mobile-auth-buttons {
+  display: none;
+}
+
 @keyframes slideDown {
   from {
     transform: translateY(-100%);
@@ -1134,17 +1142,105 @@ h4,
 }
 
 @media (max-width: 768px) {
+  .landing-header {
+    height: 70px;
+    padding: 0 5%;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 1001;
+  }
+
+  .hamburger {
+    position: relative;
+    width: 20px;
+    height: 2px;
+    background: white;
+    transition: all 0.3s ease;
+  }
+
+  .hamburger::before,
+  .hamburger::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 2px;
+    background: white;
+    transition: all 0.3s ease;
+  }
+
+  .hamburger::before {
+    top: -6px;
+  }
+
+  .hamburger::after {
+    bottom: -6px;
+  }
+
+  .hamburger.active {
+    background: transparent;
+  }
+
+  .hamburger.active::before {
+    transform: rotate(45deg);
+    top: 0;
+  }
+
+  .hamburger.active::after {
+    transform: rotate(-45deg);
+    bottom: 0;
+  }
+
   .nav-links {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    height: 100vh;
+    background: #0a0a0f;
+    flex-direction: column;
+    padding: 100px 2rem;
+    gap: 2rem;
+    transition: right 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    z-index: 1000;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-links.is-open {
+    right: 0;
+  }
+
+  .nav-links button {
+    font-size: 1.25rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .mobile-auth-buttons {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .auth-buttons {
     display: none;
   }
 
-  .landing-header {
-    height: 60px;
-    padding: 0 4%;
-  }
-
   .logo-text {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 
   .logo-orb svg {

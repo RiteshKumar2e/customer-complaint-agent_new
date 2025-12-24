@@ -32,8 +32,8 @@ export const submitFeedback = async (feedbackData) => {
 };
 
 // Auth API
-export const registerUser = async (email, fullName) => {
-  const response = await api.post("/auth/register", { email, full_name: fullName });
+export const registerUser = async (email, fullName, password) => {
+  const response = await api.post("/auth/register", { email, full_name: fullName, password });
   return response.data;
 };
 
@@ -44,6 +44,21 @@ export const requestOTP = async (email) => {
 
 export const verifyOTP = async (email, otp) => {
   const response = await api.post("/auth/verify-otp", { email, otp });
+  return response.data;
+};
+
+export const loginWithPassword = async (email, password) => {
+  const response = await api.post("/auth/login-password", { email, password });
+  return response.data;
+};
+
+export const forgotPassword = async (email) => {
+  const response = await api.post("/auth/forgot-password", { email });
+  return response.data;
+};
+
+export const resetPassword = async (email, reset_token, new_password) => {
+  const response = await api.post("/auth/reset-password", { email, reset_token, new_password });
   return response.data;
 };
 
@@ -58,3 +73,4 @@ export const googleVerifyOTP = async (email, otp) => {
 };
 
 export default api;
+

@@ -103,17 +103,29 @@ export default function Login({ onNavigate, onLoginSuccess }) {
         setLoading(true);
         setError("");
 
-        // Handle Remember Me logic
-        if (rememberMe) {
-            localStorage.setItem("saved_creds", JSON.stringify({ email, password }));
-        } else {
-            localStorage.removeItem("saved_creds");
-        }
+        try {
+            const data = await loginWithPassword(email, password);
 
-        setTimeout(() => {
-            onLoginSuccess({ email, name: email.split('@')[0] });
+            // Handle Remember Me logic
+            if (rememberMe) {
+                localStorage.setItem("saved_creds", JSON.stringify({ email, password }));
+            } else {
+                localStorage.removeItem("saved_creds");
+            }
+
+            localStorage.setItem("token", data.access_token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            onLoginSuccess(data.user);
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            if (detail && detail.includes("Password is wrong")) {
+                setError("Password is wrong. Try 'Forgot Access' below or use Google Sign-In.");
+            } else {
+                setError(detail || "Login failed. Please check your credentials.");
+            }
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
 
     const handleGoogleLogin = useGoogleLogin({

@@ -133,7 +133,7 @@ export default function Signup({ onNavigate }) {
         setLoading(true);
         setError("");
         try {
-            await registerUser(formData.email, formData.fullName);
+            await registerUser(formData.email, formData.fullName, formData.password);
             setSuccess(true);
             confetti({
                 particleCount: 150,

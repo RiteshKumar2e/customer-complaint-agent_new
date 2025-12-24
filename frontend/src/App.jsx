@@ -8,6 +8,8 @@ import Feedback from "./components/Feedback";
 import NotificationCenter from "./components/NotificationCenter";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import { getAllComplaints } from "./api";
 import "./App.css";
 
@@ -20,12 +22,17 @@ export default function App() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Check for existing session
+  // Check for existing session and URL routes
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
     if (savedUser && token) {
       setUser(JSON.parse(savedUser));
+    }
+
+    // Handle deep links from email
+    if (window.location.pathname === "/reset-password") {
+      setPage("reset-password");
     }
   }, []);
 
@@ -114,16 +121,17 @@ export default function App() {
     );
   }
 
-  // Forgot Password Page Placeholder
+  // Forgot Password Page
   if (page === "forgot-password") {
     return (
-      <div className="auth-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-        <div className="auth-content" style={{ maxWidth: '400px', height: 'auto', borderRadius: '20px' }}>
-          <h2 className="auth-title">Reset Password</h2>
-          <p className="auth-subtitle">Instruction to reset your password have been sent to your email.</p>
-          <button className="auth-submit" style={{ marginTop: '1.5rem' }} onClick={() => navigateTo("login")}>Back to Login</button>
-        </div>
-      </div>
+      <ForgotPassword onNavigate={navigateTo} />
+    );
+  }
+
+  // Reset Password Page
+  if (page === "reset-password") {
+    return (
+      <ResetPassword onNavigate={navigateTo} />
     );
   }
 
