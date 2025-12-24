@@ -11,7 +11,7 @@ class User(Base):
     full_name = Column(String(100))
     phone = Column(String(20), nullable=True)
     organization = Column(String(100), nullable=True)
-    profile_image = Column(String(500), nullable=True)  # URL or base64 image
+    profile_image = Column(Text, nullable=True)  # URL or base64 image
     hashed_password = Column(String(255), nullable=True)  # Nullable for Google/OTP users
     google_id = Column(String(255), unique=True, index=True, nullable=True)
     otp = Column(String(255), nullable=True)

@@ -7,6 +7,7 @@ export default function Feedback({ onClose }) {
         name: "",
         email: "",
         rating: "5",
+        recommendation: "8",
         message: ""
     });
     const [loading, setLoading] = useState(false);
@@ -14,6 +15,7 @@ export default function Feedback({ onClose }) {
     const [error, setError] = useState("");
 
     const ratings = ["1", "2", "3", "4", "5"];
+    const npsScores = Array.from({ length: 11 }, (_, i) => i.toString());
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -41,6 +43,7 @@ export default function Feedback({ onClose }) {
                 name: formData.name,
                 email: formData.email,
                 rating: parseInt(formData.rating),
+                recommendation: parseInt(formData.recommendation),
                 message: formData.message
             });
 
@@ -52,6 +55,7 @@ export default function Feedback({ onClose }) {
                     name: "",
                     email: "",
                     rating: "5",
+                    recommendation: "8",
                     message: ""
                 });
                 setSuccess(false);
@@ -67,7 +71,11 @@ export default function Feedback({ onClose }) {
             } else if (err.code === 'ERR_NETWORK' || !err.response) {
                 errorMessage = "Cannot connect to the server. Please make sure the backend is running.";
             } else if (err.response?.data?.detail) {
-                errorMessage = err.response.data.detail;
+                if (Array.isArray(err.response.data.detail)) {
+                    errorMessage = err.response.data.detail[0].msg;
+                } else {
+                    errorMessage = err.response.data.detail;
+                }
             }
 
             setError(errorMessage);
@@ -117,7 +125,7 @@ export default function Feedback({ onClose }) {
 
                     <div className="form-row">
                         <div className="form-group">
-                            <label htmlFor="rating">Rating *</label>
+                            <label htmlFor="rating">Overall Satisfaction *</label>
                             <select
                                 id="rating"
                                 name="rating"
@@ -127,6 +135,21 @@ export default function Feedback({ onClose }) {
                             >
                                 {ratings.map(r => (
                                     <option key={r} value={r}>{r} ⭐</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="recommendation">Likelihood to Recommend (0-10) *</label>
+                            <select
+                                id="recommendation"
+                                name="recommendation"
+                                value={formData.recommendation}
+                                onChange={handleChange}
+                                disabled={loading}
+                            >
+                                {npsScores.map(s => (
+                                    <option key={s} value={s}>{s}</option>
                                 ))}
                             </select>
                         </div>

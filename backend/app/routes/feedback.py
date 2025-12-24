@@ -9,7 +9,7 @@ class FeedbackRequest(BaseModel):
     name: str
     email: EmailStr
     rating: int  # Overall Satisfaction (1-5)
-    recommendation: int  # NPS Score (0-10)
+    recommendation: int = 8  # NPS Score (0-10), default to 8
     message: str
 
 @router.post("/feedback")

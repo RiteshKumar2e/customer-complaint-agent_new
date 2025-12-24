@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import random
 import string
+import hashlib
 from passlib.context import CryptContext
 from app.db.database import get_db
 from app.db.models import User
@@ -47,10 +48,24 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    # 1. Try with SHA-256 pre-hash (new way - fixes 72-char limit)
+    password_hash = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
+    try:
+        if pwd_context.verify(password_hash, hashed_password):
+            return True
+    except Exception:
+        pass
+        
+    # 2. Fallback to plain password (old way) for existing users
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    # Pre-hash with SHA-256 to bypass bcrypt 72-character limit
+    password_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    return pwd_context.hash(password_hash)
 
 def create_access_token(data: dict):
     to_encode = data.copy()
