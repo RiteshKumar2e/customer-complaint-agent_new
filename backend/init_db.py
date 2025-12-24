@@ -7,14 +7,18 @@ Run this to create all tables in the database
 import os
 from app.db.database import engine, Base
 from app.db.models import Complaint, User
+import sqlalchemy
+
 
 def init_db():
     """Initialize database with all tables"""
     print("🗄️  Initializing database...")
     
     # Get database URL from environment or use default
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./complaints.db")
+    db_url = os.getenv("DATABASE_URL=mysql://root:password@localhost:3306/quickfix_db")
     print(f"📍 Using database: {db_url}")
+    
+
     
     # Create all tables
     print("📝 Creating tables...")
