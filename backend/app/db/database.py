@@ -5,36 +5,41 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# PostgreSQL Configuration (recommended for production)
-# SQLite as fallback for development
+# ✅ Read DATABASE_URL from environment (Render / Local)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite:///./complaints.db"
+    "sqlite:///quickfix.db"   # fallback
 )
 
-# If using MySQL, ensure the driver is specified
+# ✅ Fix MySQL driver if needed
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///quickfix.db")
+
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
 
+
+# ✅ Create engine
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
     echo=False,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 )
 
+# ✅ Session
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
 
+# ✅ Base
 Base = declarative_base()
 
+# ✅ Dependency
 def get_db():
-    """Dependency for getting database session"""
     db = SessionLocal()
     try:
         yield db
