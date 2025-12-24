@@ -250,14 +250,20 @@
 /* Mobile View */
 @media (max-width: 480px) {
   .side-chat {
-    width: 85%;
-    max-width: 360px;
+    width: 90%;
+    max-width: 380px;
+    height: 85vh;
+    /* Reduce height to avoid keyboard overlap */
+    bottom: 20px;
+    top: auto;
     right: -100%;
+    border-radius: 20px 20px 0 0;
     border-left: none;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
   }
 
   .side-chat.open {
-    right: 0;
+    right: 20px;
   }
 
   .chat-header {
@@ -295,8 +301,9 @@
   }
 
   .chat-input {
-    padding: 12px;
-    gap: 8px;
+    padding: 10px;
+    gap: 6px;
+    background: #020617;
   }
 
   .chat-input input {
