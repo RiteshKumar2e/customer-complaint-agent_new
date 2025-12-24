@@ -47,8 +47,13 @@ export const verifyOTP = async (email, otp) => {
   return response.data;
 };
 
-export const googleAuth = async (token) => {
-  const response = await api.post("/auth/google", { token });
+export const googleAuth = async (token, name) => {
+  const response = await api.post("/auth/google", { token, name });
+  return response.data;
+};
+
+export const googleVerifyOTP = async (email, otp) => {
+  const response = await api.post("/auth/google-verify-otp", { email, otp });
   return response.data;
 };
 

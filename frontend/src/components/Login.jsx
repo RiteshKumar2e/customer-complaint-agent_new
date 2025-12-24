@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { googleAuth } from "../api";
+import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
+import { googleAuth, googleVerifyOTP } from "../api";
 import CustomCursor from "./CustomCursor";
+import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
 
 const CharacterEyes = ({ mousePos, containerRef, isHiding, targetPos }) => {
@@ -61,6 +63,9 @@ export default function Login({ onNavigate, onLoginSuccess }) {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [targetPos, setTargetPos] = useState(null);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const [showOTPModal, setShowOTPModal] = useState(false);
+    const [otpEmail, setOtpEmail] = useState("");
+    const [otpLoading, setOtpLoading] = useState(false);
     const illustrationRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
@@ -111,13 +116,51 @@ export default function Login({ onNavigate, onLoginSuccess }) {
         }, 1500);
     };
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
+    const handleGoogleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setLoading(true);
+            setError("");
+            try {
+                // Fetch user info from Google
+                const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await userInfoResponse.json();
+
+                // Send email to backend to trigger OTP
+                const response = await googleAuth(userInfo.email, userInfo.name);
+
+                if (response.requires_otp) {
+                    setOtpEmail(userInfo.email);
+                    setShowOTPModal(true);
+                } else {
+                    // Fallback if OTP not required
+                    onLoginSuccess(response.user);
+                }
+            } catch (err) {
+                setError(err.response?.data?.detail || "Google sign-in failed");
+            } finally {
+                setLoading(false);
+            }
+        },
+        onError: () => {
+            setError("Google sign-in was cancelled or failed");
+        },
+    });
+
+    const handleOTPVerify = async (otp) => {
+        setOtpLoading(true);
         try {
-            const data = await googleAuth(email || "demo@user.com");
-            onLoginSuccess(data.user);
-        } catch (err) { setError("Google sign-in failed"); }
-        finally { setLoading(false); }
+            const response = await googleVerifyOTP(otpEmail, otp);
+            localStorage.setItem("token", response.access_token);
+            localStorage.setItem("user", JSON.stringify(response.user));
+            onLoginSuccess(response.user);
+            setShowOTPModal(false);
+        } catch (err) {
+            throw err; // Let OTPModal handle the error display
+        } finally {
+            setOtpLoading(false);
+        }
     };
 
     const isHiding = isPasswordFocused && !showPassword;
@@ -273,6 +316,15 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                     </div>
                 </motion.div>
             </div>
+
+            {/* OTP Modal for Google Sign-In */}
+            <OTPModal
+                isOpen={showOTPModal}
+                onClose={() => setShowOTPModal(false)}
+                email={otpEmail}
+                onVerify={handleOTPVerify}
+                loading={otpLoading}
+            />
         </motion.div>
     );
 }

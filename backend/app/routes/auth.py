@@ -84,19 +84,55 @@ def verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
         "user": user
     }
 
-@router.post("/google", response_model=Token)
+@router.post("/google")
 def google_auth(data: GoogleAuth, db: Session = Depends(get_db)):
+    """
+    Step 1: Google Sign-In - Send OTP to the authenticated Google email
+    """
     # In a real app, verify the Google token here using google-auth library
-    # For now, we'll assume the frontend sends a valid email since we can't easily verify without client IDs
-    # This is a simplified version
-    email = data.token # Simplified: frontend sends email as token for demo
+    # For now, we'll assume the frontend sends a valid email from Google OAuth
+    email = data.token  # Simplified: frontend sends email as token for demo
     
+    # Check if user exists, if not create a new user
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        user = User(email=email, full_name="Google User", is_active=True)
+        user = User(email=email, full_name=data.name or "Google User", is_active=True)
         db.add(user)
         db.commit()
         db.refresh(user)
+    
+    # Generate and send OTP
+    otp = generate_otp()
+    user.otp = otp
+    user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+    db.commit()
+    
+    email_service.send_otp(user.email, otp)
+    return {
+        "message": "OTP sent to your Google email",
+        "email": email,
+        "requires_otp": True
+    }
+
+@router.post("/google-verify-otp", response_model=Token)
+def google_verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
+    """
+    Step 2: Verify OTP sent to Google email and complete sign-in
+    """
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user or not user.otp:
+        raise HTTPException(status_code=400, detail="Invalid request")
+    
+    if user.otp != data.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    if datetime.utcnow() > user.otp_expiry:
+        raise HTTPException(status_code=400, detail="OTP expired")
+    
+    # Clear OTP
+    user.otp = None
+    user.otp_expiry = None
+    db.commit()
     
     access_token = create_access_token(data={"sub": user.email})
     return {

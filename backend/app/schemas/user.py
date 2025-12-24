@@ -18,6 +18,7 @@ class OTPVerify(BaseModel):
 
 class GoogleAuth(BaseModel):
     token: str
+    name: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
