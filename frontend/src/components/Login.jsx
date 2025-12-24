@@ -283,16 +283,6 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '-0.5rem' }}>
-                            <label className="terms-row" style={{ margin: 0 }}>
-                                <input
-                                    type="checkbox"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                />
-                                <span>Remember Me</span>
-                            </label>
-                        </div>
 
                         <motion.button
                             type="submit"
