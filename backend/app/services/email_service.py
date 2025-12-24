@@ -3,6 +3,9 @@ import threading
 import traceback
 import requests
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class EmailService:
     """
@@ -12,20 +15,21 @@ class EmailService:
     
     def __init__(self):
         # 🟢 Configuration (Uses Brevo for reliability)
+        load_dotenv()
         self.api_key = os.getenv("BREVO_API_KEY")
-        self.sender_email = os.getenv("SENDER_EMAIL", "noreply@quickfix.com")
-        self.admin_email = "riteshkumar90359@gmail.com"
-        self.company_name = "Quickfix"
-        self.app_url = "https://customer-complaint-agent-new.vercel.app"
+        self.sender_email = os.getenv("SENDER_EMAIL")
+        self.admin_email = os.getenv("ADMIN_EMAIL", "riteshkumar90359@gmail.com")
+        self.company_name = os.getenv("COMPANY_NAME", "Quickfix")
+        self.app_url = os.getenv("APP_URL", "https://customer-complaint-agent-new.vercel.app")
         
         # 🛡️ Safety Validation: Force valid email format if .env is wrong
-        if "@" not in self.sender_email:
-            self.sender_email = "noreply@quickfix.com"
+        if not self.sender_email or "@" not in self.sender_email:
+            # If no sender email, use the admin email as a fallback sender (more likely to be verified)
+            self.sender_email = self.admin_email if self.admin_email else "noreply@quickfix.com"
         
         if not self.api_key:
             print("\n⚠️ CRITICAL: BREVO_API_KEY not set in .env!")
-            print("📝 Get one at: https://www.brevo.com/")
-            print("❌ Emails will print to console instead of sending.\n")
+            print("❌ Emails will be MOCKED (printed to console) instead of sending.\n")
     
     # ------------------------------------------------------------------
     # PUBLIC METHODS (Threaded for Speed)
@@ -236,13 +240,15 @@ class EmailService:
     def _dispatch_api(self, to_email: str, subject: str, html_body: str):
         """Internal dispatcher using Brevo HTTPS API"""
         if not self.api_key:
-            print(f"\n📢 [MOCKED EMAIL] To: {to_email} | Subject: {subject}\n")
+            print(f"\n📢 [MOCKED EMAIL] To: {to_email} | Subject: {subject}")
+            print(f"   (Brevo API Key missing. Set BREVO_API_KEY in .env)\n")
             return
         
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
             "api-key": self.api_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
         data = {
             "sender": {"name": self.company_name, "email": self.sender_email},
@@ -252,13 +258,20 @@ class EmailService:
         }
         
         try:
-            response = requests.post(url, headers=headers, json=data, timeout=10)
-            if response.status_code not in [200, 201, 202]:
-                print(f"⚠️ Brevo Error ({response.status_code}): {response.text}")
+            print(f"🚀 Dispatching email via Brevo... Sender: {self.sender_email}, To: {to_email}")
+            response = requests.post(url, headers=headers, json=data, timeout=12)
+            
+            if response.status_code in [200, 201, 202]:
+                print(f"✅ Success: Email delivered to {to_email} (ID: {response.json().get('messageId', 'N/A')})")
             else:
-                print(f"✅ Success: Email delivered to {to_email}")
+                print(f"⚠️ Brevo API Failure - Status: {response.status_code}")
+                print(f"   Response Body: {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Network Error connecting to Brevo: {str(e)}")
         except Exception as e:
-            print(f"❌ Error connecting to Brevo: {str(e)}")
+            print(f"❌ Unexpected error in _dispatch_api: {str(e)}")
+            traceback.print_exc()
     
     # ------------------------------------------------------------------
     # ADVANCED PROFESSIONAL HTML TEMPLATES
