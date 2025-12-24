@@ -25,6 +25,20 @@
   font-size: 16px;
 }
 
+.ticket-badge {
+  display: inline-block;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
 /* Cards Grid */
 .cards-grid {
   display: grid;
@@ -142,6 +156,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

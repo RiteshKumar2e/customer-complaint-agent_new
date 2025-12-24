@@ -16,13 +16,16 @@ export const submitComplaint = async (name, email, complaintText) => {
   return response.data;
 };
 
-export const getAllComplaints = async () => {
-  const response = await api.get("/complaints");
+export const getAllComplaints = async (email = "") => {
+  const url = email ? `/complaints?email=${encodeURIComponent(email)}` : "/complaints";
+  const response = await api.get(url);
   return response.data;
 };
 
-export const deleteAllComplaints = async () => {
-  const response = await api.delete("/complaints");
+export const deleteAllComplaints = async (email = "") => {
+  const response = await api.delete("/complaints", {
+    params: email ? { email } : {}
+  });
   return response.data;
 };
 
@@ -32,8 +35,15 @@ export const submitFeedback = async (feedbackData) => {
 };
 
 // Auth API
-export const registerUser = async (email, fullName, password) => {
-  const response = await api.post("/auth/register", { email, full_name: fullName, password });
+export const registerUser = async (email, fullName, password, phone, organization, profileImage) => {
+  const response = await api.post("/auth/register", {
+    email,
+    full_name: fullName,
+    password,
+    phone,
+    organization,
+    profile_image: profileImage
+  });
   return response.data;
 };
 
@@ -69,6 +79,11 @@ export const googleAuth = async (token, name) => {
 
 export const googleVerifyOTP = async (email, otp) => {
   const response = await api.post("/auth/google-verify-otp", { email, otp });
+  return response.data;
+};
+
+export const updateProfile = async (email, profileData) => {
+  const response = await api.patch(`/auth/update-profile?email=${encodeURIComponent(email)}`, profileData);
   return response.data;
 };
 

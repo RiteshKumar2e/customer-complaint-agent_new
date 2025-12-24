@@ -2,7 +2,7 @@ import "../styles/ComplaintCard.css";
 
 export default function ComplaintCard({ data }) {
   const getPriorityColor = (priority) => {
-    switch(priority) {
+    switch (priority) {
       case "High": return "#ff6b6b";
       case "Medium": return "#ffd93d";
       case "Low": return "#22c55e";
@@ -11,7 +11,7 @@ export default function ComplaintCard({ data }) {
   };
 
   const getSentimentIcon = (sentiment) => {
-    switch(sentiment) {
+    switch (sentiment) {
       case "Angry": return "😠";
       case "Negative": return "😞";
       case "Neutral": return "😐";
@@ -21,7 +21,7 @@ export default function ComplaintCard({ data }) {
   };
 
   const getSatisfactionColor = (satisfaction) => {
-    switch(satisfaction) {
+    switch (satisfaction) {
       case "High": return "#22c55e";
       case "Medium": return "#ffd93d";
       case "Low": return "#ff6b6b";
@@ -32,6 +32,9 @@ export default function ComplaintCard({ data }) {
   return (
     <div className="complaint-card-container">
       <div className="card-header">
+        <div className="ticket-badge">
+          {data.ticket_id || "NEW TICKET"}
+        </div>
         <h2> AI Analysis Complete</h2>
         <p>Here's what our 6 AI agents found:</p>
       </div>

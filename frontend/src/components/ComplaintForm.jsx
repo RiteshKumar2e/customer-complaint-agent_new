@@ -3,10 +3,10 @@ import { submitComplaint } from "../api";
 import { showNotification } from "./NotificationCenter";
 import "../styles/ComplaintForm.css";
 
-export default function ComplaintForm({ onResult }) {
+export default function ComplaintForm({ onResult, user }) {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: user?.full_name || "",
+    email: user?.email || "",
     category: "Technical",
     subject: "",
     description: ""
@@ -56,7 +56,7 @@ export default function ComplaintForm({ onResult }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -68,7 +68,7 @@ export default function ComplaintForm({ onResult }) {
     try {
       // Combine subject and description for the complaint text
       const complaintText = `[${formData.category}] ${formData.subject}\n\n${formData.description}`;
-      
+
       const res = await submitComplaint(formData.name, formData.email, complaintText);
 
       if (typeof onResult === "function") {
@@ -76,7 +76,7 @@ export default function ComplaintForm({ onResult }) {
       }
 
       setSuccess(true);
-      
+
       // Show success notification with agent's solution
       showNotification(
         "success",
@@ -88,9 +88,9 @@ export default function ComplaintForm({ onResult }) {
       // Also request browser notification permission and show notification
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Quickfix - Problem Solved!", {
-  body: `Your complaint has been resolved...`,
-  // Remove the 'icon' line if you don't have an image file
-  tag: "complaint-resolved",
+          body: `Your complaint has been resolved...`,
+          // Remove the 'icon' line if you don't have an image file
+          tag: "complaint-resolved",
           requireInteraction: false,
         });
       } else if ("Notification" in window && Notification.permission !== "denied") {
@@ -116,7 +116,7 @@ export default function ComplaintForm({ onResult }) {
     } catch (err) {
       console.error("Submission error:", err);
       let errorMessage = "Failed to submit complaint. Please try again.";
-      
+
       if (err.response?.status === 404) {
         errorMessage = "Backend server is not running. Please start the server.";
       } else if (err.code === 'ERR_NETWORK' || !err.response) {
@@ -124,9 +124,9 @@ export default function ComplaintForm({ onResult }) {
       } else {
         errorMessage = err.response?.data?.detail || errorMessage;
       }
-      
+
       setError(errorMessage);
-      
+
       // Show error notification
       showNotification(
         "error",
@@ -150,7 +150,7 @@ export default function ComplaintForm({ onResult }) {
         {/* Personal Information Section */}
         <fieldset className="form-section">
           <legend>Personal Information</legend>
-          
+
           <div className="form-group">
             <label htmlFor="name">Full Name *</label>
             <input
@@ -160,7 +160,8 @@ export default function ComplaintForm({ onResult }) {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter your full name"
-              className="form-input"
+              readOnly={!!user}
+              className={`form-input ${user ? 'readonly-input' : ''}`}
               disabled={loading}
             />
           </div>
@@ -174,7 +175,8 @@ export default function ComplaintForm({ onResult }) {
               value={formData.email}
               onChange={handleChange}
               placeholder="your.email@example.com"
-              className="form-input"
+              readOnly={!!user}
+              className={`form-input ${user ? 'readonly-input' : ''}`}
               disabled={loading}
             />
           </div>
@@ -218,7 +220,7 @@ export default function ComplaintForm({ onResult }) {
 
           <div className="form-group full-width">
             <label htmlFor="description">
-              Description * 
+              Description *
               <span className="required-hint">Minimum 10 characters</span>
             </label>
             <textarea
@@ -241,9 +243,9 @@ export default function ComplaintForm({ onResult }) {
 
         {/* Submit Button */}
         <div className="form-actions">
-          <button 
-            type="submit" 
-            className="submit-btn" 
+          <button
+            type="submit"
+            className="submit-btn"
             disabled={loading}
           >
             {loading ? (

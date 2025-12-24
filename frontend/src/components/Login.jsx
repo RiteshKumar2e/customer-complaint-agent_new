@@ -5,12 +5,13 @@ import { googleAuth, googleVerifyOTP } from "../api";
 import CustomCursor from "./CustomCursor";
 import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
+import "../styles/AuthAnimations.css";
 
-const CharacterEyes = ({ mousePos, containerRef, isHiding, targetPos }) => {
+const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }) => {
     const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
-        if (!containerRef.current || isHiding) return;
+        if (!containerRef.current || isHiding || isClosed) return;
         const rect = containerRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
@@ -31,22 +32,30 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, targetPos }) => {
             x: Math.cos(angle) * distance,
             y: Math.sin(angle) * distance
         });
-    }, [mousePos, containerRef, isHiding, targetPos]);
+    }, [mousePos, containerRef, isHiding, isClosed, targetPos]);
 
     return (
         <div className="char-eyes" style={{ opacity: isHiding ? 0 : 1, transition: '0.4s' }}>
-            <div className="char-eye-socket">
+            <div className="char-eye-socket" style={{
+                height: isClosed ? '2px' : '14px',
+                transition: 'height 0.3s ease'
+            }}>
                 <motion.div
                     className="char-pupil"
-                    animate={{ x: isHiding ? 0 : eyeOffset.x, y: isHiding ? -5 : eyeOffset.y }}
+                    animate={{ x: isHiding || isClosed ? 0 : eyeOffset.x, y: isHiding || isClosed ? -5 : eyeOffset.y }}
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    style={{ opacity: isClosed ? 0 : 1 }}
                 />
             </div>
-            <div className="char-eye-socket">
+            <div className="char-eye-socket" style={{
+                height: isClosed ? '2px' : '14px',
+                transition: 'height 0.3s ease'
+            }}>
                 <motion.div
                     className="char-pupil"
-                    animate={{ x: isHiding ? 0 : eyeOffset.x, y: isHiding ? -5 : eyeOffset.y }}
+                    animate={{ x: isHiding || isClosed ? 0 : eyeOffset.x, y: isHiding || isClosed ? -5 : eyeOffset.y }}
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    style={{ opacity: isClosed ? 0 : 1 }}
                 />
             </div>
         </div>
@@ -66,9 +75,12 @@ export default function Login({ onNavigate, onLoginSuccess }) {
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otpEmail, setOtpEmail] = useState("");
     const [otpLoading, setOtpLoading] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [activeField, setActiveField] = useState(null);
     const illustrationRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
     // Load saved credentials on mount
     useEffect(() => {
@@ -175,7 +187,8 @@ export default function Login({ onNavigate, onLoginSuccess }) {
         }
     };
 
-    const isHiding = isPasswordFocused && !showPassword;
+    const isHiding = isPasswordFocused && !showPassword; // Cover eyes with hands when typing password (hidden)
+    const isClosed = showPassword && password.length > 0 && !isPasswordFocused; // Close eyes only when password is unhidden (visible)
 
     return (
         <motion.div
@@ -203,17 +216,51 @@ export default function Login({ onNavigate, onLoginSuccess }) {
             </div>
 
             <div className="auth-illustration">
-                <div className="character-container" ref={illustrationRef}>
-                    <motion.div className={`char char-purple ${isHiding ? 'hiding-eyes' : ''}`} animate={{ y: [0, -15, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                <div className={`character-container ${isTyping ? 'typing' : ''}`} ref={illustrationRef}>
+                    <motion.div
+                        className={`char char-purple ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            y: isTyping ? [0, -20, 0] : [0, -15, 0],
+                            rotate: isTyping ? [0, 3, -3, 0] : 0
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.6 : 4,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
-                    <motion.div className={`char char-orange ${isHiding ? 'hiding-eyes' : ''}`} animate={{ scaleY: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                    <motion.div
+                        className={`char char-orange ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            scaleY: isTyping ? [1, 1.1, 1] : [1, 1.05, 1],
+                            scaleX: isTyping ? [1, 0.95, 1] : 1
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.5 : 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
-                    <motion.div className={`char char-black ${isHiding ? 'hiding-eyes' : ''}`} animate={{ y: [0, -10, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                    <motion.div
+                        className={`char char-black ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            y: isTyping ? [0, -15, 0] : [0, -10, 0],
+                            rotate: isTyping ? [0, -2, 2, 0] : 0
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.7 : 3.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 0.5
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
                 </div>
@@ -243,45 +290,106 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                     </div>
 
                     <form className="auth-form" onSubmit={handleLogin}>
-                        <div className="form-group">
+                        <motion.div
+                            className="form-group"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
                             <label>Email Address</label>
                             <div className="input-wrapper">
-                                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                                <motion.svg
+                                    className="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    animate={{
+                                        scale: activeField === 'email' ? [1, 1.2, 1] : 1,
+                                        rotate: activeField === 'email' ? [0, 5, -5, 0] : 0
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                    <polyline points="22,6 12,13 2,6" />
+                                </motion.svg>
                                 <input
                                     ref={emailRef}
                                     type="email"
                                     placeholder="Enter your email"
                                     required
-                                    onFocus={() => updateTargetPos(emailRef)}
-                                    onBlur={() => setTargetPos(null)}
+                                    onFocus={() => { updateTargetPos(emailRef); setActiveField('email'); }}
+                                    onBlur={() => { setTargetPos(null); setActiveField(null); }}
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setIsTyping(true);
+                                        clearTimeout(typingTimeoutRef.current);
+                                        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 500);
+                                    }}
                                 />
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="form-group">
+                        <motion.div
+                            className="form-group"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <label>Password</label>
                                 <span className="auth-link" style={{ fontSize: '0.85rem' }} onClick={() => onNavigate("forgot-password")}>Forgot Access?</span>
                             </div>
                             <div className="input-wrapper">
-                                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                <motion.svg
+                                    className="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    animate={{
+                                        scale: activeField === 'password' ? [1, 1.2, 1] : 1,
+                                        rotate: activeField === 'password' ? [0, -10, 10, 0] : 0
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </motion.svg>
                                 <input
                                     ref={passwordRef}
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
                                     required
-                                    onFocus={() => { setIsPasswordFocused(true); updateTargetPos(passwordRef); }}
-                                    onBlur={() => { setIsPasswordFocused(false); setTargetPos(null); }}
+                                    onFocus={() => {
+                                        setIsPasswordFocused(true);
+                                        updateTargetPos(passwordRef);
+                                        setActiveField('password');
+                                    }}
+                                    onBlur={() => {
+                                        setIsPasswordFocused(false);
+                                        setTargetPos(null);
+                                        setActiveField(null);
+                                    }}
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setIsTyping(true);
+                                        clearTimeout(typingTimeoutRef.current);
+                                        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 500);
+                                    }}
                                 />
-                                <div className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                                <motion.div
+                                    className="password-toggle"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    whileHover={{ scale: 1.2, rotate: 10 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
                                     {showPassword ? "🙈" : "👁️"}
-                                </div>
+                                </motion.div>
                             </div>
-                        </div>
+                        </motion.div>
 
 
                         <motion.button
@@ -317,16 +425,17 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                         Don't have an account? <span className="auth-link" onClick={() => onNavigate("signup")}>Signup</span>
                     </div>
                 </motion.div>
-            </div>
+            </div >
 
             {/* OTP Modal for Google Sign-In */}
-            <OTPModal
+            < OTPModal
                 isOpen={showOTPModal}
-                onClose={() => setShowOTPModal(false)}
+                onClose={() => setShowOTPModal(false)
+                }
                 email={otpEmail}
                 onVerify={handleOTPVerify}
                 loading={otpLoading}
             />
-        </motion.div>
+        </motion.div >
     );
 }

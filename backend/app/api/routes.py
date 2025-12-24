@@ -5,6 +5,8 @@ from app.db.database import get_db
 from app.db.models import Complaint
 from app.schemas.complaint import ComplaintRequest, ComplaintResponse
 from app.services.email_service import email_service
+import random
+import string
 
 router = APIRouter()
 
@@ -33,8 +35,14 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
         satisfaction = result.get("satisfaction", "Medium")
         similar = result.get("similar_issues", "")
 
+        # Generate Professional Ticket ID (e.g. QX-20231027-A1B2)
+        date_str = datetime.now().strftime("%Y%m%d")
+        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        ticket_id = f"QX-{date_str}-{random_str}"
+
         # Save to database with all fields including name and email
         complaint = Complaint(
+            ticket_id=ticket_id,
             name=data.name,
             email=data.email,
             complaint_text=data.complaint,
@@ -49,7 +57,7 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
             is_resolved=False
         )
 
-        print("💾 Saving complaint to database...")
+        print(f"💾 Saving complaint {ticket_id} to database...")
         db.add(complaint)
         db.commit()
         db.refresh(complaint)
@@ -57,6 +65,7 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
 
         # Prepare complaint data for email
         complaint_data = {
+            "ticket_id": ticket_id,
             "complaint_text": data.complaint,
             "category": category,
             "priority": priority,
@@ -71,6 +80,7 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
         email_service.send_complaint_confirmation(data.name, data.email, complaint_data)
 
         return ComplaintResponse(
+            ticket_id=ticket_id,
             category=category,
             priority=priority,
             response=response,
@@ -88,10 +98,14 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/complaints")
-def get_all_complaints(db: Session = Depends(get_db)):
-    """Get all complaints from database"""
+def get_all_complaints(email: str = None, db: Session = Depends(get_db)):
+    """Get all complaints from database (optional filter by email)"""
     try:
-        complaints = db.query(Complaint).all()
+        query = db.query(Complaint)
+        if email:
+            query = query.filter(Complaint.email == email)
+        
+        complaints = query.all()
         return {
             "total": len(complaints),
             "complaints": complaints
@@ -113,12 +127,16 @@ def get_complaint(complaint_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/complaints")
-def delete_all_complaints(db: Session = Depends(get_db)):
-    """Delete all complaints from database"""
+def delete_complaints(email: str = None, db: Session = Depends(get_db)):
+    """Delete complaints from database (optional filter by email)"""
     try:
-        count = db.query(Complaint).delete()
+        query = db.query(Complaint)
+        if email:
+            query = query.filter(Complaint.email == email)
+        
+        count = query.delete(synchronize_session=False)
         db.commit()
-        print(f"🗑️ Deleted {count} complaints from database")
+        print(f"🗑️ Deleted {count} complaints from database for email: {email if email else 'ALL'}")
         return {
             "message": f"Successfully deleted {count} complaints",
             "deleted_count": count

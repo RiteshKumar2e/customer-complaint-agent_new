@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { registerUser } from "../api";
 import confetti from "canvas-confetti";
 import "../styles/Auth.css";
+import "../styles/AuthAnimations.css";
 
-const CharacterEyes = ({ mousePos, containerRef, isHiding, targetPos }) => {
+const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }) => {
     const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
-        if (!containerRef.current || isHiding) return;
+        if (!containerRef.current || isHiding || isClosed) return;
         const rect = containerRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
@@ -29,22 +30,30 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, targetPos }) => {
             x: Math.cos(angle) * distance,
             y: Math.sin(angle) * distance
         });
-    }, [mousePos, containerRef, isHiding, targetPos]);
+    }, [mousePos, containerRef, isHiding, isClosed, targetPos]);
 
     return (
         <div className="char-eyes" style={{ opacity: isHiding ? 0 : 1, transition: '0.4s' }}>
-            <div className="char-eye-socket">
+            <div className="char-eye-socket" style={{
+                height: isClosed ? '2px' : '14px',
+                transition: 'height 0.3s ease'
+            }}>
                 <motion.div
                     className="char-pupil"
-                    animate={{ x: isHiding ? 0 : eyeOffset.x, y: isHiding ? -5 : eyeOffset.y }}
+                    animate={{ x: isHiding || isClosed ? 0 : eyeOffset.x, y: isHiding || isClosed ? -5 : eyeOffset.y }}
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    style={{ opacity: isClosed ? 0 : 1 }}
                 />
             </div>
-            <div className="char-eye-socket">
+            <div className="char-eye-socket" style={{
+                height: isClosed ? '2px' : '14px',
+                transition: 'height 0.3s ease'
+            }}>
                 <motion.div
                     className="char-pupil"
-                    animate={{ x: isHiding ? 0 : eyeOffset.x, y: isHiding ? -5 : eyeOffset.y }}
+                    animate={{ x: isHiding || isClosed ? 0 : eyeOffset.x, y: isHiding || isClosed ? -5 : eyeOffset.y }}
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    style={{ opacity: isClosed ? 0 : 1 }}
                 />
             </div>
         </div>
@@ -99,7 +108,7 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => (
 
 export default function Signup({ onNavigate }) {
     const [formData, setFormData] = useState({
-        fullName: "", email: "", organization: "", phone: "", password: "", confirmPassword: ""
+        fullName: "", email: "", organization: "", phone: "", password: "", confirmPassword: "", profileImage: ""
     });
     const [showPassword, setShowPassword] = useState(false);
     const [agree, setAgree] = useState(false);
@@ -111,6 +120,10 @@ export default function Signup({ onNavigate }) {
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
     const illustrationRef = useRef(null);
     const [showTerms, setShowTerms] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const [activeField, setActiveField] = useState(null);
+    const typingTimeoutRef = useRef(null);
+    const [imagePreview, setImagePreview] = useState(null);
 
     useEffect(() => {
         const handleMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -118,7 +131,28 @@ export default function Signup({ onNavigate }) {
         return () => window.removeEventListener("mousemove", handleMove);
     }, []);
 
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setIsTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 500);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                setError("Image size should be less than 5MB");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+                setFormData({ ...formData, profileImage: reader.result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const updateTargetPos = (e) => {
         const rect = e.target.getBoundingClientRect();
@@ -133,7 +167,14 @@ export default function Signup({ onNavigate }) {
         setLoading(true);
         setError("");
         try {
-            await registerUser(formData.email, formData.fullName, formData.password);
+            await registerUser(
+                formData.email,
+                formData.fullName,
+                formData.password,
+                formData.phone,
+                formData.organization,
+                formData.profileImage
+            );
             setSuccess(true);
             confetti({
                 particleCount: 150,
@@ -146,7 +187,8 @@ export default function Signup({ onNavigate }) {
         finally { setLoading(false); }
     };
 
-    const isHiding = isPasswordFocused && !showPassword;
+    const isHiding = isPasswordFocused && !showPassword; // Cover eyes with hands when typing password (hidden)
+    const isClosed = showPassword && (formData.password.length > 0 || formData.confirmPassword.length > 0) && !isPasswordFocused; // Close eyes only when password is unhidden (visible)
 
     return (
         <motion.div className="auth-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -159,17 +201,51 @@ export default function Signup({ onNavigate }) {
             <div className="floating-glow glow-2" />
 
             <div className="auth-illustration">
-                <div className="character-container" ref={illustrationRef}>
-                    <motion.div className={`char char-purple ${isHiding ? 'hiding-eyes' : ''}`} animate={{ y: [0, -15, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                <div className={`character-container ${isTyping ? 'typing' : ''}`} ref={illustrationRef}>
+                    <motion.div
+                        className={`char char-purple ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            y: isTyping ? [0, -20, 0] : [0, -15, 0],
+                            rotate: isTyping ? [0, 3, -3, 0] : 0
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.6 : 4,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
-                    <motion.div className={`char char-orange ${isHiding ? 'hiding-eyes' : ''}`} animate={{ scaleY: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                    <motion.div
+                        className={`char char-orange ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            scaleY: isTyping ? [1, 1.1, 1] : [1, 1.05, 1],
+                            scaleX: isTyping ? [1, 0.95, 1] : 1
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.5 : 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
-                    <motion.div className={`char char-black ${isHiding ? 'hiding-eyes' : ''}`} animate={{ y: [0, -10, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}>
-                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} targetPos={targetPos} />
+                    <motion.div
+                        className={`char char-black ${isHiding ? 'hiding-eyes' : ''}`}
+                        animate={{
+                            y: isTyping ? [0, -15, 0] : [0, -10, 0],
+                            rotate: isTyping ? [0, -2, 2, 0] : 0
+                        }}
+                        transition={{
+                            duration: isTyping ? 0.7 : 3.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 0.5
+                        }}
+                    >
+                        <CharacterEyes mousePos={mousePos} containerRef={illustrationRef} isHiding={isHiding} isClosed={isClosed} targetPos={targetPos} />
                         <div className="char-hands"><div className="char-hand" /><div className="char-hand" /></div>
                     </motion.div>
                 </div>
@@ -189,6 +265,90 @@ export default function Signup({ onNavigate }) {
                     {success && <div style={{ color: "#22c55e", textAlign: 'center', marginBottom: "1rem" }}>Account Established! Syncing...</div>}
 
                     <form className="auth-form" onSubmit={handleSignup}>
+                        {/* Profile Image Upload */}
+                        <motion.div
+                            className="profile-upload-section"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.2 }}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                marginBottom: '1.5rem',
+                                gap: '0.75rem'
+                            }}
+                        >
+                            <input
+                                type="file"
+                                id="profileImage"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                style={{ display: 'none' }}
+                            />
+                            <label
+                                htmlFor="profileImage"
+                                style={{
+                                    cursor: 'pointer',
+                                    position: 'relative'
+                                }}
+                            >
+                                <motion.div
+                                    className="profile-image-preview"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    style={{
+                                        width: '100px',
+                                        height: '100px',
+                                        borderRadius: '50%',
+                                        background: imagePreview
+                                            ? `url(${imagePreview}) center/cover`
+                                            : 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(255, 138, 61, 0.2))',
+                                        border: '3px solid rgba(139, 92, 246, 0.3)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 8px 24px rgba(139, 92, 246, 0.2)'
+                                    }}
+                                >
+                                    {!imagePreview && (
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(139, 92, 246, 0.6)" strokeWidth="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                    )}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        right: 0,
+                                        background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: '2px solid #050508',
+                                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                                    }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                            <circle cx="12" cy="13" r="4" />
+                                        </svg>
+                                    </div>
+                                </motion.div>
+                            </label>
+                            <p style={{
+                                fontSize: '0.85rem',
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                textAlign: 'center'
+                            }}>
+                                {imagePreview ? 'Click to change photo' : 'Upload profile photo'}
+                            </p>
+                        </motion.div>
+
                         <div className="form-grid">
                             <div className="form-group">
                                 <label>Identity Name</label>

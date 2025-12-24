@@ -1,0 +1,268 @@
+/* Typing Indicator Animation */
+.typing-indicator {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.typing-indicator.active {
+    opacity: 1;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--auth-accent);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Smooth Page Entrance */
+.auth-container {
+    animation: pageEntrance 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageEntrance {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Enhanced Divider Animation */
+.divider {
+    position: relative;
+    overflow: hidden;
+}
+
+.divider::before,
+.divider::after {
+    animation: dividerGrow 1s ease-out both;
+}
+
+.divider::before {
+    animation-delay: 0.3s;
+}
+
+.divider::after {
+    animation-delay: 0.4s;
+}
+
+@keyframes dividerGrow {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* Auth Footer Animation */
+.auth-footer {
+    animation: fadeIn 1s ease-out 0.8s both;
+}
+
+/* Terms Row Animation */
+.terms-row {
+    animation: slideInLeft 0.6s ease-out 0.7s both;
+}
+
+/* Back Link Animation */
+.back-link {
+    animation: slideInRight 0.6s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Character Interaction on Typing */
+.character-container.typing {
+    animation: characterExcited 0.5s ease-in-out;
+}
+
+@keyframes characterExcited {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-10px) scale(1.02);
+    }
+}
+
+/* Success State Animation */
+.auth-form.success {
+    animation: successPulse 1s ease-in-out;
+}
+
+@keyframes successPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Loading State for Submit Button */
+.auth-submit.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.auth-submit.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: buttonSpin 0.6s linear infinite;
+}
+
+@keyframes buttonSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error Shake Animation for Form */
+.auth-form.error {
+    animation: formShake 0.5s;
+}
+
+@keyframes formShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Checkbox Animation */
+.terms-row input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    transition: all 0.3s ease;
+}
+
+.terms-row input[type="checkbox"]:checked {
+    animation: checkboxPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkboxPop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Google Button Ripple Effect */
+.google-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.google-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.google-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Particle Glow on Hover */
+.auth-particle {
+    transition: all 0.3s ease;
+}
+
+.auth-container:hover .auth-particle {
+    filter: blur(3px);
+    opacity: 0.8;
+}

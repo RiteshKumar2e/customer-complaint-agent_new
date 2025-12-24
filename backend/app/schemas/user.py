@@ -5,9 +5,18 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+    phone: Optional[str] = None
+    organization: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class UserCreate(UserBase):
     password: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    organization: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

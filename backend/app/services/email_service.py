@@ -80,26 +80,26 @@ class EmailService:
         try:
             if type == "complaint":
                 # 1. Send to User
-                subject = f"✅ Complaint Received - Ticket #{complaint_data.get('id', 'N/A')}"
+                subject = f"✅ Complaint Received - Ticket #{complaint_data.get('ticket_id', 'N/A')}"
                 html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending confirmation to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"🚨 NEW TICKET #{complaint_data.get('id', 'N/A')} - {complaint_data.get('category', 'General')}"
+                admin_subject = f"🚨 NEW TICKET #{complaint_data.get('ticket_id', 'N/A')} - {complaint_data.get('category', 'General')}"
                 admin_html = self._generate_admin_notification_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending notification to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
                 
             elif type == "resolution":
                 # 1. Send to User
-                subject = f"✅ Ticket #{complaint_data.get('id', 'N/A')} Resolved - Quickfix"
+                subject = f"✅ Ticket #{complaint_data.get('ticket_id', 'N/A')} Resolved - Quickfix"
                 html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
                 print(f"📧 Sending resolution to USER: {user_email}...")
                 self._dispatch_api(user_email, subject, html_body)
                 
                 # 2. Send to Admin
-                admin_subject = f"✅ RESOLVED: Ticket #{complaint_data.get('id', 'N/A')} - {user_name}"
+                admin_subject = f"✅ RESOLVED: Ticket #{complaint_data.get('ticket_id', 'N/A')} - {user_name}"
                 admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
                 print(f"📧 Sending resolution alert to ADMIN...")
                 self._dispatch_api(self.admin_email, admin_subject, admin_html)
@@ -265,6 +265,7 @@ class EmailService:
     # ------------------------------------------------------------------
     
     def _generate_confirmation_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
+        ticket_id = complaint_data.get('ticket_id', 'N/A')
         category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
         complaint_text = complaint_data.get('complaint_text', 'N/A')
@@ -297,7 +298,7 @@ class EmailService:
                                 🎯 Quickfix Support
                             </h1>
                             <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 14px;">
-                                Your Complaint Has Been Received
+                                Ticket ID: {ticket_id}
                             </p>
                         </td>
                     </tr>
@@ -607,6 +608,7 @@ class EmailService:
                                             Ticket ID
                                         </p>
                                         <h2 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">
+                                            {complaint_data.get('ticket_id', 'N/A')}
                                         </h2>
                                     </td>
                                     <td style="width: 50%; text-align: right;">

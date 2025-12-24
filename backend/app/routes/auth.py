@@ -8,13 +8,35 @@ from app.db.database import get_db
 from app.db.models import User
 from app.schemas.user import (
     UserCreate, UserLogin, PasswordLogin, ForgotPassword, 
-    ResetPassword, OTPVerify, UserResponse, Token, GoogleAuth
+    ResetPassword, OTPVerify, UserResponse, Token, GoogleAuth, UserUpdate
 )
 from app.services.email_service import email_service
 from jose import jwt
 import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# ... (rest of imports)
+
+@router.patch("/update-profile", response_model=UserResponse)
+def update_profile(email: str, data: UserUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if data.full_name is not None:
+        user.full_name = data.full_name
+    if data.phone is not None:
+        user.phone = data.phone
+    if data.organization is not None:
+        user.organization = data.organization
+    if data.profile_image is not None:
+        user.profile_image = data.profile_image
+        
+    db.commit()
+    db.refresh(user)
+    return user
+
 
 # JWT Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-keep-it-safe")
@@ -58,6 +80,9 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         email=user_data.email,
         full_name=user_data.full_name,
+        phone=user_data.phone,
+        organization=user_data.organization,
+        profile_image=user_data.profile_image,
         hashed_password=hashed_pwd,
         is_active=True
     )

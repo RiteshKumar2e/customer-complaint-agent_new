@@ -120,6 +120,14 @@
   cursor: not-allowed;
 }
 
+.readonly-input {
+  background: rgba(15, 23, 42, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  cursor: default !important;
+  pointer-events: none;
+}
+
 /* ===== SELECT STYLING ===== */
 
 .form-select {

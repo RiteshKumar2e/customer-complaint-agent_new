@@ -12,6 +12,7 @@ class ComplaintRequest(BaseModel):
 
 class ComplaintResponse(BaseModel):
     """Response schema with AI analysis results"""
+    ticket_id: Optional[str] = None
     category: str
     priority: str
     response: str
@@ -25,6 +26,7 @@ class ComplaintResponse(BaseModel):
 class ComplaintDB(BaseModel):
     """Database schema for storing complaint"""
     id: int
+    ticket_id: Optional[str] = None
     complaint_text: str
     category: str
     priority: str
