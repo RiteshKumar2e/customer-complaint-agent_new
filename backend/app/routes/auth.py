@@ -5,7 +5,7 @@ import random
 import string
 import hashlib
 from passlib.context import CryptContext
-from app.db.database import get_db
+from app.db.database import get_db, get_ist_time
 from app.db.models import User
 from app.schemas.user import (
     UserCreate, UserLogin, PasswordLogin, ForgotPassword, 
@@ -69,7 +69,7 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = get_ist_time() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -117,7 +117,7 @@ def request_otp(data: UserLogin, db: Session = Depends(get_db)):
     
     otp = generate_otp()
     user.otp = otp
-    user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+    user.otp_expiry = get_ist_time() + timedelta(minutes=10)
     db.commit()
     
     email_service.send_otp(user.email, otp)
@@ -132,7 +132,7 @@ def verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
     if user.otp != data.otp:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
-    if datetime.utcnow() > user.otp_expiry:
+    if get_ist_time() > user.otp_expiry:
         raise HTTPException(status_code=400, detail="OTP expired")
     
     # Clear OTP
@@ -167,7 +167,7 @@ def google_auth(data: GoogleAuth, db: Session = Depends(get_db)):
     # Generate and send OTP
     otp = generate_otp()
     user.otp = otp
-    user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+    user.otp_expiry = get_ist_time() + timedelta(minutes=10)
     db.commit()
     
     email_service.send_otp(user.email, otp)
@@ -189,7 +189,7 @@ def google_verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
     if user.otp != data.otp:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
-    if datetime.utcnow() > user.otp_expiry:
+    if get_ist_time() > user.otp_expiry:
         raise HTTPException(status_code=400, detail="OTP expired")
     
     # Clear OTP
@@ -248,7 +248,7 @@ def forgot_password(data: ForgotPassword, db: Session = Depends(get_db)):
     # Generate reset token
     reset_token = generate_reset_token()
     user.otp = reset_token  # Reuse OTP field for reset token
-    user.otp_expiry = datetime.utcnow() + timedelta(hours=1)  # 1 hour validity
+    user.otp_expiry = get_ist_time() + timedelta(hours=1)  # 1 hour validity
     db.commit()
     
     # Send reset email
@@ -268,7 +268,7 @@ def reset_password(data: ResetPassword, db: Session = Depends(get_db)):
     if user.otp != data.reset_token:
         raise HTTPException(status_code=400, detail="Invalid reset link")
     
-    if datetime.utcnow() > user.otp_expiry:
+    if get_ist_time() > user.otp_expiry:
         raise HTTPException(status_code=400, detail="Reset link expired. Please request a new one.")
     
     # Update password

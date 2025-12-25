@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.agents.orchestrator import run_agent_pipeline
-from app.db.database import get_db
+from app.db.database import get_db, get_ist_time
 from app.db.models import Complaint
 from app.schemas.complaint import ComplaintRequest, ComplaintResponse
 from app.services.email_service import email_service
@@ -37,7 +37,7 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
         similar = result.get("similar_issues", "")
 
         # Generate Professional Ticket ID (e.g. QX-20231027-A1B2)
-        date_str = datetime.datetime.now().strftime("%Y%m%d")
+        date_str = get_ist_time().strftime("%Y%m%d")
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
         ticket_id = f"QX-{date_str}-{random_str}"
 

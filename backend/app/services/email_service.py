@@ -4,6 +4,7 @@ import traceback
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+from app.db.database import get_ist_time
 
 load_dotenv()
 
@@ -225,7 +226,7 @@ class EmailService:
                     <tr>
                         <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
                             <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                                © {datetime.now().year} Quickfix. Secure Multi-Agent Intelligence.
+                                © {get_ist_time().year} Quickfix. Secure Multi-Agent Intelligence.
                             </p>
                         </td>
                     </tr>
@@ -285,7 +286,7 @@ class EmailService:
         sentiment = complaint_data.get('sentiment', 'Analyzing...')
         response = complaint_data.get('response', 'Processing your request...')
         solution = complaint_data.get('solution', 'Generating solution...')
-        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         
         priority_colors = {"High": "#dc2626", "Medium": "#f59e0b", "Low": "#10b981"}
         priority_color = priority_colors.get(priority, "#3b82f6")
@@ -558,7 +559,7 @@ class EmailService:
                                 Thank you for choosing Quickfix!
                             </p>
                             <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">
-                                © {datetime.now().year} Quickfix. All rights reserved.
+                                © {get_ist_time().year} Quickfix. All rights reserved.
                             </p>
                         </td>
                     </tr>
@@ -579,7 +580,7 @@ class EmailService:
         sentiment = complaint_data.get('sentiment', 'N/A')
         response = complaint_data.get('response', 'N/A')
         solution = complaint_data.get('solution', 'N/A')
-        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         
         priority_colors = {"High": "#dc2626", "Medium": "#f59e0b", "Low": "#10b981"}
         priority_color = priority_colors.get(priority, "#3b82f6")

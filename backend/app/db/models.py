@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
 from datetime import datetime
-from app.db.database import Base
+from app.db.database import Base, get_ist_time
 
 class User(Base):
     """User model for authentication"""
@@ -17,7 +17,7 @@ class User(Base):
     otp = Column(String(255), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_ist_time)
 
 class Complaint(Base):
     """Complaint model for storing customer complaints and AI analysis results"""
@@ -36,8 +36,8 @@ class Complaint(Base):
     satisfaction_prediction = Column(String(20))  # High, Medium, Low
     action = Column(String(255))  # Recommended action
     similar_complaints = Column(Text)  # References to similar issues
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=get_ist_time, index=True)
+    updated_at = Column(DateTime, default=get_ist_time, onupdate=get_ist_time)
     is_resolved = Column(Boolean, default=False)
     
     def __repr__(self):

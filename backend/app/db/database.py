@@ -1,9 +1,15 @@
 import os
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def get_ist_time():
+    """Helper to get current time in IST (UTC+5:30)"""
+    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+
 
 # ✅ Read DATABASE_URL from environment (Render / Local)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
