@@ -15,7 +15,7 @@ def init_db():
     print("🗄️  Initializing database...")
     
     # Get database URL from environment or use default
-    db_url = os.getenv("DATABASE_URL=mysql://root:password@localhost:3306/complaints")
+    db_url = os.getenv("DATABASE_URL")
     print(f"📍 Using database: {db_url}")
     
 

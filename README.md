@@ -423,25 +423,40 @@ Create a `.env` file in the `backend/` directory:
 # Google Gemini API Configuration
 GEMINI_API_KEY=your_google_gemini_api_key
 
-# Email Configuration (Gmail)
-SENDER_EMAIL=your-gmail@gmail.com
-SENDER_PASSWORD=your-gmail-app-password
+# Database Configuration (Render PostgreSQL Recommended)
+# My code automatically converts 'postgres://' to 'postgresql://' for you!
+DATABASE_URL=postgres://user:password@host:port/dbname
 
-# Database Configuration
-DATABASE_URL=sqlite:///./complaints.db
+# Email Configuration (Brevo Recommended)
+BREVO_API_KEY=your_brevo_api_key
+SENDER_EMAIL=your-verified-sender@domain.com
+ADMIN_EMAIL=admin@yourdomain.com
 
-# Redis Configuration (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-
-# Server Configuration (optional)
+# Server Configuration
 HOST=0.0.0.0
-PORT=8000
-
-# CORS Settings (optional)
-ALLOWED_ORIGINS=http://localhost:5174,http://localhost:3000
+PORT=10000
 ```
+
+### ☁️ Render Deployment Guide (Recommended)
+
+To ensure your data survives restarts and emails are delivered reliably, follow these steps:
+
+#### 1. Database (PostgreSQL)
+1. In Render, click **New + > PostgreSQL**.
+2. Copy the **Internal Database URL**.
+3. Add it as `DATABASE_URL` in your Web Service Environment Variables.
+4. **Note:** Our code handles the `postgres://` vs `postgresql://` difference automatically!
+
+#### 2. Email (Brevo)
+1. Sign up at [Brevo.com](https://www.brevo.com/).
+2. Get your **SMTP API Key**.
+3. **Important:** Go to "Senders & IPs" and verify the email address you will use as `SENDER_EMAIL`.
+4. Add `BREVO_API_KEY` and `SENDER_EMAIL` to Render Environment Variables.
+
+#### 3. Web Service Setup
+1. Use **Build Command:** `pip install -r backend/requirements.txt`
+2. Use **Start Command:** `python start_backend.py` (which is now optimized for Render).
+3. Set the Environment Variables listed above.
 
 ### Email Setup (Gmail)
 

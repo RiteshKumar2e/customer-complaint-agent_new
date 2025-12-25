@@ -6,15 +6,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ✅ Read DATABASE_URL from environment (Render / Local)
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///complaints.db"   # fallback
-)
-
-# ✅ Fix MySQL driver if needed
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
 
-if DATABASE_URL.startswith("mysql://"):
+# ✅ Render uses 'postgres://' which SQLAlchemy requires 'postgresql://'
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# ✅ Fix MySQL driver if needed
+elif DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
 
 
