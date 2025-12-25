@@ -50,3 +50,28 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def run_migrations():
+    """Add missing columns to existing tables if they don't exist"""
+    from sqlalchemy import text
+    
+    new_columns = [
+        ("bio", "TEXT"),
+        ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
+        ("location", "VARCHAR(100) DEFAULT 'India'")
+    ]
+    
+    with engine.connect() as conn:
+        for col_name, col_type in new_columns:
+            try:
+                # SQLite and Postgres have different ALTER TABLE syntax but this works for simple column additions
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+                print(f"✅ Added missing column: {col_name}")
+            except Exception as e:
+                # Ignore errors if column already exists
+                error_str = str(e).lower()
+                if "already exists" in error_str or "duplicate column" in error_str:
+                    pass
+                else:
+                    print(f"⚠️ Note on column {col_name}: {e}")

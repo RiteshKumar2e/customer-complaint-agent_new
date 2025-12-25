@@ -10,6 +10,10 @@ from app.routes.auth import router as auth_router
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
+# Run custom migrations (add missing columns)
+from app.db.database import run_migrations
+run_migrations()
+
 app = FastAPI(title="Quickfix Agentic AI")
 
 app.add_middleware(
