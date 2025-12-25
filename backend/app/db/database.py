@@ -75,3 +75,15 @@ def run_migrations():
                     pass
                 else:
                     print(f"⚠️ Note on column {col_name}: {e}")
+        
+        # ✅ Auto-set Ritesh Kumar as Admin
+        admin_email = "riteshkumar90359@gmail.com"
+        try:
+            conn.execute(
+                text("UPDATE users SET role = 'Admin', full_name = 'Ritesh Kumar' WHERE email = :email"),
+                {"email": admin_email}
+            )
+            conn.commit()
+            print(f"👑 Admin role verified for: {admin_email}")
+        except Exception as e:
+            print(f"⚠️ Could not set auto-admin: {e}")

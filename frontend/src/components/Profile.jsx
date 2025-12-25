@@ -223,6 +223,20 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                             </svg>
                             Feedback
                         </motion.button>
+                        {user?.role === "Admin" && (
+                            <motion.button
+                                className="nav-btn admin-panel-btn"
+                                onClick={() => onNavigate("admin")}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{ color: "var(--secondary)", borderColor: "var(--secondary)" }}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg>
+                                Admin Panel
+                            </motion.button>
+                        )}
                     </nav>
 
                     <div className="header-right">

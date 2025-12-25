@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./../styles/Landing.css";
 import CookieConsent from "./CookieConsent";
 
-export default function Landing({ user, onStart, onDashboard }) {
+export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'privacy' or 'terms'
@@ -159,15 +159,25 @@ export default function Landing({ user, onStart, onDashboard }) {
           <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
           <div className="mobile-auth-buttons">
             <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
-              {user ? "Dashboard" : "Sign in"}
+              {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign in")}
             </button>
+            {!user && (
+              <button className="btn-admin admin-special" onClick={() => { onAdminLogin(); setIsMenuOpen(false); }} style={{ marginTop: '10px', background: 'var(--secondary)' }}>
+                Admin Login
+              </button>
+            )}
           </div>
         </nav>
 
-        <div className="auth-buttons">
+        <div className="auth-buttons" style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn-admin" onClick={onStart}>
-            {user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign in"}
+            {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign in")}
           </button>
+          {!user && (
+            <button className="btn-admin admin-special" onClick={onAdminLogin} style={{ background: 'linear-gradient(135deg, #ff8a3d, #ff6b1a)', border: 'none' }}>
+              Admin Access
+            </button>
+          )}
         </div>
       </header>
 

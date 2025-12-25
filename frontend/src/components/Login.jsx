@@ -62,7 +62,7 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }
     );
 };
 
-export default function Login({ onNavigate, onLoginSuccess }) {
+export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
@@ -112,6 +112,13 @@ export default function Login({ onNavigate, onLoginSuccess }) {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
+        // 👑 Strict check for Admin Portal
+        if (isAdminMode && email.toLowerCase() !== "riteshkumar90359@gmail.com") {
+            setError("Access Violation: You are not authorized to access the Admin Neural Core.");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
@@ -150,6 +157,13 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                 });
                 const userInfo = await userInfoResponse.json();
+
+                // 👑 Critical Admin Security Check
+                if (isAdminMode && userInfo.email.toLowerCase() !== "riteshkumar90359@gmail.com") {
+                    setError("Security Alert: Unauthorized account detected for administrative sync.");
+                    setLoading(false);
+                    return;
+                }
 
                 // Send email to backend to trigger OTP
                 const response = await googleAuth(userInfo.email, userInfo.name);
@@ -285,8 +299,8 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                         >
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                         </motion.div>
-                        <h2 className="auth-title">Welcome Back</h2>
-                        <p className="auth-subtitle">Log in to your profile</p>
+                        <h2 className="auth-title">{isAdminMode ? "Admin Access" : "Welcome Back"}</h2>
+                        <p className="auth-subtitle">{isAdminMode ? "Restricted administrative login" : "Log in to your profile"}</p>
                     </div>
 
                     {error && (
@@ -357,7 +371,7 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                             transition={{ delay: 0.2 }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <label>Password</label>
+                                <label>Enter Password</label>
                                 <span className="auth-link" style={{ fontSize: '0.85rem' }} onClick={() => onNavigate("forgot-password")}>Forgot Access?</span>
                             </div>
                             <div className="input-wrapper">
@@ -440,9 +454,11 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                         </motion.button>
                     </form>
 
-                    <div className="auth-footer">
-                        Don't have an account? <span className="auth-link" onClick={() => onNavigate("signup")}>Signup</span>
-                    </div>
+                    {!isAdminMode && (
+                        <div className="auth-footer">
+                            Don't have an account? <span className="auth-link" onClick={() => onNavigate("signup")}>Signup</span>
+                        </div>
+                    )}
                 </motion.div>
             </div >
 

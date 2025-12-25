@@ -10,6 +10,7 @@ import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
+import AdminDashboard from "./components/AdminDashboard";
 import { getAllComplaints } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
@@ -33,6 +34,7 @@ export default function App() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Check for existing session and URL routes
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function App() {
     localStorage.removeItem("user");
     localStorage.removeItem("lastPage");
     setUser(null);
+    setIsAdminMode(false); // Reset admin mode on logout
     navigateTo("landing");
   };
 
@@ -110,8 +113,15 @@ export default function App() {
       <>
         <Landing
           user={user}
-          onStart={() => user ? navigateTo("profile") : navigateTo("login")}
-          onDashboard={() => user ? navigateTo("profile") : navigateTo("login")}
+          onStart={() => {
+            setIsAdminMode(false);
+            user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login");
+          }}
+          onAdminLogin={() => {
+            setIsAdminMode(true);
+            navigateTo("login");
+          }}
+          onDashboard={() => user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login")}
           onFeedback={() => setFeedbackOpen(true)}
         />
         <NotificationCenter />
@@ -128,11 +138,16 @@ export default function App() {
   if (page === "login") {
     return (
       <Login
-        onNavigate={navigateTo}
+        onNavigate={(p) => {
+          setIsAdminMode(false);
+          navigateTo(p);
+        }}
         onLoginSuccess={(userData) => {
           setUser(userData);
-          navigateTo("profile");
+          setIsAdminMode(false);
+          userData.role === "Admin" ? navigateTo("admin") : navigateTo("profile");
         }}
+        isAdminMode={isAdminMode}
       />
     );
   }
@@ -192,6 +207,17 @@ export default function App() {
     );
   }
 
+
+  // Admin Dashboard Page
+  if (page === "admin") {
+    return (
+      <AdminDashboard
+        user={user}
+        onNavigate={navigateTo}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   // Complaint Form Page
   return (

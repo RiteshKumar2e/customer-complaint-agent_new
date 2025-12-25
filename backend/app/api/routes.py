@@ -100,18 +100,19 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
 
 @router.get("/complaints")
 def get_all_complaints(email: str = None, db: Session = Depends(get_db)):
-    """Get complaints for a specific user. Email is required for privacy."""
+    """Get complaints. Normal users see only their own. Admins see all."""
     try:
         if not email:
-            # If no email is provided, we return an empty list for privacy
-            # This ensures users only see their own data
-            return {
-                "total": 0,
-                "complaints": []
-            }
+            return {"total": 0, "complaints": []}
             
-        query = db.query(Complaint).filter(Complaint.email == email)
-        complaints = query.all()
+        # Check if user is admin
+        from app.db.models import User
+        user = db.query(User).filter(User.email == email).first()
+        
+        if user and user.role == "Admin":
+            complaints = db.query(Complaint).all()
+        else:
+            complaints = db.query(Complaint).filter(Complaint.email == email).all()
         
         return {
             "total": len(complaints),
