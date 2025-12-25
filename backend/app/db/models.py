@@ -31,7 +31,8 @@ class Complaint(Base):
     name = Column(String(100), nullable=False)  # Customer name
     email = Column(String(100), nullable=False, index=True)  # Customer email
     subject = Column(String(255), nullable=True) # Complaint Subject
-    description = Column(Text, nullable=False)  # Detailed Complaint Description
+    description = Column(Text, nullable=True)  # Detailed Complaint Description
+    complaint_text = Column(Text, nullable=True) # Legacy field for DB compatibility
     category = Column(String(50), nullable=False)  # Billing, Technical, Delivery, Service, Security
     priority = Column(String(20), nullable=False)  # High, Medium, Low
     sentiment = Column(String(20))  # Positive, Neutral, Negative, Angry

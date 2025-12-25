@@ -82,8 +82,18 @@ def run_migrations():
                 conn.commit()
             except Exception:
                 conn.rollback()
+
+        # ✅ Ensure complaint_text is nullable for legacy compatibility
+        try:
+            conn.execute(text("ALTER TABLE complaints ALTER COLUMN complaint_text DROP NOT NULL"))
+            conn.commit()
+        except Exception:
+            try:
+                # SQLite doesn't support ALTER COLUMN DROP NOT NULL, skip it there
+                conn.rollback()
+            except: pass
         
-        # ✅ Auto-set Ritesh Kumar as Admin
+        # ✅ Manual fallback if Postgres/MySQL fails
         admin_email = "riteshkumar90359@gmail.com"
         try:
             conn.execute(

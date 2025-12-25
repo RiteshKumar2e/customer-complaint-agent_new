@@ -48,6 +48,7 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
             email=data.email,
             subject=data.subject,
             description=data.description,
+            complaint_text=data.description, # Mirror to legacy field for DB compatibility
             category=category,
             priority=priority,
             response=response,
