@@ -33,6 +33,12 @@ def update_profile(email: str, data: UserUpdate, db: Session = Depends(get_db)):
         user.organization = data.organization
     if data.profile_image is not None:
         user.profile_image = data.profile_image
+    if data.bio is not None:
+        user.bio = data.bio
+    if data.role is not None:
+        user.role = data.role
+    if data.location is not None:
+        user.location = data.location
         
     db.commit()
     db.refresh(user)

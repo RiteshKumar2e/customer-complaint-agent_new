@@ -8,6 +8,9 @@ class UserBase(BaseModel):
     phone: Optional[str] = None
     organization: Optional[str] = None
     profile_image: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = "Strategic Member"
+    location: Optional[str] = "India"
 
 class UserCreate(UserBase):
     password: Optional[str] = None
@@ -17,6 +20,9 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     organization: Optional[str] = None
     profile_image: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = None
+    location: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

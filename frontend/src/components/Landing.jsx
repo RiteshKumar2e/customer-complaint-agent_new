@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import "./../styles/Landing.css";
+import CookieConsent from "./CookieConsent";
 
-export default function Landing({ onStart, onDashboard }) {
+export default function Landing({ user, onStart, onDashboard }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'privacy' or 'terms'
@@ -157,12 +158,16 @@ export default function Landing({ onStart, onDashboard }) {
           <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
           <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
           <div className="mobile-auth-buttons">
-            <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>Sign in</button>
+            <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
+              {user ? "Dashboard" : "Sign in"}
+            </button>
           </div>
         </nav>
 
         <div className="auth-buttons">
-          <button className="btn-admin" onClick={onStart}>Sign in</button>
+          <button className="btn-admin" onClick={onStart}>
+            {user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign in"}
+          </button>
         </div>
       </header>
 
@@ -583,6 +588,9 @@ export default function Landing({ onStart, onDashboard }) {
           </button>
         )
       }
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   );
 }

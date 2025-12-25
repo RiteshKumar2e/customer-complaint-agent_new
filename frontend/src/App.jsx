@@ -16,7 +16,17 @@ import "./App.css";
 import "./styles/Profile.css";
 
 export default function App() {
-  const [page, setPage] = useState("landing");
+  const [page, setPage] = useState(() => {
+    // Initial page load from localStorage if logged in
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    const lastPage = localStorage.getItem("lastPage");
+
+    if (savedUser && token && lastPage) {
+      return lastPage;
+    }
+    return "landing";
+  });
   const [user, setUser] = useState(null);
   const [result, setResult] = useState(null);
   const [showChatbot, setShowChatbot] = useState(false);
@@ -37,6 +47,11 @@ export default function App() {
       setPage("reset-password");
     }
   }, []);
+
+  // Save lastPage to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("lastPage", page);
+  }, [page]);
 
   // Load complaints from database
   useEffect(() => {
@@ -79,6 +94,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("lastPage");
     setUser(null);
     navigateTo("landing");
   };
@@ -92,6 +108,7 @@ export default function App() {
     return (
       <>
         <Landing
+          user={user}
           onStart={() => user ? navigateTo("profile") : navigateTo("login")}
           onDashboard={() => user ? navigateTo("profile") : navigateTo("login")}
           onFeedback={() => setFeedbackOpen(true)}

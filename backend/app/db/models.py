@@ -17,6 +17,9 @@ class User(Base):
     otp = Column(String(255), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
+    bio = Column(Text, nullable=True)
+    role = Column(String(100), default="Strategic Member")
+    location = Column(String(100), default="India")
     created_at = Column(DateTime, default=get_ist_time)
 
 class Complaint(Base):

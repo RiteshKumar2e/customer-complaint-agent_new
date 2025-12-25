@@ -103,7 +103,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
             const updatedUser = await updateProfile(user.email, profileForm);
             localStorage.setItem("user", JSON.stringify(updatedUser));
             setIsEditingProfile(false);
-            window.location.reload();
+            window.location.reload(); // App.jsx persistence will keep us on profile
         } catch (error) {
             console.error("Error updating profile:", error);
             alert("Failed to update profile");
@@ -158,6 +158,8 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                         <motion.div
                             className="logo"
                             whileHover={{ scale: 1.05, rotate: 5 }}
+                            onClick={() => onNavigate("landing")}
+                            style={{ cursor: "pointer" }}
                         >
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -598,6 +600,16 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                                 <div className="detail-value">
                                                     {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "Recently Joined"}
                                                 </div>
+                                            </div>
+
+                                            <div className="detail-row">
+                                                <div className="detail-label">
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                    </svg>
+                                                    Network Role
+                                                </div>
+                                                <div className="detail-value">{user?.role || "Strategic Member"}</div>
                                             </div>
 
                                             <div className="detail-row">
