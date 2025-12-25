@@ -21,6 +21,7 @@ class ComplaintResponse(BaseModel):
     solution: str
     satisfaction: str
     similar_issues: str
+    steps: Optional[list] = None
 
 
 class ComplaintDB(BaseModel):

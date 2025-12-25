@@ -1,47 +1,17 @@
-from app.agents.gemini_client import ask_gemini
+from app.agents.gemini_client import async_ask_gemini
 
-
-def predict_satisfaction(response: str, priority: str, category: str) -> str:
-    """
-    Predicts likelihood customer will be satisfied with proposed response.
-    Returns: High | Medium | Low
-    """
-
+async def predict_satisfaction(response: str, priority: str, category: str) -> str:
     if not response or not response.strip():
         return "Low"
 
-    # Rule-based fallback
-    if priority == "High":
-        if any(word in response.lower() for word in ["immediately", "urgent", "escalate", "manager"]):
-            return "High"
-        else:
-            return "Low"
-
-    if any(word in response.lower() for word in ["apology", "sorry", "will help", "resolve", "fix", "refund", "compensation"]):
-        satisfaction = "High"
-    elif any(word in response.lower() for word in ["will investigate", "review", "pending"]):
-        satisfaction = "Medium"
-    else:
-        satisfaction = "Low"
-
-    # Use Gemini for more sophisticated analysis
-    prompt = f"""
-Based on this customer complaint and our response, predict customer satisfaction level.
-
+    prompt = f"""Based on this customer complaint and our response, predict customer satisfaction level.
 Response: {response}
 Priority: {priority}
 Category: {category}
-
-Return ONE word only: High, Medium, or Low
-
-Consider: Is the response empathetic? Does it offer concrete solutions? Is it timely?
-"""
-
+Return ONE word only: High, Medium, or Low"""
     try:
-        result = ask_gemini(prompt).strip()
+        result = await async_ask_gemini(prompt)
         allowed = {"High", "Medium", "Low"}
-        return result if result in allowed else satisfaction
-
-    except Exception:
-        return satisfaction
-
+        return result.strip() if result.strip() in allowed else "Medium"
+    except:
+        return "Medium"

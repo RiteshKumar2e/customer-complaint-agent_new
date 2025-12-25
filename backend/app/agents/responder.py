@@ -4,15 +4,10 @@ import google.generativeai as genai
 
 load_dotenv()
 
-# -------------------------------
-# Gemini Configuration
-# -------------------------------
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    
-    # ✅ Robust Model Selection (Trying 7 different models for best response)
     SUPPORTED_MODELS = [
        "gemini-2.0-flash-exp",
         "gemini-2.0-flash",
@@ -20,7 +15,7 @@ if GEMINI_API_KEY:
         "gemini-2.0-flash-lite",
         "gemini-flash-latest",
         "gemini-pro-latest",
-        "gemma-3-27b-it"
+        "gemma-3-27b-it",
         "gemini-3-flash-preview",
         "gemini-robotics-er-1.5-preview",
         "deep-research-pro-preview-12-2025"
@@ -29,20 +24,14 @@ if GEMINI_API_KEY:
     def initialize_best_model():
         for m_name in SUPPORTED_MODELS:
             try:
-                # Basic check to avoid immediate failures
                 return genai.GenerativeModel(m_name)
             except:
                 continue
         return genai.GenerativeModel("gemini-2.5-flash")
-
     model = initialize_best_model()
 else:
     model = None
 
-
-# -------------------------------
-# Fallback Responder
-# -------------------------------
 def fallback_response(category: str) -> str:
     responses = {
         "Billing": "We understand your concern regarding billing. Our team is reviewing your issue and will assist you shortly.",
@@ -54,43 +43,20 @@ def fallback_response(category: str) -> str:
     }
     return responses.get(category, responses["Other"])
 
-
-# -------------------------------
-# Main Responder
-# -------------------------------
-def generate_response(category: str, text: str) -> str:
-    """
-    Generates a user-facing response for the complaint.
-    """
-
+async def generate_response(category: str, text: str) -> str:
     if not text or not text.strip():
         return fallback_response(category)
-
-    # 🚨 Gemini unavailable → fallback
     if model is None:
         return fallback_response(category)
-
-    prompt = f"""
-You are a professional customer support assistant.
-
-Complaint:
-{text}
-
-Category:
-{category}
-
-Write a polite, professional, and reassuring response in 2–3 sentences.
-"""
-
+    prompt = f"""You are a professional customer support assistant.
+Complaint: {text}
+Category: {category}
+Write a polite, professional, and reassuring response in 2–3 sentences."""
     try:
-        response = model.generate_content(prompt)
-
+        response = await model.generate_content_async(prompt)
         if not response or not response.text:
             return fallback_response(category)
-
         return response.text.strip()
-
     except Exception as e:
-        # 🔥 Gemini failure → fallback instead of 500 error
-        print(f"Gemini generation error: {e}") # Helpful for debugging logs
+        print(f"Gemini generation error: {e}")
         return fallback_response(category)

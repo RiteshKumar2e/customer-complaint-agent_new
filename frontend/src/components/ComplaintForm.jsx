@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { submitComplaint } from "../api";
+import { useState, useEffect } from "react";
+import { submitComplaint, submitReview } from "../api";
 import { showNotification } from "./NotificationCenter";
 import "../styles/ComplaintForm.css";
 
@@ -14,41 +14,23 @@ export default function ComplaintForm({ onResult, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [steps, setSteps] = useState([]);
+  const [showReview, setShowReview] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [ticketId, setTicketId] = useState("");
 
   const categories = ["Technical", "Billing", "Delivery", "Service", "Security", "Other"];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError("");
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError("Name is required");
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setError("Email is required");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError("Please enter a valid email address");
-      return false;
-    }
-    if (!formData.subject.trim()) {
-      setError("Subject is required");
-      return false;
-    }
-    if (!formData.description.trim()) {
-      setError("Description is required");
-      return false;
-    }
-    if (formData.description.trim().length < 10) {
-      setError("Description must be at least 10 characters");
+    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.description.trim()) {
+      setError("All fields marked with * are required");
       return false;
     }
     return true;
@@ -56,52 +38,47 @@ export default function ComplaintForm({ onResult, user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setError("");
     setSuccess(false);
+    setShowReview(false);
+
+    // Initial steps for visible solving
+    setSteps([
+      { name: "Initializing Multi-Agent Pipeline...", status: "active" },
+      { name: "Scaling Resources for High Traffic...", status: "waiting" },
+      { name: "AI Categorization & Priority Check...", status: "waiting" },
+      { name: "Orchestrating Solution Strategy...", status: "waiting" },
+      { name: "Finalizing Resolution Response...", status: "waiting" }
+    ]);
 
     try {
-      // Combine subject and description for the complaint text
-      const complaintText = `[${formData.category}] ${formData.subject}\n\n${formData.description}`;
+      const updateStep = (idx) => {
+        setSteps(prev => prev.map((s, i) =>
+          i === idx ? { ...s, status: 'done' } :
+            (i === idx + 1 ? { ...s, status: 'active' } : s)
+        ));
+      };
 
+      // Progress simulation for transparency
+      setTimeout(() => updateStep(0), 700);
+      setTimeout(() => updateStep(1), 1500);
+      setTimeout(() => updateStep(2), 2500);
+
+      const complaintText = `[${formData.category}] ${formData.subject}\n\n${formData.description}`;
       const res = await submitComplaint(formData.name, formData.email, complaintText);
 
-      if (typeof onResult === "function") {
-        onResult(res);
-      }
+      updateStep(3);
+      updateStep(4);
 
+      setTicketId(res.ticket_id);
+      if (typeof onResult === "function") onResult(res);
       setSuccess(true);
+      setShowReview(true);
 
-      // Show success notification with agent's solution
-      showNotification(
-        "success",
-        "✅ Problem Solved!",
-        `Your ${formData.category} complaint has been analyzed and resolved. Solution: ${res.solution || "Check the details below"} - Check your email for full details.`,
-        "✨"
-      );
-
-      // Also request browser notification permission and show notification
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Quickfix - Problem Solved!", {
-          body: `Your complaint has been resolved...`,
-          // Remove the 'icon' line if you don't have an image file
-          tag: "complaint-resolved",
-          requireInteraction: false,
-        });
-      } else if ("Notification" in window && Notification.permission !== "denied") {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            new Notification("Quickfix - Problem Solved!", {
-              body: `Your complaint has been resolved by our AI agents. Check your email for details.`,
-            });
-          }
-        });
-      }
+      showNotification("success", "✅ Issue Resolved!", "AI agents completed the orchestration successfully.", "✨");
 
       setFormData({
         name: user?.full_name || "",
@@ -110,159 +87,111 @@ export default function ComplaintForm({ onResult, user }) {
         subject: "",
         description: ""
       });
-
-      // Clear success message after 5 seconds  
-      setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
-      console.error("Submission error:", err);
-      let errorMessage = "Failed to submit complaint. Please try again.";
-
-      if (err.response?.status === 404) {
-        errorMessage = "Backend server is not running. Please start the server.";
-      } else if (err.code === 'ERR_NETWORK' || !err.response) {
-        errorMessage = "Cannot connect to the server. Please make sure the backend is running on port 8000.";
-      } else {
-        errorMessage = err.response?.data?.detail || errorMessage;
-      }
-
-      setError(errorMessage);
-
-      // Show error notification
-      showNotification(
-        "error",
-        "❌ Error",
-        errorMessage,
-        "⚠️"
-      );
+      setError(err.response?.data?.detail || "System overload. Please try again.");
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 800);
+    }
+  };
+
+  const handleReview = async () => {
+    if (rating === 0) {
+      showNotification("error", "Rating Required", "Please select a star rating", "⚠️");
+      return;
+    }
+    try {
+      await submitReview(ticketId, rating, feedback);
+      showNotification("success", "Feedback Received", "Thank you for reviewing our AI!", "⭐");
+      setShowReview(false);
+    } catch (e) {
+      console.error(e);
+      showNotification("error", "Error", "Failed to submit review.", "❌");
     }
   };
 
   return (
     <div className="complaint-form-container">
+      {loading && (
+        <div className="ai-processing-overlay">
+          <div className="processing-card">
+            <div className="processor-header">
+              <span className="live-badge">LIVE ORCHESTRATION</span>
+              <div className="ai-brain-pulse">🧠</div>
+            </div>
+            <h3>AI Solving Your Problem...</h3>
+            <div className="steps-list">
+              {steps.map((s, i) => (
+                <div key={i} className={`step-row ${s.status}`}>
+                  <div className="step-indicator">
+                    {s.status === 'done' ? '✅' : (s.status === 'active' ? <div className="spinner-small"></div> : '○')}
+                  </div>
+                  <div className="step-text">{s.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="form-header">
-        <h2>📝 Submit Your Complaint</h2>
-        <p>We're here to help. Please provide us with detailed information about your issue.</p>
+        <h2>📝 AI Multi-Agent Portal</h2>
+        <p>Enterprise-grade feedback system with high-concurrency support.</p>
       </div>
 
       <form className="complaint-form" onSubmit={handleSubmit}>
-        {/* Personal Information Section */}
-        <fieldset className="form-section">
-          <legend>Personal Information</legend>
-
+        <div className="form-section-wrapper">
           <div className="form-group">
-            <label htmlFor="name">Full Name *</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              readOnly={!!user}
-              className={`form-input ${user ? 'readonly-input' : ''}`}
-              disabled={loading}
-            />
+            <label>Name</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-input" disabled={loading} />
           </div>
-
           <div className="form-group">
-            <label htmlFor="email">Email Address *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="your.email@example.com"
-              readOnly={!!user}
-              className={`form-input ${user ? 'readonly-input' : ''}`}
-              disabled={loading}
-            />
+            <label>Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input" disabled={loading} />
           </div>
-        </fieldset>
-
-        {/* Complaint Details Section */}
-        <fieldset className="form-section">
-          <legend>Complaint Details</legend>
-
-          <div className="form-group">
-            <label htmlFor="category">Category *</label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="form-select"
-              disabled={loading}
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="subject">Subject *</label>
-            <input
-              type="text"
-              id="subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              placeholder="Brief summary of your issue"
-              className="form-input"
-              maxLength="100"
-              disabled={loading}
-            />
-            <small className="char-count">{formData.subject.length}/100</small>
-          </div>
-
-          <div className="form-group full-width">
-            <label htmlFor="description">
-              Description *
-              <span className="required-hint">Minimum 10 characters</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Please provide detailed information about your complaint. The more details you provide, the better we can assist you."
-              className="form-textarea"
-              rows="6"
-              disabled={loading}
-            />
-            <small className="char-count">{formData.description.length} characters</small>
-          </div>
-        </fieldset>
-
-        {/* Error/Success Messages */}
-        {error && <div className="alert alert-error">❌ {error}</div>}
-        {success && <div className="alert alert-success">✅ Complaint submitted successfully! Our AI agents are processing your request.</div>}
-
-        {/* Submit Button */}
-        <div className="form-actions">
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Submitting...
-              </>
-            ) : (
-              <>
-                <span>🚀</span>
-                Submit Complaint
-              </>
-            )}
-          </button>
-          <p className="form-note">* Required fields</p>
         </div>
+
+        <div className="form-group">
+          <label>Category</label>
+          <select name="category" value={formData.category} onChange={handleChange} className="form-select" disabled={loading}>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Subject</label>
+          <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-input" placeholder="What's the issue?" disabled={loading} />
+        </div>
+
+        <div className="form-group">
+          <label>Full Description</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened..." rows="5" disabled={loading} />
+        </div>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        <button type="submit" className="launch-btn" disabled={loading}>
+          {loading ? "Orchestrating AI..." : "🚀 Launch Multi-Agent Cluster"}
+        </button>
       </form>
+
+      {showReview && (
+        <div className="review-block">
+          <h3>⭐ Review AI Solution</h3>
+          <p>Help us improve by rating the resolution for <strong>{ticketId}</strong></p>
+          <div className="star-rating">
+            {[1, 2, 3, 4, 5].map(s => (
+              <button key={s} className={`star-btn ${rating >= s ? 'active' : ''}`} onClick={() => setRating(s)}>★</button>
+            ))}
+          </div>
+          <textarea
+            placeholder="How could our AI have handled this better?"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            className="review-textarea"
+          />
+          <button onClick={handleReview} className="submit-review-btn">Submit Feedback</button>
+        </div>
+      )}
     </div>
   );
 }

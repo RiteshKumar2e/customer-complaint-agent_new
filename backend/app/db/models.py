@@ -39,6 +39,9 @@ class Complaint(Base):
     satisfaction_prediction = Column(String(20))  # High, Medium, Low
     action = Column(String(255))  # Recommended action
     similar_complaints = Column(Text)  # References to similar issues
+    ai_analysis_steps = Column(Text, nullable=True) # Stores JSON of orchestrated steps
+    user_rating = Column(Integer, nullable=True) # User's review rating (1-5)
+    user_feedback = Column(Text, nullable=True) # User's qualitative feedback
     created_at = Column(DateTime, default=get_ist_time, index=True)
     updated_at = Column(DateTime, default=get_ist_time, onupdate=get_ist_time)
     is_resolved = Column(Boolean, default=False)

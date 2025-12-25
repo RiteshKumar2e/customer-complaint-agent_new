@@ -38,9 +38,10 @@ def get_model():
 
 model = get_model()
 
-def ask_gemini(prompt: str) -> str:
+async def async_ask_gemini(prompt: str) -> str:
+    """Asynchronous version of GEMINI request for high performance scaling."""
     try:
-        response = model.generate_content(prompt)
+        response = await model.generate_content_async(prompt)
         
         if response and response.text:
             return response.text.strip()
@@ -48,11 +49,11 @@ def ask_gemini(prompt: str) -> str:
         return "I couldn’t generate a response right now."
 
     except Exception as e:
-        print(f"⚠ Gemini error with {model.model_name}:", e)
-        # Try a quick fallback if the primary model fails during execution
+        print(f"⚠ Async Gemini error with {model.model_name}:", e)
         try:
+            # Fallback for speed
             fallback_m = genai.GenerativeModel("gemini-1.5-flash")
-            res = fallback_m.generate_content(prompt)
+            res = await fallback_m.generate_content_async(prompt)
             if res and res.text:
                 return res.text.strip()
         except:

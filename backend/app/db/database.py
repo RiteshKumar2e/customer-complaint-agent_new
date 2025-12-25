@@ -58,24 +58,28 @@ def run_migrations():
     new_columns = [
         ("bio", "TEXT"),
         ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
-        ("location", "VARCHAR(100) DEFAULT 'India'")
+        ("location", "VARCHAR(100) DEFAULT 'India'"),
+        ("ai_analysis_steps", "TEXT"),
+        ("user_rating", "INTEGER"),
+        ("user_feedback", "TEXT")
     ]
     
     with engine.connect() as conn:
-        for col_name, col_type in new_columns:
+        # Migration for 'users' table
+        for col_name, col_type in new_columns[:3]:
             try:
-                # Start a nested transaction or just use the connection
-                # To be safest in Postgres, we should rollback if it fails
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
-                print(f"✅ Added missing column: {col_name}")
-            except Exception as e:
-                conn.rollback()  # 🔄 CRITICAL: Fixes "current transaction is aborted"
-                error_str = str(e).lower()
-                if "already exists" in error_str or "duplicate column" in error_str:
-                    pass
-                else:
-                    print(f"⚠️ Note on column {col_name}: {e}")
+            except Exception:
+                conn.rollback()
+
+        # Migration for 'complaints' table
+        for col_name, col_type in new_columns[3:]:
+            try:
+                conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
         
         # ✅ Auto-set Ritesh Kumar as Admin
         admin_email = "riteshkumar90359@gmail.com"

@@ -34,6 +34,11 @@ export const submitFeedback = async (feedbackData) => {
   return response.data;
 };
 
+export const submitReview = async (ticketId, rating, feedback) => {
+  const response = await api.post(`/complaint/${ticketId}/review`, { rating, feedback });
+  return response.data;
+};
+
 // Auth API
 export const registerUser = async (email, fullName, password, phone, organization, profileImage) => {
   const response = await api.post("/auth/register", {
