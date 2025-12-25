@@ -149,12 +149,70 @@ h4,
   animation: slideDown 0.8s ease-out;
 }
 
+/* Mobile Menu Toggle Button */
 .mobile-menu-toggle {
   display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 101;
 }
 
+.hamburger {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.hamburger::before,
+.hamburger::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.hamburger::before {
+  top: -8px;
+}
+
+.hamburger::after {
+  top: 8px;
+}
+
+.hamburger.active {
+  background: transparent;
+}
+
+.hamburger.active::before {
+  transform: rotate(45deg);
+  top: 0;
+}
+
+.hamburger.active::after {
+  transform: rotate(-45deg);
+  top: 0;
+}
+
+/* Mobile Auth Buttons Container */
 .mobile-auth-buttons {
   display: none;
+  width: 100%;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
 }
 
 @keyframes slideDown {
@@ -1556,5 +1614,155 @@ h4,
 
   .goal-content p {
     font-size: 0.9rem;
+  }
+}
+
+/* ===== MOBILE NAVIGATION STYLES ===== */
+@media (max-width: 968px) {
+
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* Hide desktop auth buttons */
+  .auth-buttons {
+    display: none;
+  }
+
+  /* Mobile Navigation */
+  .nav-links {
+    position: fixed;
+    top: 65px;
+    right: -100%;
+    width: 280px;
+    height: calc(100vh - 65px);
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    gap: 0;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    z-index: 99;
+  }
+
+  .nav-links.is-open {
+    right: 0;
+  }
+
+  /* Show mobile auth buttons at top */
+  .nav-links .mobile-auth-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.5rem;
+    order: -1;
+    /* Move to top */
+  }
+
+  /* Style Sign in button as rounded rectangle */
+  .nav-links .mobile-auth-buttons .btn-admin {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #764ba2, #667eea);
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin:active {
+    transform: translateY(0);
+  }
+
+  /* Navigation buttons */
+  .nav-links button {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+  }
+
+  .nav-links button::after {
+    display: none;
+  }
+
+  .nav-links button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #667eea;
+    padding-left: 1.5rem;
+  }
+
+  /* Overlay when menu is open */
+  .landing-header.menu-open::before {
+    content: '';
+    position: fixed;
+    top: 65px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 98;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .nav-links {
+    width: 100%;
+    right: -100%;
+  }
+
+  .nav-links.is-open {
+    right: 0;
+  }
+
+  .landing-header {
+    padding: 0 4%;
+  }
+
+  .mobile-auth-buttons {
+    padding: 1.25rem 1rem;
+  }
+
+  .nav-links button {
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
   }
 }
