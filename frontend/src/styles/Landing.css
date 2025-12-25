@@ -495,6 +495,7 @@ h4,
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  padding: 0.85rem 1.75rem;
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
@@ -1197,6 +1198,11 @@ h4,
   .footer-content {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Hide desktop auth buttons on tablets and below */
+  .auth-buttons {
+    display: none !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1294,7 +1300,7 @@ h4,
   }
 
   .auth-buttons {
-    display: none;
+    display: none !important;
   }
 
   .logo-text {
@@ -1627,7 +1633,7 @@ h4,
 
   /* Hide desktop auth buttons */
   .auth-buttons {
-    display: none;
+    display: none !important;
   }
 
   /* Mobile Navigation */
@@ -1659,10 +1665,9 @@ h4,
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0.5rem 1.25rem 0.75rem 1.25rem;
+    padding: 1rem 1.25rem;
     margin: 0;
-    margin-top: 0 !important;
-    padding-top: 0.5rem !important;
+    gap: 0.75rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     order: -1;
     /* Move to top */
@@ -1671,7 +1676,7 @@ h4,
   /* Style Sign in button as rounded rectangle */
   .nav-links .mobile-auth-buttons .btn-admin {
     width: 100%;
-    padding: 0.85rem 1.5rem;
+    padding: 1rem 1.5rem;
     border-radius: 12px;
     font-size: 1rem;
     font-weight: 600;
@@ -1686,12 +1691,24 @@ h4,
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    margin: 0;
+  }
+
+  /* Admin Access button special styling */
+  .nav-links .mobile-auth-buttons .btn-admin.admin-special {
+    background: linear-gradient(135deg, #ff8a3d, #ff6b1a);
+    box-shadow: 0 4px 12px rgba(255, 138, 61, 0.3);
   }
 
   .nav-links .mobile-auth-buttons .btn-admin:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
     background: linear-gradient(135deg, #764ba2, #667eea);
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin.admin-special:hover {
+    box-shadow: 0 6px 16px rgba(255, 138, 61, 0.5);
+    background: linear-gradient(135deg, #ff6b1a, #ff8a3d);
   }
 
   .nav-links .mobile-auth-buttons .btn-admin:active {
@@ -1760,11 +1777,20 @@ h4,
   }
 
   .mobile-auth-buttons {
-    padding: 1.25rem 1rem;
+    padding: 1rem;
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin {
+    padding: 0.9rem 1.25rem;
+    font-size: 0.95rem;
   }
 
   .nav-links button {
     padding: 0.9rem 1rem;
     font-size: 0.95rem;
+  }
+
+  .logo-text {
+    font-size: 1.1rem;
   }
 }

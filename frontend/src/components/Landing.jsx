@@ -235,11 +235,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="scroll-indicator" onClick={() => scrollToSection('features')}>
-          <span className="scroll-chevron">↓</span>
-          <div className="scroll-line"></div>
-        </div>
+
       </section>
 
       {/* Features Section */}
