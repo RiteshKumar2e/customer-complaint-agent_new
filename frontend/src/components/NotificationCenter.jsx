@@ -70,7 +70,7 @@ export const showNotification = (type, title, message, icon) => {
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, {
       body: message,
-      icon: "🤖",
+      icon: "https://img.icons8.com/parakeet/96/robot-machine.png",
     });
   }
 };

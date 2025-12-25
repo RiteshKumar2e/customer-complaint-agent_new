@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from app.db.database import engine
 from app.db import models
 from app.api.routes import router as complaint_router
@@ -15,6 +17,15 @@ from app.db.database import run_migrations
 run_migrations()
 
 app = FastAPI(title="Quickfix Agentic AI")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"❌ VALIDATION ERROR: {exc.errors()}")
+    print(f"📋 REQUEST BODY: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(await request.body())},
+    )
 
 app.add_middleware(
     CORSMiddleware,

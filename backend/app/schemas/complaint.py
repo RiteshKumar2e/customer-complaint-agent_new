@@ -5,10 +5,11 @@ from typing import Optional
 
 class ComplaintRequest(BaseModel):
     """Request schema for submitting a complaint"""
-    name: str
-    email: str
-    subject: str
-    description: str
+    name: Optional[str] = ""
+    email: Optional[str] = ""
+    subject: Optional[str] = ""
+    description: Optional[str] = ""
+    category: Optional[str] = "Other"
 
 
 class ComplaintResponse(BaseModel):
@@ -16,15 +17,15 @@ class ComplaintResponse(BaseModel):
     ticket_id: Optional[str] = None
     subject: Optional[str] = None
     description: Optional[str] = None
-    category: str
-    priority: str
-    response: str
-    action: str
-    sentiment: str
-    solution: str
-    satisfaction: str
-    similar_issues: str
-    steps: Optional[list] = None
+    category: Optional[str] = "Other"
+    priority: Optional[str] = "Low"
+    response: Optional[str] = ""
+    action: Optional[str] = ""
+    sentiment: Optional[str] = "Neutral"
+    solution: Optional[str] = ""
+    satisfaction: Optional[str] = "Medium"
+    similar_issues: Optional[str] = ""
+    steps: Optional[list] = []
 
 
 class ComplaintDB(BaseModel):
