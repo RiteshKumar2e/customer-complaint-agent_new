@@ -64,12 +64,13 @@ def run_migrations():
     with engine.connect() as conn:
         for col_name, col_type in new_columns:
             try:
-                # SQLite and Postgres have different ALTER TABLE syntax but this works for simple column additions
+                # Start a nested transaction or just use the connection
+                # To be safest in Postgres, we should rollback if it fails
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
                 print(f"✅ Added missing column: {col_name}")
             except Exception as e:
-                # Ignore errors if column already exists
+                conn.rollback()  # 🔄 CRITICAL: Fixes "current transaction is aborted"
                 error_str = str(e).lower()
                 if "already exists" in error_str or "duplicate column" in error_str:
                     pass
@@ -86,4 +87,5 @@ def run_migrations():
             conn.commit()
             print(f"👑 Admin role verified for: {admin_email}")
         except Exception as e:
+            conn.rollback() # 🔄 Rollback here too
             print(f"⚠️ Could not set auto-admin: {e}")
