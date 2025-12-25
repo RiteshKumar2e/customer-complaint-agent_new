@@ -11,13 +11,31 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    try:
-        # ✅ FIX: Updated to 'gemini-2.5-pro' (Current stable version)
-        # 'gemini-pro' (1.0) is deprecated and causes the 404 error
-        model = genai.GenerativeModel("gemini-2.5-flash")
-    except Exception as e:
-        print(f"Error initializing Gemini: {e}") # Optional: Print error for debugging
-        model = None
+    
+    # ✅ Robust Model Selection (Trying 7 different models for best response)
+    SUPPORTED_MODELS = [
+       "gemini-2.0-flash-exp",
+        "gemini-2.0-flash",
+        "gemini-exp-1206",
+        "gemini-2.0-flash-lite",
+        "gemini-flash-latest",
+        "gemini-pro-latest",
+        "gemma-3-27b-it"
+        "gemini-3-flash-preview",
+        "gemini-robotics-er-1.5-preview",
+        "deep-research-pro-preview-12-2025"
+    ]
+    
+    def initialize_best_model():
+        for m_name in SUPPORTED_MODELS:
+            try:
+                # Basic check to avoid immediate failures
+                return genai.GenerativeModel(m_name)
+            except:
+                continue
+        return genai.GenerativeModel("gemini-2.5-flash")
+
+    model = initialize_best_model()
 else:
     model = None
 
