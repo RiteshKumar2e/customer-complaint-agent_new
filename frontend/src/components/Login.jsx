@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
-import { googleAuth, googleVerifyOTP } from "../api";
+import { googleAuth, googleVerifyOTP, loginWithPassword } from "../api";
 import CustomCursor from "./CustomCursor";
 import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
@@ -288,6 +288,25 @@ export default function Login({ onNavigate, onLoginSuccess }) {
                         <h2 className="auth-title">Welcome Back</h2>
                         <p className="auth-subtitle">Log in to your profile</p>
                     </div>
+
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            style={{
+                                color: "#ef4444",
+                                textAlign: 'center',
+                                marginBottom: "1.5rem",
+                                fontSize: "0.85rem",
+                                background: "rgba(239, 68, 68, 0.1)",
+                                padding: "12px",
+                                borderRadius: "10px",
+                                border: "1px solid rgba(239, 68, 68, 0.2)"
+                            }}
+                        >
+                            {error}
+                        </motion.div>
+                    )}
 
                     <form className="auth-form" onSubmit={handleLogin}>
                         <motion.div
