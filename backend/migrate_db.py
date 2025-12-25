@@ -1,49 +1,50 @@
-"""
-Database migration script to add new fields to users table
-Run this to update your existing database schema
-"""
-import sqlite3
 import os
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
 
-# Get the database path
-db_path = os.path.join(os.path.dirname(__file__), 'complaints.db')
+load_dotenv()
 
-def migrate_database():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+# Read DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+elif DATABASE_URL.startswith("mysql://"):
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+
+engine = create_engine(DATABASE_URL)
+
+def migrate():
+    print(f"🚀 Connecting to: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}")
     
-    try:
-        # Check if columns already exist
-        cursor.execute("PRAGMA table_info(users)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        # Add phone column if it doesn't exist
-        if 'phone' not in columns:
-            print("Adding 'phone' column...")
-            cursor.execute("ALTER TABLE users ADD COLUMN phone VARCHAR(20)")
-            print("✓ Added 'phone' column")
-        
-        # Add organization column if it doesn't exist
-        if 'organization' not in columns:
-            print("Adding 'organization' column...")
-            cursor.execute("ALTER TABLE users ADD COLUMN organization VARCHAR(100)")
-            print("✓ Added 'organization' column")
-        
-        # Add profile_image column if it doesn't exist
-        if 'profile_image' not in columns:
-            print("Adding 'profile_image' column...")
-            cursor.execute("ALTER TABLE users ADD COLUMN profile_image VARCHAR(500)")
-            print("✓ Added 'profile_image' column")
-        
-        conn.commit()
-        print("\n✅ Database migration completed successfully!")
-        
-    except Exception as e:
-        print(f"❌ Error during migration: {e}")
-        conn.rollback()
-    finally:
-        conn.close()
+    with engine.connect() as conn:
+        # Check current columns in users table
+        try:
+            print("🧐 Checking for missing columns...")
+            
+            # Use universal SQL to try adding columns if they don't exist
+            # Note: SQLite and PostgreSQL differ, so we handle it gracefully
+            
+            new_columns = [
+                ("bio", "TEXT"),
+                ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
+                ("location", "VARCHAR(100) DEFAULT 'India'")
+            ]
+            
+            for col_name, col_type in new_columns:
+                try:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                    print(f"✅ Added column: {col_name}")
+                except Exception as e:
+                    if "already exists" in str(e).lower() or "duplicate column" in str(e).lower():
+                        print(f"ℹ️ Column '{col_name}' already exists, skipping.")
+                    else:
+                        print(f"❌ Error adding '{col_name}': {e}")
+            
+            conn.commit()
+            print("✨ Migration completed successfully!")
+            
+        except Exception as e:
+            print(f"💥 Migration failed: {e}")
 
 if __name__ == "__main__":
-    print("Starting database migration...")
-    migrate_database()
+    migrate()
