@@ -1051,7 +1051,7 @@ See the [LICENSE](LICENSE) file for details.
 [![GitHub](https://img.shields.io/badge/GitHub-RiteshKumar2e-181717?style=for-the-badge&logo=github)](https://github.com/RiteshKumar2e)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ritesh_Kumar-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/ritesh-kumar-b3a654253)
 [![Email](https://img.shields.io/badge/Email-riteshkumar90359@gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:riteshkumar90359@gmail.com)
-[![Phone](https://img.shields.io/badge/Phone-+91_6206269895-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](tel:+916206269895)
+
 
 </div>
 
