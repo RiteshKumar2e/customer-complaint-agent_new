@@ -8,7 +8,11 @@ export default function CustomCursor() {
     const cursorX = useSpring(0, springConfig);
     const cursorY = useSpring(0, springConfig);
 
+    const [isVisible, setIsVisible] = useState(false);
+
     useEffect(() => {
+        setIsVisible(window.matchMedia("(pointer: fine)").matches);
+
         const handleMouseMove = (e) => {
             cursorX.set(e.clientX);
             cursorY.set(e.clientY);
@@ -19,14 +23,18 @@ export default function CustomCursor() {
             setIsHovering(!!isClickable);
         };
 
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseover", handleHover);
+        if (window.matchMedia("(pointer: fine)").matches) {
+            window.addEventListener("mousemove", handleMouseMove);
+            window.addEventListener("mouseover", handleHover);
+        }
 
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseover", handleHover);
         };
     }, [cursorX, cursorY]);
+
+    if (!isVisible) return null;
 
     return (
         <>

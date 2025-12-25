@@ -179,7 +179,7 @@ export default function App() {
   return (
     <div className="app-container">
       {/* Consistent Profile-style Header for Form Page */}
-      <header className="profile-header" style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', boxSizing: 'border-box' }}>
+      <header className="profile-header">
         <div className="header-content">
           <div className="header-left">
             <div className="logo" onClick={() => navigateTo("landing")}>
@@ -193,7 +193,6 @@ export default function App() {
             <button
               className="nav-btn active"
               onClick={() => navigateTo("profile")}
-              style={{ padding: '0.6rem 1.2rem', borderRadius: '12px' }}
             >
               📊 Back to Profile
             </button>
@@ -202,7 +201,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="form-content" style={{ marginTop: '100px' }}>
+      <main className="form-content-wrapper">
         <ComplaintForm onResult={handleComplaintSubmit} user={user} />
         {result && (
           <div className="result-section">
