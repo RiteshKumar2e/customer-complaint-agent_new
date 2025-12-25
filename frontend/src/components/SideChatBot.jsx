@@ -63,11 +63,10 @@ export default function SideChatBot({ open, onClose }) {
           <div key={i} className={`chat-msg ${m.role}`}>
             <p>{m.text}</p>
 
-            {m.meta && (
+            {m.meta && m.meta.type === "complaint" && (
               <div className="chat-meta">
                 <span>📂 {m.meta.category}</span>
                 <span>⚠ {m.meta.priority}</span>
-                <span>➡ {m.meta.action}</span>
               </div>
             )}
           </div>
@@ -79,7 +78,7 @@ export default function SideChatBot({ open, onClose }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          onKeyDown={handleKeyDown} 
+          onKeyDown={handleKeyDown}
           disabled={loading} // Optional: Disable input while sending
         />
         <button onClick={sendMessage} disabled={loading}>

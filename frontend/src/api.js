@@ -7,11 +7,12 @@ const api = axios.create({
   },
 });
 
-export const submitComplaint = async (name, email, complaintText) => {
+export const submitComplaint = async (name, email, subject, description) => {
   const response = await api.post("/complaint", {
     name,
     email,
-    complaint: complaintText,
+    subject,
+    description,
   });
   return response.data;
 };

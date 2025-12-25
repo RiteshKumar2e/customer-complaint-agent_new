@@ -699,7 +699,8 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                                     </span>
                                                 </div>
                                             </div>
-                                            <p className="complaint-text">{complaint.complaint_text}</p>
+                                            <h4 className="complaint-subject">{complaint.subject || "No Subject"}</h4>
+                                            <p className="complaint-text">{complaint.description || complaint.complaint_text}</p>
                                             <div className="complaint-footer">
                                                 <span className="complaint-date">
                                                     {new Date(complaint.created_at).toLocaleDateString()}

@@ -86,7 +86,7 @@
   color: #e2e8f0;
 }
 
-/* Response Section */
+.content-section,
 .response-section,
 .solution-section,
 .action-section,
@@ -98,6 +98,21 @@
   margin-bottom: 20px;
   backdrop-filter: blur(10px);
   animation: slideUp 0.6s ease-out;
+}
+
+.subject-line {
+  font-size: 18px;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.description-text {
+  font-size: 15px;
+  color: #cbd5f0;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 
 .response-section {

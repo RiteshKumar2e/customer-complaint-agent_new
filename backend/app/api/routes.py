@@ -18,10 +18,13 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
     Handle complaint submission and run AI analysis pipeline (Async version for scaling)
     """
     try:
-        print("📋 Complaint received:", data.complaint)
+        print(f"📋 New Complaint: {data.subject}")
 
+        # Combine subject and description for comprehensive AI analysis
+        full_text = f"Subject: {data.subject}\nDescription: {data.description}"
+        
         # Run AI agents pipeline asynchronously
-        result = await run_agent_pipeline(data.complaint)
+        result = await run_agent_pipeline(full_text)
         
         category = result.get("category", "Other")
         priority = result.get("priority", "Low")
@@ -43,7 +46,8 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
             ticket_id=ticket_id,
             name=data.name,
             email=data.email,
-            complaint_text=data.complaint,
+            subject=data.subject,
+            description=data.description,
             category=category,
             priority=priority,
             response=response,
@@ -63,7 +67,8 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
         # Send confirmation email
         email_service.send_complaint_confirmation(data.name, data.email, {
             "ticket_id": ticket_id,
-            "complaint_text": data.complaint,
+            "subject": data.subject,
+            "description": data.description,
             "category": category,
             "priority": priority,
             "sentiment": sentiment,
@@ -74,6 +79,8 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
 
         return ComplaintResponse(
             ticket_id=ticket_id,
+            subject=data.subject,
+            description=data.description,
             category=category,
             priority=priority,
             response=response,

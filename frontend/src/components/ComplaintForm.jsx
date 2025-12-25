@@ -67,8 +67,7 @@ export default function ComplaintForm({ onResult, user }) {
       setTimeout(() => updateStep(1), 1500);
       setTimeout(() => updateStep(2), 2500);
 
-      const complaintText = `[${formData.category}] ${formData.subject}\n\n${formData.description}`;
-      const res = await submitComplaint(formData.name, formData.email, complaintText);
+      const res = await submitComplaint(formData.name, formData.email, formData.subject, formData.description);
 
       updateStep(3);
       updateStep(4);

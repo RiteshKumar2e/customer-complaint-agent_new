@@ -77,6 +77,20 @@ export default function ComplaintCard({ data }) {
         </div>
       </div>
 
+      {/* Subject & Description Section */}
+      <div className="content-section">
+        <div className="section-title">
+          <span>📝</span>
+          Complaint Details
+        </div>
+        <div className="subject-line">
+          <strong>Subject:</strong> {data.subject || "No Subject"}
+        </div>
+        <p className="description-text">
+          {data.description || data.complaint_text}
+        </p>
+      </div>
+
       {/* Full Response Section */}
       <div className="response-section">
         <div className="section-title">

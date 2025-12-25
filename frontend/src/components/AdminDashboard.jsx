@@ -40,7 +40,8 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
             complaint.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             complaint.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             complaint.ticket_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            complaint.complaint_text?.toLowerCase().includes(searchTerm.toLowerCase());
+            complaint.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (complaint.description || complaint.complaint_text)?.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesCategory = filterCategory === "All" || complaint.category === filterCategory;
         const matchesPriority = filterPriority === "All" || complaint.priority === filterPriority;
@@ -506,9 +507,13 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                 </div>
 
                                 <div className="admin-modal-section">
-                                    <h3>Complaint Text</h3>
+                                    <h3>Subject</h3>
+                                    <div className="admin-modal-text" style={{ fontWeight: 'bold', marginBottom: '15px' }}>
+                                        {selectedComplaint.subject || "No Subject"}
+                                    </div>
+                                    <h3>Detailed Description</h3>
                                     <div className="admin-modal-text">
-                                        {selectedComplaint.complaint_text}
+                                        {selectedComplaint.description || selectedComplaint.complaint_text}
                                     </div>
                                 </div>
 

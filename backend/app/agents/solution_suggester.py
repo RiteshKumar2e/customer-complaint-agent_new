@@ -1,19 +1,31 @@
+import sys
+import os
 from app.agents.gemini_client import async_ask_gemini
+
+# Import training data
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+try:
+    from training_data import SOLUTION_EXAMPLES
+except ImportError:
+    SOLUTION_EXAMPLES = ""
 
 async def suggest_solution(category: str, text: str) -> str:
     if not text or not text.strip():
         return "Please contact our support team for assistance."
 
-    fallback_solutions = {
-        "Billing": "We will review your billing records and process a refund if needed.",
-        "Technical": "Our technical team will investigate and provide a fix.",
-        "Delivery": "We will trace your shipment and expedite delivery.",
-        "Other": "Our team will investigate and follow up within 24 hours."
-    }
+    prompt = f"""
+{SOLUTION_EXAMPLES}
 
-    prompt = f"Suggest ONE specific, actionable solution for this {category} complaint: {text}. Provide a practical, empathetic solution in 1-2 sentences."
+You are a customer service solution expert.
+Based on this complaint category and details, suggest ONE specific, actionable solution.
+
+Category: {category}
+Complaint: {text}
+
+Provide a practical, empathetic solution in 1-2 sentences.
+"""
     try:
         result = await async_ask_gemini(prompt)
-        return result.strip() if result else fallback_solutions.get(category, fallback_solutions["Other"])
+        return result.strip() if result else "Our team will investigate and follow up within 24 hours."
     except:
-        return fallback_solutions.get(category, fallback_solutions["Other"])
+        return "Our team will investigate and follow up within 24 hours."

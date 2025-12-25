@@ -365,15 +365,25 @@ class EmailService:
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 20px;">
-                                        <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
-                                            Your Message
-                                        </p>
-                                        <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; font-style: italic;">
-                                            "{complaint_text[:200]}{'...' if len(complaint_text) > 200 else ''}"
-                                        </p>
-                                    </td>
-                                </tr>
+                                     <td style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                                         <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                             Subject
+                                         </p>
+                                         <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 700;">
+                                             {complaint_data.get('subject', 'No Subject')}
+                                         </p>
+                                     </td>
+                                 </tr>
+                                 <tr>
+                                     <td style="padding: 20px;">
+                                         <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                             Detailed Description
+                                         </p>
+                                         <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                                             {complaint_data.get('description', 'No Description')}
+                                         </p>
+                                     </td>
+                                 </tr>
                             </table>
                         </td>
                     </tr>
@@ -672,26 +682,26 @@ class EmailService:
                                     📋 Complaint Details
                                 </h3>
                                 <table width="100%" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                        <td style="padding-bottom: 12px;">
-                                            <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
-                                                Category:
-                                            </p>
-                                            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.5;">
-                                                {category}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
-                                                Customer Message:
-                                            </p>
-                                            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6; font-style: italic;">
-                                                "{complaint_text}"
-                                            </p>
-                                        </td>
-                                    </tr>
+                                     <tr>
+                                         <td style="padding-bottom: 12px;">
+                                             <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
+                                                 Subject:
+                                             </p>
+                                             <p style="margin: 0; color: #991b1b; font-size: 15px; font-weight: 700;">
+                                                 {complaint_data.get('subject', 'No Subject')}
+                                             </p>
+                                         </td>
+                                     </tr>
+                                     <tr>
+                                         <td>
+                                             <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 13px; font-weight: 600;">
+                                                 Detailed Description:
+                                             </p>
+                                             <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
+                                                 {complaint_data.get('description', 'No Description')}
+                                             </p>
+                                         </td>
+                                     </tr>
                                 </table>
                             </div>
                         </td>

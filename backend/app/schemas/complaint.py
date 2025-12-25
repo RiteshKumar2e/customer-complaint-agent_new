@@ -7,12 +7,15 @@ class ComplaintRequest(BaseModel):
     """Request schema for submitting a complaint"""
     name: str
     email: str
-    complaint: str
+    subject: str
+    description: str
 
 
 class ComplaintResponse(BaseModel):
     """Response schema with AI analysis results"""
     ticket_id: Optional[str] = None
+    subject: Optional[str] = None
+    description: Optional[str] = None
     category: str
     priority: str
     response: str
@@ -28,7 +31,8 @@ class ComplaintDB(BaseModel):
     """Database schema for storing complaint"""
     id: int
     ticket_id: Optional[str] = None
-    complaint_text: str
+    subject: Optional[str] = None
+    description: str
     category: str
     priority: str
     sentiment: Optional[str]

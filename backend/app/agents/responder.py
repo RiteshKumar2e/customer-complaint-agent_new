@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -9,18 +10,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     SUPPORTED_MODELS = [
-       "gemini-2.0-flash-exp",
+        "gemini-2.0-flash-exp",
         "gemini-2.0-flash",
         "gemini-exp-1206",
         "gemini-2.0-flash-lite",
         "gemini-flash-latest",
-        "gemini-pro-latest",
-        "gemma-3-27b-it",
-        "gemini-3-flash-preview",
-        "gemini-robotics-er-1.5-preview",
-        "deep-research-pro-preview-12-2025"
+        "gemini-pro-latest"
     ]
-    
     def initialize_best_model():
         for m_name in SUPPORTED_MODELS:
             try:
@@ -32,22 +28,23 @@ if GEMINI_API_KEY:
 else:
     model = None
 
-def fallback_response(category: str) -> str:
-    responses = {
-        "Billing": "We understand your concern regarding billing. Our team is reviewing your issue and will assist you shortly.",
-        "Technical": "Thank you for reporting this technical issue. Our engineers are actively working on a fix.",
-        "Delivery": "We apologize for the delivery delay. Please be assured we are tracking this closely.",
-        "Service": "We’re sorry for the inconvenience. Your feedback has been shared with our support team.",
-        "Security": "Your security concern is important to us. Our security team is investigating this matter.",
-        "Other": "Thank you for reaching out. We’ll get back to you as soon as possible."
-    }
-    return responses.get(category, responses["Other"])
+# Import training data
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+try:
+    from training_data import RESPONSE_TEMPLATES
+except ImportError:
+    RESPONSE_TEMPLATES = {}
 
 async def generate_response(category: str, text: str) -> str:
     if not text or not text.strip():
-        return fallback_response(category)
+        return "Thank you for reaching out. We are here to help."
+    
+    # Priority can be passed here or detected inside. For the responder, we'll try to find a template.
+    # We'll use a generic template check if priority isn't known, otherwise we default to AI.
+    
     if model is None:
-        return fallback_response(category)
+        return RESPONSE_TEMPLATES.get(category, {}).get("Medium", "We have received your complaint and are looking into it.")
+
     prompt = f"""You are a professional customer support assistant.
 Complaint: {text}
 Category: {category}
@@ -55,8 +52,8 @@ Write a polite, professional, and reassuring response in 2–3 sentences."""
     try:
         response = await model.generate_content_async(prompt)
         if not response or not response.text:
-            return fallback_response(category)
+            return RESPONSE_TEMPLATES.get(category, {}).get("Medium", "We are investigating your issue.")
         return response.text.strip()
     except Exception as e:
         print(f"Gemini generation error: {e}")
-        return fallback_response(category)
+        return RESPONSE_TEMPLATES.get(category, {}).get("Medium", "We are looking into the matter.")

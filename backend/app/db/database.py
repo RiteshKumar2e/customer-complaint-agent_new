@@ -61,7 +61,9 @@ def run_migrations():
         ("location", "VARCHAR(100) DEFAULT 'India'"),
         ("ai_analysis_steps", "TEXT"),
         ("user_rating", "INTEGER"),
-        ("user_feedback", "TEXT")
+        ("user_feedback", "TEXT"),
+        ("subject", "VARCHAR(255)"),
+        ("description", "TEXT")
     ]
     
     with engine.connect() as conn:

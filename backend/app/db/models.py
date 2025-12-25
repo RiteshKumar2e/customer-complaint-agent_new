@@ -30,7 +30,8 @@ class Complaint(Base):
     ticket_id = Column(String(50), unique=True, index=True, nullable=True) # Professional Ticket ID (e.g. QX-12345)
     name = Column(String(100), nullable=False)  # Customer name
     email = Column(String(100), nullable=False, index=True)  # Customer email
-    complaint_text = Column(Text, nullable=False)  # Original complaint
+    subject = Column(String(255), nullable=True) # Complaint Subject
+    description = Column(Text, nullable=False)  # Detailed Complaint Description
     category = Column(String(50), nullable=False)  # Billing, Technical, Delivery, Service, Security
     priority = Column(String(20), nullable=False)  # High, Medium, Low
     sentiment = Column(String(20))  # Positive, Neutral, Negative, Angry
