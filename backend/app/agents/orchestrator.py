@@ -40,7 +40,7 @@ async def run_agent_pipeline(text: str):
 
     # Phase 3: Final Analysis
     action = recommend_action(priority)
-    satisfaction = predict_satisfaction(response, priority, category)
+    satisfaction = await predict_satisfaction(response, priority, category)
     steps.append({"step": "Orchestration Complete", "action": action})
 
     return {
