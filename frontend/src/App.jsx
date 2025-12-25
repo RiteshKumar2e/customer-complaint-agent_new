@@ -55,15 +55,16 @@ export default function App() {
 
   // Load complaints from database
   useEffect(() => {
-    if (page === "dashboard" || page === "form" || page === "profile") {
+    if ((page === "dashboard" || page === "form" || page === "profile") && user?.email) {
       loadComplaints();
     }
-  }, [page]);
+  }, [page, user?.email]);
 
   const loadComplaints = async () => {
+    if (!user?.email) return;
     try {
       setLoading(true);
-      const data = await getAllComplaints(user?.email || "");
+      const data = await getAllComplaints(user.email);
       setComplaints(data.complaints || []);
     } catch (error) {
       console.error("Error loading complaints:", error);

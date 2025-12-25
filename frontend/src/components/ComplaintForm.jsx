@@ -104,8 +104,8 @@ export default function ComplaintForm({ onResult, user }) {
       }
 
       setFormData({
-        name: "",
-        email: "",
+        name: user?.full_name || "",
+        email: user?.email || "",
         category: "Technical",
         subject: "",
         description: ""

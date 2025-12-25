@@ -100,13 +100,19 @@ def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
 
 @router.get("/complaints")
 def get_all_complaints(email: str = None, db: Session = Depends(get_db)):
-    """Get all complaints from database (optional filter by email)"""
+    """Get complaints for a specific user. Email is required for privacy."""
     try:
-        query = db.query(Complaint)
-        if email:
-            query = query.filter(Complaint.email == email)
-        
+        if not email:
+            # If no email is provided, we return an empty list for privacy
+            # This ensures users only see their own data
+            return {
+                "total": 0,
+                "complaints": []
+            }
+            
+        query = db.query(Complaint).filter(Complaint.email == email)
         complaints = query.all()
+        
         return {
             "total": len(complaints),
             "complaints": complaints
@@ -129,19 +135,20 @@ def get_complaint(complaint_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/complaints")
 def delete_complaints(email: str = None, db: Session = Depends(get_db)):
-    """Delete complaints from database (optional filter by email)"""
+    """Delete complaints for a specific user. Email is required for safety."""
     try:
-        query = db.query(Complaint)
-        if email:
-            query = query.filter(Complaint.email == email)
-        
-        count = query.delete(synchronize_session=False)
+        if not email:
+            raise HTTPException(status_code=400, detail="Email is required to delete complaints")
+            
+        count = db.query(Complaint).filter(Complaint.email == email).delete(synchronize_session=False)
         db.commit()
-        print(f"🗑️ Deleted {count} complaints from database for email: {email if email else 'ALL'}")
+        print(f"🗑️ Deleted {count} complaints from database for email: {email}")
         return {
             "message": f"Successfully deleted {count} complaints",
             "deleted_count": count
         }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
