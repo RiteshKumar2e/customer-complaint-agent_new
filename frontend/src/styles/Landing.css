@@ -1579,32 +1579,34 @@ body.light-theme .modal-body li {
 
   .hamburger {
     position: relative;
-    width: 20px;
+    width: 22px;
     height: 2px;
     background: white;
     transition: all 0.3s ease;
+    display: block;
   }
 
   .hamburger::before,
   .hamburger::after {
     content: '';
     position: absolute;
-    width: 20px;
+    width: 22px;
     height: 2px;
     background: white;
     transition: all 0.3s ease;
+    left: 0;
   }
 
   .hamburger::before {
-    top: -6px;
+    top: -7px;
   }
 
   .hamburger::after {
-    bottom: -6px;
+    top: 7px;
   }
 
   .hamburger.active {
-    background: transparent;
+    background: transparent !important;
   }
 
   .hamburger.active::before {
