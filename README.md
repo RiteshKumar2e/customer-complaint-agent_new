@@ -38,12 +38,6 @@
 
 <br/>
 
-<!-- 3D Stats Cards -->
-<img src="https://github-readme-stats.vercel.app/api?username=RiteshKumar2e&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0d1117&title_color=6366f1&icon_color=00d9ff&text_color=c9d1d9&border_radius=15" height="170"/>
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=RiteshKumar2e&layout=compact&theme=tokyonight&hide_border=true&bg_color=0d1117&title_color=6366f1&text_color=c9d1d9&border_radius=15" height="170"/>
-
-<br/><br/>
-
 ---
 
 ### 🎯 **The Future of Customer Support**
@@ -91,7 +85,7 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    QUICKFIX AI PLATFORM                          ║
 ║                                                                  ║
-║  🎯 14 Specialized Agents  │  ⚡ Sub-500ms Response             ║
+║  🎯 7+ Specialized Agents  │  ⚡ Sub-500ms Response             ║
 ║  🧠 98% Accuracy          │  🔒 Enterprise Security            ║
 ║  📊 Real-time Analytics   │  🌐 24/7 Availability              ║
 ╚══════════════════════════════════════════════════════════════════╝
