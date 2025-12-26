@@ -2067,6 +2067,12 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     z-index: 99;
   }
 
+  body.light-theme .nav-links {
+    background: rgba(255, 255, 255, 0.98);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+  }
+
   .nav-links.is-open {
     right: 0;
   }
@@ -2082,6 +2088,10 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     order: -1;
     /* Move to top */
+  }
+
+  body.light-theme .nav-links .mobile-auth-buttons {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   /* Style Sign in button as rounded rectangle */
@@ -2137,6 +2147,11 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     transition: all 0.3s ease;
   }
 
+  body.light-theme .nav-links button {
+    color: #1e293b;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
   .nav-links button::after {
     display: none;
   }
@@ -2145,6 +2160,10 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     background: rgba(255, 255, 255, 0.05);
     color: #667eea;
     padding-left: 1.5rem;
+  }
+
+  body.light-theme .nav-links button:hover {
+    background: rgba(0, 0, 0, 0.02);
   }
 
   /* Overlay when menu is open */
@@ -2159,6 +2178,10 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     backdrop-filter: blur(4px);
     z-index: 98;
     animation: fadeIn 0.3s ease;
+  }
+
+  body.light-theme .landing-header.menu-open::before {
+    background: rgba(255, 255, 255, 0.5);
   }
 
   @keyframes fadeIn {
