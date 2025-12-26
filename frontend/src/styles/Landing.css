@@ -1555,14 +1555,15 @@ body.light-theme .modal-body li {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
+    padding: 0;
+    line-height: 0;
   }
 
   body.light-theme .mobile-menu-toggle {
@@ -1613,7 +1614,7 @@ body.light-theme .modal-body li {
 
   .hamburger.active::after {
     transform: rotate(-45deg);
-    bottom: 0;
+    top: 0;
   }
 
   .nav-links {
@@ -1695,9 +1696,17 @@ body.light-theme .modal-body li {
   .hero-cta {
     flex-direction: column;
     width: 100%;
-    max-width: 300px;
+    max-width: 320px;
     margin: 0 auto 2.5rem;
-    gap: 0.75rem;
+    gap: 1rem;
+  }
+
+  .hero-cta .btn-cta,
+  .hero-cta .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem 2rem;
+    font-size: 1rem;
   }
 
   .btn-cta {
@@ -2195,16 +2204,21 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   }
 
   .mobile-header-actions .navbar-theme-toggle {
-    width: 40px !important;
-    height: 40px !important;
+    width: 44px !important;
+    height: 44px !important;
     padding: 0 !important;
     background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    position: relative !important;
+    top: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
 
   body.light-theme .mobile-header-actions .navbar-theme-toggle {
