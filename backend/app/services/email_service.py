@@ -637,7 +637,7 @@ class EmailService:
                             </div>
                         </td>
                     </tr>
-                    
+                
                 </table>
             </td>
         </tr>
@@ -645,12 +645,7 @@ class EmailService:
 </body>
 </html>
 """
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-"""
+    
     
     def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
         user_name = user_name or "Valued Customer"
