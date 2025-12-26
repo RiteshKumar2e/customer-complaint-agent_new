@@ -1,17 +1,24 @@
 /* ===== COMPLAINT FORM CONTAINER ===== */
 .complaint-form-container {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.7));
+  background: var(--bg-card);
   padding: 40px;
   border-radius: 24px;
   max-width: 800px;
   width: 100%;
   margin: 40px auto;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(10px);
   animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+}
+
+body.light-theme .complaint-form-container {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: none;
 }
 
 .form-header {
@@ -23,9 +30,16 @@
   font-size: 36px;
   background: linear-gradient(to right, #ffffff, #86efac);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
   margin-bottom: 12px;
+}
+
+body.light-theme .form-header h2 {
+  color: var(--text-primary);
+  background: none;
+  -webkit-text-fill-color: initial;
 }
 
 .form-header p {
@@ -61,18 +75,18 @@
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-secondary);
   margin-left: 4px;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 14px 18px;
-  color: white;
+  color: var(--text-primary);
   font-size: 15px;
   transition: all 0.3s ease;
   outline: none;
@@ -81,9 +95,22 @@
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-  background: rgba(15, 23, 42, 0.8);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+  background: var(--bg-card);
+}
+
+body.light-theme .form-input,
+body.light-theme .form-select,
+body.light-theme .form-textarea {
+  background: var(--bg-secondary);
+  border-color: var(--border-medium);
+}
+
+body.light-theme .form-input:focus,
+body.light-theme .form-select:focus,
+body.light-theme .form-textarea:focus {
+  background: var(--bg-elevated);
 }
 
 .launch-btn {
@@ -92,7 +119,7 @@
   border-radius: 14px;
   border: none;
   background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #022c22;
+  color: white;
   font-weight: 800;
   font-size: 18px;
   cursor: pointer;
@@ -100,9 +127,15 @@
   box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
 }
 
-.launch-btn:hover:not(:disabled) {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 50px rgba(34, 197, 94, 0.5);
+body.light-theme .launch-btn {
+  background: var(--accent-primary);
+  color: white !important;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+}
+
+body.light-theme .launch-btn:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  box-shadow: 0 15px 40px rgba(37, 99, 235, 0.3);
 }
 
 .launch-btn:active {
@@ -123,15 +156,26 @@
 }
 
 .processing-card {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
   padding: 48px;
   border-radius: 32px;
   width: 100%;
   max-width: 520px;
   text-align: center;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+  box-shadow: var(--shadow-xl);
   animation: scaleIn 0.5s ease-out;
+}
+
+body.light-theme .ai-processing-overlay {
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+body.light-theme .processing-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xl);
 }
 
 @keyframes scaleIn {
@@ -260,6 +304,10 @@
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+body.light-theme .star-btn {
+  color: rgba(0, 0, 0, 0.1);
+}
+
 .star-btn.active {
   color: #fbbf24;
   text-shadow: 0 0 25px rgba(251, 191, 36, 0.6);
@@ -290,7 +338,7 @@
 
 .submit-review-btn {
   background: #22c55e;
-  color: #022c22;
+  color: white;
   border: none;
   padding: 14px 40px;
   border-radius: 12px;
@@ -298,6 +346,11 @@
   font-size: 16px;
   cursor: pointer;
   transition: all 0.4s ease;
+}
+
+body.light-theme .submit-review-btn {
+  background: var(--accent-primary);
+  color: white !important;
 }
 
 .submit-review-btn:hover {

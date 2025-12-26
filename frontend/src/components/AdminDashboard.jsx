@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAllComplaints, deleteAllComplaints } from "../api";
+import { getAllComplaints, deleteAllComplaints, updateComplaintStatus } from "../api";
+import ThemeToggle from "./ThemeToggle";
 import "../styles/AdminDashboard.css";
 
 export default function AdminDashboard({ user, onNavigate, onLogout }) {
@@ -24,13 +25,29 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
         if (!user?.email) return;
         try {
             setLoading(true);
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/complaints?email=${encodeURIComponent(user.email)}`);
-            const data = await response.json();
+            const data = await getAllComplaints(user.email);
             setComplaints(data.complaints || []);
         } catch (error) {
             console.error("Error loading complaints:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateStatus = async (ticketId, currentStatus) => {
+        try {
+            const newStatus = !currentStatus;
+            await updateComplaintStatus(ticketId, newStatus);
+            // Refresh local state or reload all
+            setComplaints(prev => prev.map(c =>
+                c.ticket_id === ticketId ? { ...c, is_resolved: newStatus, updated_at: new Date().toISOString() } : c
+            ));
+            if (selectedComplaint?.ticket_id === ticketId) {
+                setSelectedComplaint(prev => ({ ...prev, is_resolved: newStatus, updated_at: new Date().toISOString() }));
+            }
+        } catch (error) {
+            console.error("Error updating status:", error);
+            alert("Failed to update status");
         }
     };
 
@@ -126,7 +143,8 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                         </motion.div>
                     </div>
 
-                    <div className="admin-header-right">
+                    <div className="admin-header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="admin-profile-btn"
                             whileHover={{ scale: 1.05 }}
@@ -446,13 +464,36 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="admin-modal-header">
-                                <h2>Complaint Details</h2>
-                                <button onClick={() => setSelectedComplaint(null)}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                    </svg>
-                                </button>
+                                <div className="admin-modal-header-left">
+                                    <h2>Complaint Details</h2>
+                                    <span className={`admin-status-pill ${selectedComplaint.is_resolved ? 'resolved' : 'pending'}`}>
+                                        {selectedComplaint.is_resolved ? 'Resolved' : 'Pending'}
+                                    </span>
+                                </div>
+                                <div className="admin-modal-header-actions">
+                                    <button
+                                        className={`admin-status-toggle-btn ${selectedComplaint.is_resolved ? 'reopen' : 'resolve'}`}
+                                        onClick={() => handleUpdateStatus(selectedComplaint.ticket_id, selectedComplaint.is_resolved)}
+                                    >
+                                        {selectedComplaint.is_resolved ? (
+                                            <>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6M23 20v-6h-6" /><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" /></svg>
+                                                Reopen Ticket
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                                                Mark as Resolved
+                                            </>
+                                        )}
+                                    </button>
+                                    <button className="admin-modal-close" onClick={() => setSelectedComplaint(null)}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="admin-modal-content">
@@ -503,6 +544,10 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             <label>Sentiment</label>
                                             <p>{selectedComplaint.sentiment || "N/A"}</p>
                                         </div>
+                                        <div className="admin-modal-field">
+                                            <label>Prediction</label>
+                                            <p>{selectedComplaint.satisfaction_prediction || "N/A"}</p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -539,6 +584,62 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                         <div className="admin-modal-text">
                                             {selectedComplaint.action}
                                         </div>
+                                    </div>
+                                )}
+
+                                {selectedComplaint.ai_analysis_steps && (
+                                    <div className="admin-modal-section">
+                                        <h3>AI Reasoning Steps</h3>
+                                        <div className="admin-steps-container">
+                                            {(() => {
+                                                try {
+                                                    const steps = typeof selectedComplaint.ai_analysis_steps === 'string'
+                                                        ? JSON.parse(selectedComplaint.ai_analysis_steps)
+                                                        : selectedComplaint.ai_analysis_steps;
+                                                    return steps.map((step, idx) => (
+                                                        <div key={idx} className="admin-step-item">
+                                                            <div className="admin-step-number">{idx + 1}</div>
+                                                            <div className="admin-step-content">{step}</div>
+                                                        </div>
+                                                    ));
+                                                } catch (e) {
+                                                    return <div className="admin-modal-text">{selectedComplaint.ai_analysis_steps}</div>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedComplaint.similar_complaints && (
+                                    <div className="admin-modal-section">
+                                        <h3>Similar Issues Found</h3>
+                                        <div className="admin-modal-text similar-issues">
+                                            {selectedComplaint.similar_complaints}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(selectedComplaint.user_rating || selectedComplaint.user_feedback) && (
+                                    <div className="admin-modal-section user-review-section">
+                                        <div className="section-header-with-badge">
+                                            <h3>User Satisfaction Review</h3>
+                                            {selectedComplaint.user_rating && (
+                                                <div className="admin-rating-display">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <span key={i} className={`star ${i < selectedComplaint.user_rating ? 'filled' : ''}`}>★</span>
+                                                    ))}
+                                                    <span className="rating-num">({selectedComplaint.user_rating}/5)</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {selectedComplaint.user_feedback && (
+                                            <div className="admin-modal-text user-feedback-text">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '10px', opacity: 0.5 }}>
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                                </svg>
+                                                "{selectedComplaint.user_feedback}"
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -40,6 +40,11 @@ export const submitReview = async (ticketId, rating, feedback) => {
   return response.data;
 };
 
+export const updateComplaintStatus = async (ticketId, is_resolved) => {
+  const response = await api.patch(`/complaint/${ticketId}/status`, { is_resolved });
+  return response.data;
+};
+
 // Auth API
 export const registerUser = async (email, fullName, password, phone, organization, profileImage) => {
   const response = await api.post("/auth/register", {

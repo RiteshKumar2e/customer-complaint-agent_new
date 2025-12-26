@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { updateProfile, deleteAllComplaints, getAllComplaints, submitFeedback } from "../api";
+import ThemeToggle from "./ThemeToggle";
 import "../styles/Profile.css";
 
 export default function Profile({ user, onNavigate, onLogout, complaints = [], setComplaints }) {
@@ -239,7 +240,8 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                         )}
                     </nav>
 
-                    <div className="header-right">
+                    <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="profile-btn"
                             whileHover={{ scale: 1.05 }}

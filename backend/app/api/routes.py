@@ -141,3 +141,21 @@ def delete_complaints(email: str = None, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+@router.patch("/complaint/{ticket_id}/status")
+async def update_complaint_status(ticket_id: str, is_resolved: bool = Body(..., embed=True), db: Session = Depends(get_db)):
+    """
+    Update complaint resolution status
+    """
+    try:
+        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        
+        complaint.is_resolved = is_resolved
+        complaint.updated_at = get_ist_time()
+        db.commit()
+        
+        return {"message": "Status updated successfully", "ticket_id": ticket_id, "is_resolved": is_resolved}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

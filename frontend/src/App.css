@@ -5,8 +5,8 @@
 .app-container {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  color: #f1f5f9;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
 }
 
 /* ===== Header Navigation ===== */
@@ -14,14 +14,21 @@
   position: sticky;
   top: 0;
   z-index: 500;
-  background: rgba(15, 23, 42, 0.7);
+  background: var(--bg-card);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   animation: slideDown 0.5s ease-out;
+}
+
+body.light-theme .app-header {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-sm);
 }
 
 @keyframes slideDown {
@@ -45,11 +52,17 @@
 .header-brand h1 {
   font-size: 20px;
   font-weight: 600;
-  background: linear-gradient(135deg, #22c55e, #a855f7);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin: 0;
+}
+
+body.light-theme .header-brand h1 {
+  color: var(--text-primary);
+  background: none;
+  -webkit-text-fill-color: initial;
 }
 
 .header-buttons {
@@ -59,9 +72,9 @@
 
 .header-btn {
   padding: 8px 16px;
-  background: rgba(148, 163, 184, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  color: #e2e8f0;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -70,8 +83,8 @@
 }
 
 .header-btn:hover {
-  background: rgba(148, 163, 184, 0.2);
-  border-color: rgba(148, 163, 184, 0.4);
+  background: var(--bg-active);
+  border-color: var(--border-medium);
 }
 
 .header-btn:active {
@@ -92,18 +105,23 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: var(--accent-primary);
   border: none;
-  color: #022c22;
+  color: white;
   font-size: 28px;
   cursor: pointer;
-  box-shadow: 0 20px 50px rgba(34, 197, 94, 0.4);
+  box-shadow: var(--shadow-lg);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(10px);
+}
+
+body.light-theme .chat-fab {
+  box-shadow: var(--shadow-md);
+  backdrop-filter: none;
 }
 
 .chat-fab:hover {

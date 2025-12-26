@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./../styles/Landing.css";
 import CookieConsent from "./CookieConsent";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
@@ -147,9 +148,12 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           </div>
         </div>
 
-        <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
-        </button>
+        <div className="mobile-header-actions">
+          <ThemeToggle className="navbar-theme-toggle" />
+          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
+          </button>
+        </div>
 
         <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
           <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
@@ -169,7 +173,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           </div>
         </nav>
 
-        <div className="auth-buttons" style={{ display: 'flex', gap: '1rem' }}>
+        <div className="auth-buttons" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <ThemeToggle className="navbar-theme-toggle" />
           <button className="btn-admin" onClick={onStart}>
             {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign in")}
           </button>
