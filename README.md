@@ -270,7 +270,7 @@ graph LR
     end
     
     subgraph "AI Layer"
-        C[14 AI Agents<br/>Gemini 1.5 Pro/Flash]
+        C[7+ AI Agents<br/>Gemini 1.5 Pro/Flash]
     end
     
     subgraph "Data Layer"
@@ -316,7 +316,7 @@ customer-complaint-agent_new/
 │
 ├── 📂 backend/                     # FastAPI + Python
 │   ├── 📂 app/
-│   │   ├── 📂 agents/              # 14 AI Agents
+│   │   ├── 📂 agents/              # 7+ AI Agents
 │   │   │   ├── orchestrator.py    # Master coordinator
 │   │   │   ├── classifier.py      # Category detection
 │   │   │   ├── sentiment_analyzer.py
@@ -985,10 +985,6 @@ Need help? We're here for you!
 <img src="https://img.icons8.com/fluency/96/github.png" width="48"/>
 <br/><b>GitHub Issues</b>
 <br/><a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new/issues">Create Issue</a>
-</td>
-<td align="center" width="33%">
-<img src="https://img.icons8.com/fluency/96/phone.png" width="48"/>
-<br/><b>Phone</b>
 </td>
 </tr>
 </table>
