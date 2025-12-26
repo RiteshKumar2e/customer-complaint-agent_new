@@ -185,3 +185,36 @@ async def update_complaint_status(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.delete("/complaint/{ticket_id}")
+async def delete_complaint(ticket_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a single complaint by ticket_id
+    """
+    try:
+        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        
+        db.delete(complaint)
+        db.commit()
+        
+        return {
+            "message": "Complaint deleted successfully",
+            "ticket_id": ticket_id
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/complaints/bulk")
+async def bulk_delete_complaints(ticket_ids: list[str] = Body(..., embed=True), db: Session = Depends(get_db)):
+    """
+    Delete multiple complaints by ticket_ids
+    """
+    try:
+        count = db.query(Complaint).filter(Complaint.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {count} complaints", "deleted_count": count}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

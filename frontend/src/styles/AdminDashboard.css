@@ -853,6 +853,28 @@ body.light-theme .admin-modal-section h3 {
     gap: 1rem;
 }
 
+.admin-delete-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.admin-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
 .admin-status-toggle-btn {
     display: flex;
     align-items: center;
@@ -996,5 +1018,45 @@ body.light-theme .similar-issues {
     .admin-status-toggle-btn {
         flex: 1;
         justify-content: center;
+    }
+}
+
+/* Multi-select Styles */
+.admin-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #2563eb;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.selected-row {
+    background-color: rgba(37, 99, 235, 0.04) !important;
+}
+
+.admin-bulk-actions {
+    margin-bottom: 1.5rem;
+}
+
+.bulk-delete-btn:hover {
+    background: #dc2626 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.bulk-actions-content {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }

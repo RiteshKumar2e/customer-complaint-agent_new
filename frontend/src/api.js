@@ -49,6 +49,17 @@ export const updateComplaintStatus = async (ticketId, is_resolved, admin_solutio
   return response.data;
 };
 
+export const deleteComplaint = async (ticketId) => {
+  const response = await api.delete(`/complaint/${ticketId}`);
+  return response.data;
+};
+
+export const bulkDeleteComplaints = async (ticketIds) => {
+  const response = await api.delete("/complaints/bulk", { data: { ticket_ids: ticketIds } });
+  return response.data;
+};
+
+
 // Auth API
 export const registerUser = async (email, fullName, password, phone, organization, profileImage) => {
   const response = await api.post("/auth/register", {
