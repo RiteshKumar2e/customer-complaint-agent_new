@@ -100,17 +100,87 @@ body.light-theme .form-header h2 {
   background: var(--bg-card);
 }
 
+/* Category Dropdown Specific Styling */
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  padding-right: 45px;
+}
+
+.form-select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 12px;
+  font-size: 15px;
+}
+
+/* Dark Theme Dropdown */
+body:not(.light-theme) .form-select {
+  background-color: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body:not(.light-theme) .form-select:hover {
+  background-color: rgba(30, 41, 59, 0.9);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+body:not(.light-theme) .form-select:focus {
+  background-color: rgba(15, 23, 42, 0.95);
+  border-color: #22c55e;
+}
+
+body:not(.light-theme) .form-select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+body:not(.light-theme) .form-select option:hover,
+body:not(.light-theme) .form-select option:checked {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Light Theme Dropdown */
 body.light-theme .form-input,
 body.light-theme .form-select,
 body.light-theme .form-textarea {
-  background: var(--bg-secondary);
-  border-color: var(--border-medium);
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+body.light-theme .form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+body.light-theme .form-select:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 body.light-theme .form-input:focus,
 body.light-theme .form-select:focus,
 body.light-theme .form-textarea:focus {
-  background: var(--bg-elevated);
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+body.light-theme .form-select option {
+  background-color: #ffffff;
+  color: #0f172a;
+  padding: 12px;
+}
+
+body.light-theme .form-select option:hover,
+body.light-theme .form-select option:checked {
+  background-color: #2563eb;
+  color: white;
 }
 
 .launch-btn {

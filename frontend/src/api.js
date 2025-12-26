@@ -40,8 +40,12 @@ export const submitReview = async (ticketId, rating, feedback) => {
   return response.data;
 };
 
-export const updateComplaintStatus = async (ticketId, is_resolved) => {
-  const response = await api.patch(`/complaint/${ticketId}/status`, { is_resolved });
+export const updateComplaintStatus = async (ticketId, is_resolved, admin_solution = null) => {
+  const body = { is_resolved };
+  if (admin_solution) {
+    body.admin_solution = admin_solution;
+  }
+  const response = await api.patch(`/complaint/${ticketId}/status`, body);
   return response.data;
 };
 

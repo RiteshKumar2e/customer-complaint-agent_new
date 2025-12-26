@@ -46,11 +46,17 @@ class EmailService:
         thread.start()
         return True
     
-    def send_resolution_email(self, user_name: str, user_email: str, complaint_data: dict):
+    def send_resolution_email(self, name: str, email: str, ticket_id: str, subject: str, solution: str):
         """Send resolution email to BOTH User and Admin in background"""
+        complaint_data = {
+            'ticket_id': ticket_id,
+            'subject': subject,
+            'solution': solution,
+            'category': 'Resolved'
+        }
         thread = threading.Thread(
             target=self._worker_send_notification,
-            args=("resolution", user_name, user_email, complaint_data)
+            args=("resolution", name, email, complaint_data)
         )
         thread.daemon = True
         thread.start()
@@ -486,7 +492,8 @@ class EmailService:
 """
     
     def _generate_resolution_html(self, user_name: str, complaint_data: dict, user_email: str = None) -> str:
-        category = complaint_data.get('category', 'General')
+        ticket_id = complaint_data.get('ticket_id', 'N/A')
+        subject = complaint_data.get('subject', 'Your Issue')
         solution = complaint_data.get('solution', 'Your issue has been resolved.')
         timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
@@ -496,85 +503,148 @@ class EmailService:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint Resolved</title>
+    <title>Issue Resolved - Quickfix</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
         <tr>
             <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
                     
-                    
-                    <!-- Content -->
+                    <!-- Success Header -->
                     <tr>
-                        <td style="padding: 40px 30px;">
-                            <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 20px; font-weight: 600;">
-                                Dear {user_name},
-                            </h3>
-                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                                Great news! Your complaint has been successfully resolved by our AI-powered support system. We've implemented a comprehensive solution tailored to address your specific concern.
-                            </p>
-                            
-                            <!-- Resolution Details -->
-                            <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                                <h4 style="margin: 0 0 12px 0; color: #065f46; font-size: 16px; font-weight: 600;">
-                                    💡 Resolution Details
-                                </h4>
-                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;">
-                                    <strong>Category:</strong> {category}
-                                </p>
-                                <p style="margin: 0 0 10px 0; color: #047857; font-size: 14px; line-height: 1.6;">
-                                    <strong>Resolved On:</strong> {timestamp}
-                                </p>
-                                <p style="margin: 0; color: #047857; font-size: 14px; line-height: 1.6;">
-                                    <strong>Solution:</strong><br>
-                                    {solution}
-                                </p>
-                            </div>
-                            
-                            <!-- Feedback Request -->
-                            <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                                <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
-                                    📊 How Was Your Experience?
-                                </h4>
-                                <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
-                                    Your feedback helps us improve our service. Please take a moment to rate your experience.
-                                </p>
-                                <div style="text-align: center;">
-                                    <a href="{self.app_url}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 0 5px;">
-                                        Rate Experience
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <p style="margin: 25px 0 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                                If you have any additional questions or concerns, please don't hesitate to reach out. We're here to help!
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                            <div style="font-size: 56px; margin-bottom: 15px;">✅</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                                Issue Resolved!
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 15px; font-weight: 500;">
+                                Ticket #{ticket_id}
                             </p>
                         </td>
                     </tr>
                     
-                    <!-- CTA -->
+                    <!-- Greeting -->
                     <tr>
-                        <td style="padding: 0 30px 30px 30px; text-align: center;">
-                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px;">
-                                View Ticket History
-                            </a>
+                        <td style="padding: 40px 30px 20px 30px;">
+                            <h2 style="margin: 0 0 15px 0; color: #1f2937; font-size: 22px; font-weight: 600;">
+                                Dear {user_name},
+                            </h2>
+                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px; line-height: 1.7;">
+                                We're delighted to inform you that your issue has been successfully resolved! Our team has carefully reviewed your complaint and implemented a comprehensive solution.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Issue Summary -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <div style="background-color: #f9fafb; border-radius: 12px; padding: 20px; border-left: 4px solid #10b981;">
+                                <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                    Your Issue
+                                </p>
+                                <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 600; line-height: 1.5;">
+                                    {subject}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Solution Details -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 25px; border: 2px solid #10b981;">
+                                <h3 style="margin: 0 0 15px 0; color: #065f46; font-size: 18px; font-weight: 700; display: flex; align-items: center;">
+                                    <span style="font-size: 24px; margin-right: 10px;">💡</span>
+                                    Solution Implemented
+                                </h3>
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 20px; margin-top: 15px;">
+                                    <p style="margin: 0; color: #047857; font-size: 15px; line-height: 1.8; white-space: pre-wrap;">
+{solution}
+                                    </p>
+                                </div>
+                                <p style="margin: 15px 0 0 0; color: #059669; font-size: 13px; font-weight: 600;">
+                                    <span style="font-size: 16px; margin-right: 5px;">📅</span>
+                                    Resolved on {timestamp}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Thank You Message -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 25px; text-align: center; border: 2px solid #f59e0b;">
+                                <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 20px; font-weight: 700;">
+                                    🙏 Thank You for Your Patience!
+                                </h3>
+                                <p style="margin: 0; color: #78350f; font-size: 15px; line-height: 1.7;">
+                                    We truly appreciate your trust in Quickfix. Your feedback helps us improve our services and serve you better. We're committed to providing you with the best possible experience.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Feedback Request -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #eff6ff; border-radius: 12px; padding: 25px; text-align: center;">
+                                <h4 style="margin: 0 0 12px 0; color: #1e40af; font-size: 17px; font-weight: 600;">
+                                    📊 How Was Your Experience?
+                                </h4>
+                                <p style="margin: 0 0 20px 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
+                                    Your feedback is invaluable to us. Please take a moment to share your experience.
+                                </p>
+                                <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                                    Rate Your Experience
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Need Help Section -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; text-align: center;">
+                                <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                                    Still have questions or need further assistance?
+                                </p>
+                                <p style="margin: 0; color: #6b7280; font-size: 13px;">
+                                    Reply to this email or visit our <a href="{self.app_url}" style="color: #10b981; text-decoration: none; font-weight: 600;">Help Center</a>
+                                </p>
+                            </div>
                         </td>
                     </tr>
                     
                     <!-- Footer -->
                     <tr>
-                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
-                                Thank you for choosing Quickfix!
+                        <td style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 10px 0; color: #059669; font-size: 14px; font-weight: 600;">
+                                Thank you for choosing Quickfix! 🎉
+                            </p>
+                            <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 13px; line-height: 1.6;">
+                                We're always here to help you with exceptional AI-powered support.
                             </p>
                             <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">
                                 © {get_ist_time().year} Quickfix. All rights reserved.
                             </p>
+                            <div style="margin-top: 15px;">
+                                <a href="{self.app_url}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Help Center</a>
+                                <span style="color: #d1d5db;">|</span>
+                                <a href="{self.app_url}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Privacy Policy</a>
+                                <span style="color: #d1d5db;">|</span>
+                                <a href="{self.app_url}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Contact Us</a>
+                            </div>
                         </td>
                     </tr>
                     
                 </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
             </td>
         </tr>
     </table>
