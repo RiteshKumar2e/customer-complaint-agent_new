@@ -178,7 +178,7 @@ class EmailService:
                     <tr>
                         <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
                             <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                                © {datetime.now().year} Quickfix. Secure Multi-Agent Intelligence.
+                                © {get_ist_time().year} Quickfix. Secure Multi-Agent Intelligence.
                             </p>
                         </td>
                     </tr>
@@ -471,7 +471,7 @@ class EmailService:
                                 Need immediate assistance? Reply to this email or visit our help center.
                             </p>
                             <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 12px;">
-                                © {datetime.now().year} Quickfix. All rights reserved.
+                                © {get_ist_time().year} Quickfix. All rights reserved.
                             </p>
                             <div style="margin-top: 15px;">
                                 <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Help Center</a>
@@ -495,7 +495,7 @@ class EmailService:
         ticket_id = complaint_data.get('ticket_id', 'N/A')
         subject = complaint_data.get('subject', 'Your Issue')
         solution = complaint_data.get('solution', 'Your issue has been resolved.')
-        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         
         return f"""
 <!DOCTYPE html>
@@ -850,7 +850,7 @@ class EmailService:
     def _generate_admin_resolution_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
         category = complaint_data.get('category', 'General')
         solution = complaint_data.get('solution', 'Issue resolved')
-        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         
         return f"""
 <!DOCTYPE html>

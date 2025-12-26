@@ -1,19 +1,23 @@
-### 🌟 The Future of Autonomous Customer Support with Multi-Agent Intelligence
+<div align="center">
 
-Quickfix is not just a ticketing tool; it's a **Surgical AI Resolution Engine**. powered by a cluster of **14 specialized AI agents**, it transforms chaos into clarity, resolving complex customer issues in seconds with human-like empathy and machine-level precision.
+# 🚀 Quickfix: Surgical AI Resolution Engine
+### The Future of High-Precision Customer Support
 
-**[🎯 Live Demo](https://customer-complaint-agent-new.vercel.app)** • **[💻 GitHub](https://github.com/RiteshKumar2e/customer-complaint-agent_new)**
+[![GitHub Stars](https://img.shields.io/github/stars/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=FFD700&labelColor=24292e)](https://github.com/RiteshKumar2e/customer-complaint-agent_new)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_Demo-white?style=for-the-badge&logo=vercel&color=000000)](https://customer-complaint-agent-new.vercel.app)
+[![FastAPI Status](https://img.shields.io/badge/FastAPI-v0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Gemini 1.5](https://img.shields.io/badge/Gemini-1.5_Pro-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+
+<br/>
+
+**[🎯 Launch Platform](https://customer-complaint-agent-new.vercel.app)** • **[📑 API Registry](https://customer-complaint-agent-new.vercel.app/docs)** • **[💻 Repository](https://github.com/RiteshKumar2e/customer-complaint-agent_new)**
+
+<br/>
 
 ---
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Google_Gemini-AI-4285F4?style=flat-square&logo=google&logoColor=white" alt="Gemini">
-  <img src="https://img.shields.io/badge/PostgreSQL-15-336791?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Vite-7.2.5-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
-</p>
+### 🧠 Modern AI Architecture
+Quickfix is powered by a **Surgical AI Resolution Engine**—a cluster of **14 specialized agents** that transform customer feedback into high-precision resolutions in milliseconds.
 
 </div>
 
@@ -61,7 +65,7 @@ Quickfix is not just a ticketing tool; it's a **Surgical AI Resolution Engine**.
 
 ## ✨ Key Features
 
-### � **The 14-Agent Intelligence Grid**
+### 🤖 **The 14-Agent Intelligence Grid**
 
 | Layer | Agent | Mission-Critical Responsibility | Tech Stack |
 | :--- | :--- | :--- | :--- |
@@ -638,89 +642,39 @@ Response: 200 OK
 
 ## 🤖 AI Agent System
 
-### Agent Workflow
+### 🔄 **Neural Agent Processing Flow**
 
-```
-User Submits Complaint
-        │
-        ▼
-┌──────────────────┐
-│  Orchestrator    │ ◄─── Coordinates all agents
-└────────┬─────────┘
-         │
-         ├─────────────────────────────────────────┐
-         │                                          │
-         ▼                                          ▼
-┌──────────────────┐                      ┌──────────────────┐
-│   Classifier     │ ─── Categorizes      │  Cache Layer     │
-│   (Gemini AI)    │     complaint        │  (Redis)         │
-└────────┬─────────┘                      └──────────────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Sentiment        │ ─── Analyzes emotions
-│ Analyzer         │     (Positive/Negative/Neutral)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Priority Agent   │ ─── Assigns urgency
-│                  │     (Low/Medium/High)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Complaint        │ ─── Finds similar cases
-│ Matcher          │     (Vector similarity)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Responder        │ ─── Generates professional
-│ (Gemini AI)      │     empathetic response
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Solution         │ ─── Recommends specific
-│ Suggester        │     solutions
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Action           │ ─── Suggests next steps
-│ Recommender      │     (Escalate, Refund, etc)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Satisfaction     │ ─── Predicts customer
-│ Predictor        │     satisfaction score
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Re-evaluator     │ ─── Adjusts priority
-│                  │     based on analysis
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Response         │ ─── Validates quality
-│ Validator        │     of response
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Database         │ ─── Stores complaint
-│ (PostgreSQL)     │     and AI analysis
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ Email Service    │ ─── Sends notifications
-│ (Brevo)          │     to user and admin
-└──────────────────┘
+```mermaid
+graph TD
+    User([User Submission]) --> Orchestrator{🎯 Orchestrator}
+    Orchestrator --> Classifier[🏷️ Classifier]
+    Classifier --> Sentiment[😊 Sentiment Analyzer]
+    Sentiment --> Priority[⚡ Priority Agent]
+    
+    subgraph Analysis_Core [Deep Analysis Layer]
+        Priority --> Matcher[🔍 Semantic Matcher]
+        Matcher --> Predictor[📊 Satisfaction Predictor]
+    end
+    
+    subgraph Generation_Core [Resolution Layer]
+        Predictor --> Responder[📝 Contextual Responder]
+        Responder --> Suggester[💡 Solution Suggester]
+        Suggester --> Action[🎬 Action Recommender]
+    end
+    
+    subgraph Quality_Control [Verification Layer]
+        Action --> Reevaluator[🔄 Dynamic Re-evaluator]
+        Reevaluator --> Validator[✅ Quality Guardrails]
+    end
+    
+    Validator --> DB[(🗄️ Database)]
+    DB --> Email[📧 Email Service]
+    Email --> UserEnd([Resolution Delivered])
+    
+    style Orchestrator fill:#4285F4,stroke:#fff,stroke-width:2px,color:#fff
+    style DB fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    style User fill:#10B981,stroke:#fff,stroke-width:2px,color:#fff
+    style Email fill:#F59E0B,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
 ### Performance

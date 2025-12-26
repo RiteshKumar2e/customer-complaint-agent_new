@@ -529,7 +529,12 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className="admin-date">{formatDate(complaint.created_at)}</span>
+                                                        <span className="admin-date">
+                                                            {complaint.is_resolved && complaint.updated_at
+                                                                ? formatDate(complaint.updated_at)
+                                                                : formatDate(complaint.created_at)}
+                                                            {complaint.is_resolved && <div style={{ fontSize: '0.7rem', color: '#10b981' }}>Resolved At</div>}
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <motion.button
@@ -661,6 +666,14 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             <label>Date Submitted</label>
                                             <p>{formatDate(selectedComplaint.created_at)}</p>
                                         </div>
+                                        {selectedComplaint.is_resolved && selectedComplaint.updated_at && (
+                                            <div className="admin-modal-field">
+                                                <label>Resolved At</label>
+                                                <p style={{ color: '#10b981', fontWeight: '600' }}>
+                                                    {formatDate(selectedComplaint.updated_at)}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
