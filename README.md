@@ -5,8 +5,6 @@
 
 <br/>
 
-<!-- Animated Typing SVG -->
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=28&duration=3000&pause=1000&color=6366F1&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=100&lines=14+Specialized+AI+Agents;98%25+Classification+Accuracy;Sub-500ms+Response+Time;Enterprise-Grade+Resolution" alt="Typing SVG" /></a>
 
 <br/>
 
@@ -392,8 +390,8 @@ npm run dev
 <table>
 <tr>
 <td width="25%" align="center">
-<img src="https://img.icons8.com/fluency/96/node-js.png" width="48"/>
-<br/><b>Node.js 16+</b>
+<img src="https://img.icons8.com/color/96/npm.png" width="48"/>
+<br/><b>npm (Frontend)</b>
 </td>
 <td width="25%" align="center">
 <img src="https://img.icons8.com/fluency/96/python.png" width="48"/>
@@ -991,7 +989,6 @@ Need help? We're here for you!
 <td align="center" width="33%">
 <img src="https://img.icons8.com/fluency/96/phone.png" width="48"/>
 <br/><b>Phone</b>
-<br/><a href="tel:+916206269895">+91 6206269895</a>
 </td>
 </tr>
 </table>
