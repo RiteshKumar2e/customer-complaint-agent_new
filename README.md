@@ -42,7 +42,7 @@
 
 ### 🎯 **The Future of Customer Support**
 
-**Quickfix** is an enterprise-grade AI platform powered by **14 specialized agents** that transform customer complaints into surgical resolutions in **milliseconds**. Built with Google Gemini AI, FastAPI, and React.
+**Quickfix** is an enterprise-grade AI platform powered by **7+ specialized agents** that transform customer complaints into surgical resolutions in **milliseconds**. Built with Google Gemini AI, FastAPI, and React.
 
 </div>
 
@@ -146,7 +146,7 @@ mindmap
 
 ## ✨ **Key Features**
 
-### 🤖 **The 14-Agent Intelligence Grid**
+### 🤖 **The 7+ Agent Intelligence Grid**
 
 <div align="center">
 
