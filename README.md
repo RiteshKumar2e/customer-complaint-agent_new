@@ -65,7 +65,7 @@ Quickfix is powered by a **Surgical AI Resolution Engine**—a cluster of **14 s
 
 ## ✨ Key Features
 
-### 🤖 **The 14-Agent Intelligence Grid**
+### � **The 14-Agent Intelligence Grid**
 
 | Layer | Agent | Mission-Critical Responsibility | Tech Stack |
 | :--- | :--- | :--- | :--- |
@@ -219,6 +219,7 @@ customer-complaint-agent_new/
 ```
 
 ---
+
 
 ## 🚀 Quick Start
 
