@@ -60,51 +60,98 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }
     );
 };
 
-const TermsModal = ({ isOpen, onClose, onAccept }) => (
-    <AnimatePresence>
-        {isOpen && (
-            <motion.div
-                className="terms-modal-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-            >
+const TermsModal = ({ isOpen, onClose, onAccept, initialTab = "terms" }) => {
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    useEffect(() => {
+        if (isOpen) setActiveTab(initialTab);
+    }, [isOpen, initialTab]);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
                 <motion.div
-                    className="terms-modal-content"
-                    initial={{ scale: 0.9, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.9, y: 20 }}
-                    onClick={(e) => e.stopPropagation()}
+                    className="terms-modal-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
                 >
-                    <div className="terms-modal-header">
-                        <h3>Terms & Privacy Policy</h3>
-                        <button className="close-modal" onClick={onClose}>&times;</button>
-                    </div>
-                    <div className="terms-modal-body">
-                        <section>
-                            <h4>1. Terms of Service</h4>
-                            <p>By accessing this AI-powered complaint platform, you agree to provide accurate information and NOT use the service for malicious reporting or harassment. We reserve the right to terminate accounts that violate our community guidelines.</p>
-                        </section>
-                        <section>
-                            <h4>2. Data Privacy</h4>
-                            <p>Your data is encrypted using neural-grade protocols. We do not sell your personal information to third parties. We use your complaint data only to improve the resolution process and train our local sub-agents for better efficiency.</p>
-                        </section>
-                        <section>
-                            <h4>3. Responsiveness</h4>
-                            <p>While our agents are highly efficient, response times may vary based on system load. We strive for a 99.9% uptime for our AI resolution grid.</p>
-                        </section>
-                        <section>
-                            <h4>4. Cookie Policy</h4>
-                            <p>We use essential session tokens to keep your neural link active. No tracking cookies are used for advertising purposes.</p>
-                        </section>
-                    </div>
-                    <button className="modal-accept-btn" onClick={onAccept}>I Understand & Accept</button>
+                    <motion.div
+                        className="terms-modal-content"
+                        initial={{ scale: 0.9, y: 20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.9, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="terms-modal-header">
+                            <h3>Legal Agreement</h3>
+                            <button className="close-modal" onClick={onClose}>&times;</button>
+                        </div>
+
+                        <div className="terms-modal-tabs">
+                            <div
+                                className={`terms-tab ${activeTab === "terms" ? "active" : ""}`}
+                                onClick={() => setActiveTab("terms")}
+                            >
+                                Terms of Service
+                            </div>
+                            <div
+                                className={`terms-tab ${activeTab === "privacy" ? "active" : ""}`}
+                                onClick={() => setActiveTab("privacy")}
+                            >
+                                Privacy Policy
+                            </div>
+                        </div>
+
+                        <div className="terms-modal-body">
+                            {activeTab === "terms" ? (
+                                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                                    <section>
+                                        <h4>1. Acceptance of Terms</h4>
+                                        <p>By creating an account on the Quickfix AI platform, you agree to abide by these Terms of Service. This platform is designed for legitimate complaint registration and resolution. Any misuse, including harassment or false reporting, will result in immediate account termination.</p>
+                                    </section>
+                                    <section>
+                                        <h4>2. User Responsibilities</h4>
+                                        <p>Users are responsible for maintaining the confidentiality of their account credentials. You agree to provide accurate, current, and complete information during the registration process.</p>
+                                    </section>
+                                    <section>
+                                        <h4>3. AI Resolution Grid</h4>
+                                        <p>Our autonomous sub-agents work around the clock to process your complaints. While we strive for extreme efficiency, the complexity of certain cases may require manual intervention from senior administrators.</p>
+                                    </section>
+                                    <section>
+                                        <h4>4. Service Uptime</h4>
+                                        <p>We maintain a 99.9% uptime for our decentralized neural nodes. Scheduled maintenance will be communicated 24 standard cycles in advance.</p>
+                                    </section>
+                                </motion.div>
+                            ) : (
+                                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
+                                    <section>
+                                        <h4>1. Data Collection</h4>
+                                        <p>We collect essential identity data (name, email, phone) and organization details to facilitate the complaint resolution process. Profile pictures are stored securely to personalize your experience.</p>
+                                    </section>
+                                    <section>
+                                        <h4>2. Neural Encryption</h4>
+                                        <p>All communication within the Quickfix grid is encrypted using end-to-end neural protocols. Your personal information is never exposed to external non-authorized entities.</p>
+                                    </section>
+                                    <section>
+                                        <h4>3. Use of AI</h4>
+                                        <p>We use your complaint descriptions to train our local sub-agents for better pattern recognition. This data is anonymized before being fed into the central model.</p>
+                                    </section>
+                                    <section>
+                                        <h4>4. Cookie Policy</h4>
+                                        <p>Our system uses session tokens and essential state markers to maintain your connection to the grid. We do not use third-party tracking cookies for advertising.</p>
+                                    </section>
+                                </motion.div>
+                            )}
+                        </div>
+                        <button className="modal-accept-btn" onClick={onAccept}>I Accept the Agreement</button>
+                    </motion.div>
                 </motion.div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-);
+            )}
+        </AnimatePresence>
+    );
+};
 
 export default function Signup({ onNavigate }) {
     const [formData, setFormData] = useState({
@@ -120,6 +167,7 @@ export default function Signup({ onNavigate }) {
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
     const illustrationRef = useRef(null);
     const [showTerms, setShowTerms] = useState(false);
+    const [termsTab, setTermsTab] = useState("terms");
     const [isTyping, setIsTyping] = useState(false);
     const [activeField, setActiveField] = useState(null);
     const typingTimeoutRef = useRef(null);
@@ -194,6 +242,7 @@ export default function Signup({ onNavigate }) {
         <motion.div className="auth-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <TermsModal
                 isOpen={showTerms}
+                initialTab={termsTab}
                 onClose={() => setShowTerms(false)}
                 onAccept={() => { setAgree(true); setShowTerms(false); }}
             />
@@ -298,8 +347,8 @@ export default function Signup({ onNavigate }) {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     style={{
-                                        width: '100px',
-                                        height: '100px',
+                                        width: '80px',
+                                        height: '80px',
                                         borderRadius: '50%',
                                         background: imagePreview
                                             ? `url(${imagePreview}) center/cover`
@@ -314,7 +363,7 @@ export default function Signup({ onNavigate }) {
                                     }}
                                 >
                                     {!imagePreview && (
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(139, 92, 246, 0.6)" strokeWidth="2">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(139, 92, 246, 0.6)" strokeWidth="2">
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                             <circle cx="12" cy="7" r="4" />
                                         </svg>
@@ -323,17 +372,17 @@ export default function Signup({ onNavigate }) {
                                         position: 'absolute',
                                         bottom: 0,
                                         right: 0,
-                                        background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-                                        width: '32px',
-                                        height: '32px',
+                                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                                        width: '28px',
+                                        height: '28px',
                                         borderRadius: '50%',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         border: '2px solid #050508',
-                                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
                                     }}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                             <circle cx="12" cy="13" r="4" />
                                         </svg>
@@ -341,41 +390,42 @@ export default function Signup({ onNavigate }) {
                                 </motion.div>
                             </label>
                             <p style={{
-                                fontSize: '0.85rem',
-                                color: 'rgba(255, 255, 255, 0.6)',
-                                textAlign: 'center'
+                                fontSize: '0.8rem',
+                                color: 'var(--text-tertiary)',
+                                textAlign: 'center',
+                                marginTop: '-0.25rem'
                             }}>
-                                {imagePreview ? 'Click to change photo' : 'Upload profile photo'}
+                                {imagePreview ? 'Click to change' : 'Upload Identity Photo'}
                             </p>
                         </motion.div>
 
                         <div className="form-grid">
                             <div className="form-group">
-                                <label>Identity Name</label>
+                                <label>Full Name</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                    <input name="fullName" placeholder="Full Name" required value={formData.fullName} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                    <input name="fullName" placeholder="Enter your name" required value={formData.fullName} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
                             <div className="form-group">
+                                <label>Phone Number</label>
+                                <div className="input-wrapper">
+                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                                    <input name="phone" placeholder="+91 00000 00000" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className="form-group full-width">
                                 <label>Email Address</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                                     <input name="email" type="email" placeholder="email@domain.com" required value={formData.email} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
-                            <div className="form-group">
+                            <div className="form-group full-width">
                                 <label>Organization</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
                                     <input name="organization" placeholder="Org/Company" required value={formData.organization} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label>Link Number</label>
-                                <div className="input-wrapper">
-                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                                    <input name="phone" placeholder="+91 xxxxxxxxx" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
                             <div className="form-group">
@@ -397,7 +447,12 @@ export default function Signup({ onNavigate }) {
 
                         <label className="terms-row">
                             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-                            <span>Agree to <span className="auth-link" onClick={() => setShowTerms(true)}>Terms of Service</span> and <span className="auth-link" onClick={() => setShowTerms(true)}>Privacy Policy</span>.</span>
+                            <span>
+                                I have read and agree to the
+                                <span className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("terms"); setShowTerms(true); }}>Terms of Service</span>
+                                and
+                                <span className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("privacy"); setShowTerms(true); }}>Privacy Policy</span>.
+                            </span>
                         </label>
 
                         <motion.button type="submit" className="auth-submit" disabled={loading || success} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
