@@ -38,17 +38,11 @@
 
 <br/>
 
-<!-- 3D Stats Cards -->
-<img src="https://github-readme-stats.vercel.app/api?username=RiteshKumar2e&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0d1117&title_color=6366f1&icon_color=00d9ff&text_color=c9d1d9&border_radius=15" height="170"/>
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=RiteshKumar2e&layout=compact&theme=tokyonight&hide_border=true&bg_color=0d1117&title_color=6366f1&text_color=c9d1d9&border_radius=15" height="170"/>
-
-<br/><br/>
-
 ---
 
 ### 🎯 **The Future of Customer Support**
 
-**Quickfix** is an enterprise-grade AI platform powered by **14 specialized agents** that transform customer complaints into surgical resolutions in **milliseconds**. Built with Google Gemini AI, FastAPI, and React.
+**Quickfix** is an enterprise-grade AI platform powered by **7+ specialized agents** that transform customer complaints into surgical resolutions in **milliseconds**. Built with Google Gemini AI, FastAPI, and React.
 
 </div>
 
@@ -91,7 +85,7 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    QUICKFIX AI PLATFORM                          ║
 ║                                                                  ║
-║  🎯 14 Specialized Agents  │  ⚡ Sub-500ms Response             ║
+║  🎯 7+ Specialized Agents  │  ⚡ Sub-500ms Response             ║
 ║  🧠 98% Accuracy          │  🔒 Enterprise Security            ║
 ║  📊 Real-time Analytics   │  🌐 24/7 Availability              ║
 ╚══════════════════════════════════════════════════════════════════╝
@@ -152,7 +146,7 @@ mindmap
 
 ## ✨ **Key Features**
 
-### 🤖 **The 14-Agent Intelligence Grid**
+### 🤖 **The 7+ Agent Intelligence Grid**
 
 <div align="center">
 
@@ -270,7 +264,7 @@ graph LR
     end
     
     subgraph "AI Layer"
-        C[14 AI Agents<br/>Gemini 1.5 Pro/Flash]
+        C[7+ AI Agents<br/>Gemini 1.5 Pro/Flash]
     end
     
     subgraph "Data Layer"
@@ -316,7 +310,7 @@ customer-complaint-agent_new/
 │
 ├── 📂 backend/                     # FastAPI + Python
 │   ├── 📂 app/
-│   │   ├── 📂 agents/              # 14 AI Agents
+│   │   ├── 📂 agents/              # 7+ AI Agents
 │   │   │   ├── orchestrator.py    # Master coordinator
 │   │   │   ├── classifier.py      # Category detection
 │   │   │   ├── sentiment_analyzer.py
@@ -876,7 +870,7 @@ copies or substantial portions of the Software.
 [![GitHub](https://img.shields.io/badge/GitHub-RiteshKumar2e-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RiteshKumar2e)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ritesh_Kumar-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ritesh-kumar-b3a654253)
 [![Email](https://img.shields.io/badge/Email-riteshkumar90359@gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:riteshkumar90359@gmail.com)
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Site-6366F1?style=for-the-badge&logo=google-chrome&logoColor=white)](https://customer-complaint-agent-new.vercel.app)
+[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Site-6366F1?style=for-the-badge&logo=google-chrome&logoColor=white)](https://riteshkumar2e.github.io/Portfolio/)
 
 </div>
 
@@ -985,10 +979,6 @@ Need help? We're here for you!
 <img src="https://img.icons8.com/fluency/96/github.png" width="48"/>
 <br/><b>GitHub Issues</b>
 <br/><a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new/issues">Create Issue</a>
-</td>
-<td align="center" width="33%">
-<img src="https://img.icons8.com/fluency/96/phone.png" width="48"/>
-<br/><b>Phone</b>
 </td>
 </tr>
 </table>
