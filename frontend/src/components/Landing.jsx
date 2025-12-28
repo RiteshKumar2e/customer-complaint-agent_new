@@ -174,13 +174,13 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </nav>
 
         <div className="auth-buttons" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <ThemeToggle className="navbar-theme-toggle" />
+          <ThemeToggle className="navbar-theme-toggle desktop-only-toggle" />
           <button className="btn-admin" onClick={onStart}>
-            {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign in")}
+            {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign In")}
           </button>
           {!user && (
             <button className="btn-admin admin-special" onClick={onAdminLogin} style={{ background: 'linear-gradient(135deg, #ff8a3d, #ff6b1a)', border: 'none' }}>
-              Admin Access
+              Admin Login
             </button>
           )}
         </div>

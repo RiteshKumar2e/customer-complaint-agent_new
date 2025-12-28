@@ -185,7 +185,22 @@ body.light-theme .landing-header {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
 }
 
+@media (max-width: 1100px) {
+  .nav-links {
+    gap: 1rem;
+  }
+
+  .landing-header {
+    padding: 0 3%;
+  }
+}
+
+
 /* Mobile Menu Toggle Button */
+.mobile-header-actions {
+  display: none;
+}
+
 .mobile-menu-toggle {
   display: none;
   flex-direction: column;
@@ -2035,7 +2050,17 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
 }
 
 /* ===== MOBILE NAVIGATION STYLES ===== */
-@media (max-width: 968px) {
+@media (max-width: 850px) {
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .desktop-only-toggle {
+    display: none !important;
+  }
+
 
   /* Show mobile menu toggle */
   .mobile-menu-toggle {
@@ -2076,6 +2101,7 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   .nav-links.is-open {
     right: 0;
   }
+
 
   /* Show mobile auth buttons at top */
   .nav-links .mobile-auth-buttons {
