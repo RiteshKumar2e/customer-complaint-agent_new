@@ -166,28 +166,16 @@ body.light-theme .mouse-glow {
   top: 0;
   right: 0;
   left: 0;
-  height: 70px;
+  height: 65px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 4%;
-  z-index: 1000;
-  backdrop-filter: blur(16px);
+  padding: 0 5%;
+  z-index: 100;
+  backdrop-filter: blur(12px);
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
   animation: slideDown 0.8s ease-out;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.desktop-auth-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 body.light-theme .landing-header {
@@ -197,25 +185,34 @@ body.light-theme .landing-header {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
 }
 
-/* Consolidated Media Queries handled at end of file */
+@media (max-width: 1100px) {
+  .nav-links {
+    gap: 1rem;
+  }
 
+  .landing-header {
+    padding: 0 3%;
+  }
+}
 
 
 /* Mobile Menu Toggle Button */
+.mobile-header-actions {
+  display: none;
+}
+
 .mobile-menu-toggle {
   display: none;
-  width: 32px;
-  height: 32px;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
+  justify-content: space-around;
+  width: 30px;
+  height: 24px;
   background: transparent;
   border: none;
   cursor: pointer;
-  z-index: 2000;
+  padding: 0;
+  z-index: 101;
 }
-
 
 .hamburger {
   display: block;
@@ -2052,109 +2049,236 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   }
 }
 
-/* ===== RESPONSIVE HEADER OVERHAUL ===== */
-
-/* Tablet & Intermediate Desktop (e.g. Desktop mode on mobile) */
-@media (max-width: 1024px) {
-  .landing-header {
-    padding: 0 2%;
-    height: 65px;
+/* ===== MOBILE NAVIGATION STYLES ===== */
+@media (max-width: 850px) {
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  .nav-links {
-    gap: 0.75rem;
+  .desktop-only-toggle {
+    display: none !important;
   }
 
-  .nav-links button {
-    font-size: 0.85rem;
-  }
 
-  .header-actions {
-    gap: 0.75rem;
-  }
-
-  .btn-admin {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-  }
-}
-
-/* Force Mobile Menu at 800px or below */
-@media (max-width: 800px) {
-  .desktop-auth-buttons {
-    display: none;
-  }
-
-  .nav-links {
-    display: none;
-    /* Hide default flex links */
-  }
-
+  /* Show mobile menu toggle */
   .mobile-menu-toggle {
     display: flex;
   }
 
-  /* Actual Side Menu Styles */
+  /* Hide desktop auth buttons */
+  .auth-buttons {
+    display: none !important;
+  }
+
+  /* Mobile Navigation */
   .nav-links {
-    display: flex;
     position: fixed;
-    top: 0;
+    top: 65px;
     right: -100%;
     width: 280px;
-    height: 100vh;
-    background: var(--bg-card);
+    height: calc(100vh - 65px);
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 80px 1.5rem 2rem;
-    gap: 0.5rem;
-    z-index: 1001;
+    align-items: flex-start;
+    padding: 0;
+    gap: 0;
     transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
-    border-left: 1px solid var(--border-subtle);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    z-index: 99;
+  }
+
+  body.light-theme .nav-links {
+    background: rgba(255, 255, 255, 0.98);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
   }
 
   .nav-links.is-open {
     right: 0;
   }
 
+
+  /* Show mobile auth buttons at top */
+  .nav-links .mobile-auth-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    margin: 0;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    order: -1;
+    /* Move to top */
+  }
+
+  body.light-theme .nav-links .mobile-auth-buttons {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  /* Style Sign in button as rounded rectangle */
+  .nav-links .mobile-auth-buttons .btn-admin {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  /* Admin Access button special styling */
+  .nav-links .mobile-auth-buttons .btn-admin.admin-special {
+    background: linear-gradient(135deg, #ff8a3d, #ff6b1a);
+    box-shadow: 0 4px 12px rgba(255, 138, 61, 0.3);
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #764ba2, #667eea);
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin.admin-special:hover {
+    box-shadow: 0 6px 16px rgba(255, 138, 61, 0.5);
+    background: linear-gradient(135deg, #ff6b1a, #ff8a3d);
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin:active {
+    transform: translateY(0);
+  }
+
+  /* Navigation buttons */
   .nav-links button {
     width: 100%;
     text-align: left;
-    padding: 1rem;
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
   }
 
-  .mobile-auth-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 2rem;
-    width: 100%;
+  body.light-theme .nav-links button {
+    color: #1e293b;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
   }
 
-  .mobile-auth-buttons .btn-admin {
-    width: 100%;
-    justify-content: center;
-    padding: 1rem;
+  .nav-links button::after {
+    display: none;
   }
 
+  .nav-links button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #667eea;
+    padding-left: 1.5rem;
+  }
+
+  body.light-theme .nav-links button:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  /* Overlay when menu is open */
   .landing-header.menu-open::before {
     content: '';
     position: fixed;
-    inset: 0;
+    top: 65px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    z-index: 1000;
+    z-index: 98;
+    animation: fadeIn 0.3s ease;
+  }
+
+  body.light-theme .landing-header.menu-open::before {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 }
 
-/* Even Smaller Phones */
+/* Extra small mobile devices */
 @media (max-width: 480px) {
   .nav-links {
     width: 100%;
+    right: -100%;
+  }
+
+  .nav-links.is-open {
+    right: 0;
+  }
+
+  .landing-header {
+    padding: 0 4%;
+  }
+
+  .mobile-auth-buttons {
+    padding: 1rem;
+  }
+
+  .nav-links .mobile-auth-buttons .btn-admin {
+    padding: 0.9rem 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  .nav-links button {
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
   }
 
   .logo-text {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .mobile-header-actions .navbar-theme-toggle {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    top: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.light-theme .mobile-header-actions .navbar-theme-toggle {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+
+  .mobile-auth-buttons .navbar-theme-toggle {
+    display: none !important;
   }
 }
