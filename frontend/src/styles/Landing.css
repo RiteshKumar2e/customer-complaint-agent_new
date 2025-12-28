@@ -178,6 +178,13 @@ body.light-theme .mouse-glow {
   animation: slideDown 0.8s ease-out;
 }
 
+.landing-header .nav-links {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+
 body.light-theme .landing-header {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(15px);
@@ -185,42 +192,55 @@ body.light-theme .landing-header {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
 }
 
+.header-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
 @media (max-width: 1100px) {
   .nav-links {
     gap: 1rem;
-  }
-
-  .landing-header {
-    padding: 0 3%;
   }
 }
 
 
 /* Mobile Menu Toggle Button */
-.mobile-header-actions {
-  display: none;
-}
-
 .mobile-menu-toggle {
   display: none;
   flex-direction: column;
   justify-content: space-around;
-  width: 30px;
-  height: 24px;
-  background: transparent;
-  border: none;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   cursor: pointer;
-  padding: 0;
+  padding: 6px;
   z-index: 101;
+  transition: all 0.3s ease;
+}
+
+body.light-theme .mobile-menu-toggle {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
 .hamburger {
   display: block;
   position: relative;
   width: 100%;
-  height: 3px;
+  height: 2px;
   background: var(--text-primary);
-  border-radius: 3px;
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
@@ -318,6 +338,9 @@ body.light-theme .navbar-theme-toggle {
   transition: width 0.3s ease;
 }
 
+/* Hide navigation from top bar on small screens handled by media query */
+
+
 .nav-links button:hover {
   color: var(--accent-primary);
 }
@@ -333,9 +356,19 @@ body.light-theme .nav-links button::after {
 /* Auth Buttons */
 .auth-buttons {
   display: flex;
-  gap: 0.9rem;
+  gap: 1rem;
   align-items: center;
 }
+
+.auth-buttons .btn-admin {
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.auth-buttons .admin-special {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
+
 
 .btn-signin,
 .btn-user,
@@ -2050,34 +2083,32 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
 }
 
 /* ===== MOBILE NAVIGATION STYLES ===== */
-@media (max-width: 850px) {
-  .mobile-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+@media (max-width: 980px) {
+  .header-right .auth-buttons {
+    display: none;
   }
 
-  .desktop-only-toggle {
-    display: none !important;
-  }
-
-
-  /* Show mobile menu toggle */
   .mobile-menu-toggle {
     display: flex;
   }
 
-  /* Hide desktop auth buttons */
-  .auth-buttons {
-    display: none !important;
+  /* Desktop Navigation needs to be hidden from the center */
+  .landing-header .nav-links {
+    display: none;
   }
 
-  /* Mobile Navigation */
+  .landing-header.menu-open .nav-links {
+    display: flex;
+  }
+
+  /* Mobile Navigation Slide-in */
   .nav-links {
+    display: flex;
     position: fixed;
     top: 65px;
     right: -100%;
     width: 280px;
+
     height: calc(100vh - 65px);
     background: rgba(10, 10, 15, 0.98);
     backdrop-filter: blur(20px);

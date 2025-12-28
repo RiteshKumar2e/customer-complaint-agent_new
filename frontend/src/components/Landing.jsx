@@ -124,46 +124,36 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
       {/* Header */}
       <header className={`landing-header ${isMenuOpen ? 'menu-open' : ''}`}>
-        <div className="navbar-brand ecohealth-logo" onClick={scrollToTop}>
-          <div className="logo-orb">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="18" cy="18" r="18" fill="url(#orb-grad)" fillOpacity="0.15" />
-              <circle cx="18" cy="18" r="17.5" stroke="url(#orb-grad)" strokeOpacity="0.2" />
-              <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="url(#shield-grad)" />
-              <path d="M18 13V17M18 21H18.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              <defs>
-                <linearGradient id="orb-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#7c9aff" />
-                  <stop offset="1" stopColor="#b69eff" />
-                </linearGradient>
-                <linearGradient id="shield-grad" x1="10" y1="8" x2="26" y2="30" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#7c9aff" />
-                  <stop offset="1" stopColor="#3b82f6" />
-                </linearGradient>
-              </defs>
-            </svg>
+        <div className="header-left">
+          <div className="navbar-brand ecohealth-logo" onClick={scrollToTop}>
+            <div className="logo-orb">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="18" cy="18" r="18" fill="url(#orb-grad)" fillOpacity="0.15" />
+                <circle cx="18" cy="18" r="17.5" stroke="url(#orb-grad)" strokeOpacity="0.2" />
+                <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="url(#shield-grad)" />
+                <path d="M18 13V17M18 21H18.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <defs>
+                  <linearGradient id="orb-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#7c9aff" />
+                    <stop offset="1" stopColor="#b69eff" />
+                  </linearGradient>
+                  <linearGradient id="shield-grad" x1="10" y1="8" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#7c9aff" />
+                    <stop offset="1" stopColor="#3b82f6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div className="brand-text-stack">
+              <span className="logo-text">Quickfix</span>
+            </div>
           </div>
-          <div className="brand-text-stack">
-            <span className="logo-text">Quickfix</span>
-          </div>
-        </div>
-
-        <div className="mobile-header-actions">
-          <ThemeToggle className="navbar-theme-toggle" />
-          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
-          </button>
         </div>
 
         <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
-          <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
-          <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
-          <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
-          <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
-          <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
           <div className="mobile-auth-buttons">
             <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
-              {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign in")}
+              {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign In")}
             </button>
             {!user && (
               <button className="btn-admin admin-special" onClick={() => { onAdminLogin(); setIsMenuOpen(false); }} style={{ marginTop: '10px', background: 'var(--secondary)' }}>
@@ -171,18 +161,28 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
               </button>
             )}
           </div>
+          <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
+          <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
+          <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
+          <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
+          <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
         </nav>
 
-        <div className="auth-buttons" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <ThemeToggle className="navbar-theme-toggle desktop-only-toggle" />
-          <button className="btn-admin" onClick={onStart}>
-            {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign In")}
-          </button>
-          {!user && (
-            <button className="btn-admin admin-special" onClick={onAdminLogin} style={{ background: 'linear-gradient(135deg, #ff8a3d, #ff6b1a)', border: 'none' }}>
-              Admin Login
+        <div className="header-right">
+          <ThemeToggle className="navbar-theme-toggle" />
+          <div className="auth-buttons">
+            <button className="btn-admin" onClick={onStart}>
+              {user?.role === "Admin" ? `Admin Panel` : (user ? `Dashboard` : "Sign In")}
             </button>
-          )}
+            {!user && (
+              <button className="btn-admin admin-special" onClick={onAdminLogin}>
+                Admin Login
+              </button>
+            )}
+          </div>
+          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
+          </button>
         </div>
       </header>
 
@@ -602,6 +602,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
       {/* Cookie Consent Banner */}
       <CookieConsent />
-    </div>
+    </div >
   );
 }
