@@ -148,41 +148,42 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           </div>
         </div>
 
-        <div className="mobile-header-actions">
+        <div className="header-actions">
           <ThemeToggle className="navbar-theme-toggle" />
-          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
-          </button>
-        </div>
 
-        <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
-          <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
-          <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
-          <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
-          <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
-          <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
-          <div className="mobile-auth-buttons">
-            <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
-              {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign in")}
+          <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
+            <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
+            <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
+            <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
+            <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
+            <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
+
+            <div className="mobile-auth-buttons">
+              <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
+                {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign In")}
+              </button>
+              {!user && (
+                <button className="btn-admin admin-special" onClick={() => { onAdminLogin(); setIsMenuOpen(false); }}>
+                  Admin Login
+                </button>
+              )}
+            </div>
+          </nav>
+
+          <div className="desktop-auth-buttons">
+            <button className="btn-admin" onClick={onStart}>
+              {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign In")}
             </button>
             {!user && (
-              <button className="btn-admin admin-special" onClick={() => { onAdminLogin(); setIsMenuOpen(false); }} style={{ marginTop: '10px', background: 'var(--secondary)' }}>
+              <button className="btn-admin admin-special" onClick={onAdminLogin}>
                 Admin Login
               </button>
             )}
           </div>
-        </nav>
 
-        <div className="auth-buttons" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <ThemeToggle className="navbar-theme-toggle desktop-only-toggle" />
-          <button className="btn-admin" onClick={onStart}>
-            {user?.role === "Admin" ? `Admin Panel (${user.full_name?.split(' ')[0]})` : (user ? `Dashboard (${user.full_name?.split(' ')[0]})` : "Sign In")}
+          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
           </button>
-          {!user && (
-            <button className="btn-admin admin-special" onClick={onAdminLogin} style={{ background: 'linear-gradient(135deg, #ff8a3d, #ff6b1a)', border: 'none' }}>
-              Admin Login
-            </button>
-          )}
         </div>
       </header>
 
