@@ -45,8 +45,6 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .theme-toggle {
-        top: 15px;
-        right: 15px;
         width: 44px;
         height: 44px;
     }

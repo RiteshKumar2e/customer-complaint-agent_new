@@ -203,6 +203,12 @@ body.light-theme .landing-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -217,16 +223,18 @@ body.light-theme .landing-header {
 .mobile-menu-toggle {
   display: none;
   flex-direction: column;
-  justify-content: space-around;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
   cursor: pointer;
-  padding: 6px;
+  padding: 0;
   z-index: 101;
   transition: all 0.3s ease;
+  gap: 6px;
 }
 
 body.light-theme .mobile-menu-toggle {
@@ -249,9 +257,9 @@ body.light-theme .mobile-menu-toggle {
   content: '';
   position: absolute;
   width: 100%;
-  height: 3px;
+  height: 2px;
   background: var(--text-primary);
-  border-radius: 3px;
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
@@ -2088,6 +2096,12 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     display: none;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .mobile-menu-toggle {
     display: flex;
   }
@@ -2282,34 +2296,27 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   }
 
   .logo-text {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
   }
 
-  .mobile-header-actions .navbar-theme-toggle {
-    width: 44px !important;
-    height: 44px !important;
-    padding: 0 !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 12px !important;
+  .header-actions .navbar-theme-toggle,
+  .mobile-menu-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    position: relative !important;
-    top: 0 !important;
-    right: 0 !important;
-    transform: none !important;
-    margin: 0 !important;
-    box-shadow: none !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-subtle) !important;
+    padding: 0 !important;
   }
 
-  body.light-theme .mobile-header-actions .navbar-theme-toggle {
-    background: #f1f5f9 !important;
+  body.light-theme .mobile-menu-toggle,
+  body.light-theme .header-actions .navbar-theme-toggle {
+    background: #ffffff !important;
     border-color: #e2e8f0 !important;
     color: #1e293b !important;
-  }
-
-  .mobile-auth-buttons .navbar-theme-toggle {
-    display: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
   }
 }

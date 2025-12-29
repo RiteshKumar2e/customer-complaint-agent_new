@@ -169,7 +169,12 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </nav>
 
         <div className="header-right">
-          <ThemeToggle className="navbar-theme-toggle" />
+          <div className="header-actions">
+            <ThemeToggle className="navbar-theme-toggle" />
+            <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
+            </button>
+          </div>
           <div className="auth-buttons">
             <button className="btn-admin" onClick={onStart}>
               {user?.role === "Admin" ? `Admin Panel` : (user ? `Dashboard` : "Sign In")}
@@ -180,9 +185,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
               </button>
             )}
           </div>
-          <button className="mobile-menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <span className={`hamburger ${isMenuOpen ? 'active' : ''}`}></span>
-          </button>
         </div>
       </header>
 
