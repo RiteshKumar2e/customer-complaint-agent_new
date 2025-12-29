@@ -30,7 +30,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://customer-complaint-agent-new.vercel.app",
+        "https://customer-complaint-agent-new-vpfu.vercel.app",
         "http://localhost:5173",
         "http://localhost:5174",
     ],
