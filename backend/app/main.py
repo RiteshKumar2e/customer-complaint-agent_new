@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request
+import os
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -33,7 +35,13 @@ app.add_middleware(
         "https://riteshkr.online",
         "http://localhost:5173",
         "http://localhost:5174",
-        "http://riteshkr.online"
+        "http://riteshkr.online",
+        "https://*.vercel.app", # Allow all vercel subdomains
+        os.getenv("FRONTEND_URL", "*") # Or allow specific frontend URL from env
+    ] if os.getenv("ENVIRONMENT") != "production" else [
+        "https://riteshkr.online",
+        "http://riteshkr.online",
+        os.getenv("FRONTEND_URL")
     ],
     allow_credentials=True,
     allow_methods=["*"],
