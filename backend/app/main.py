@@ -33,6 +33,7 @@ app.add_middleware(
         "https://riteshkr.online",
         "http://localhost:5173",
         "http://localhost:5174",
+        "http://riteshkr.online"
     ],
     allow_credentials=True,
     allow_methods=["*"],
