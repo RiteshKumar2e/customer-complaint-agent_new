@@ -21,7 +21,7 @@ class EmailService:
         self.sender_email = os.getenv("SENDER_EMAIL")
         self.admin_email = os.getenv("ADMIN_EMAIL", "riteshkumar90359@gmail.com")
         self.company_name = os.getenv("COMPANY_NAME", "Quickfix")
-        self.app_url = os.getenv("APP_URL", "https://customer-complaint-agent-new.vercel.app")
+        self.app_url = os.getenv("APP_URL", "https://riteshkr.online")
         
         # 🛡️ Safety Validation: Force valid email format if .env is wrong
         if not self.sender_email or "@" not in self.sender_email:
@@ -441,7 +441,7 @@ class EmailService:
                     <!-- CTA Button -->
                     <tr>
                         <td style="padding: 10px 30px 30px 30px; text-align: center;">
-                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+                            <a href="{self.app_url}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
                                 View Complete Dashboard
                             </a>
                         </td>
@@ -595,7 +595,7 @@ class EmailService:
                                 <p style="margin: 0 0 20px 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
                                     Your feedback is invaluable to us. Please take a moment to share your experience.
                                 </p>
-                                <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                                <a href="{self.app_url}/feedback" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                                     Rate Your Experience
                                 </a>
                             </div>

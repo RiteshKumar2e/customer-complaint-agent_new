@@ -25,13 +25,13 @@
 
 <!-- Action Buttons -->
 <p align="center">
-  <a href="https://customer-complaint-agent-new.vercel.app">
+  <a href="https://riteshkr.online">
     <img src="https://img.shields.io/badge/🚀_LIVE_DEMO-Launch_Platform-6366F1?style=for-the-badge&labelColor=1a1a1a" alt="Live Demo"/>
   </a>
   <a href="#-quick-start">
     <img src="https://img.shields.io/badge/⚡_QUICK_START-5_Minutes-10B981?style=for-the-badge&labelColor=1a1a1a" alt="Quick Start"/>
   </a>
-  <a href="https://customer-complaint-agent-new.vercel.app/docs">
+  <a href="https://riteshkr.online/docs">
     <img src="https://img.shields.io/badge/📚_API_DOCS-Interactive-F59E0B?style=for-the-badge&labelColor=1a1a1a" alt="API Docs"/>
   </a>
 </p>

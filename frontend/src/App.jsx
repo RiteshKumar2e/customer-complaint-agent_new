@@ -48,6 +48,17 @@ export default function App() {
     // Handle deep links from email
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
+    } else if (window.location.pathname === "/dashboard") {
+      // If user is logged in, show profile, else landing will handle sign-in button
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        setPage("profile");
+      } else {
+        setPage("landing");
+      }
+    } else if (window.location.pathname === "/feedback") {
+      setPage("landing");
+      setFeedbackOpen(true);
     }
   }, []);
 
