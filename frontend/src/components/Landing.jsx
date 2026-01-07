@@ -162,6 +162,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             )}
           </div>
           <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
+          <button onClick={() => { scrollToSection('mission'); setIsMenuOpen(false); }}>Mission</button>
           <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
           <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
           <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
@@ -243,6 +244,43 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </div>
 
 
+      </section>
+
+      {/* Vision & Mission Section */}
+      <section className="vision-mission-section" id="mission">
+        <div className="container">
+          <div className="vision-box" data-aos="fade-up">
+            <div className="section-tag">Our Vision</div>
+            <h2 className="vision-text">
+              To redefine the global standard of customer success through autonomous AI intelligence.
+            </h2>
+          </div>
+
+          <div className="mission-content">
+            <div className="mission-card" data-aos="fade-right">
+              <div className="section-tag">Our Mission</div>
+              <h3 className="mission-title">Empowering Enterprises with Agentic Precision</h3>
+              <p className="mission-description">
+                Our mission is to bridge the gap between complex technical logic and human-centric service.
+                We deploy high-frequency agentic clusters that analyze, classify, and resolve issues with
+                surgical precision. By combining emotional intelligence with recursive reasoning, we ensure
+                that every customer feels heard, valued, and satisfied in real-time, reducing resolution
+                cycles from days to mere seconds.
+              </p>
+              <div className="mission-stats">
+                <div className="stat-item">
+                  <span className="stat-value">98%</span>
+                  <span className="stat-label">Surgical Accuracy</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">&lt; 2s</span>
+                  <span className="stat-label">Response Latency</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
@@ -402,7 +440,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             <h3 className="solution-title team-name">Ritesh Kumar</h3>
             <p className="team-role-pill">Software Engineer | AI & ML Enthusiast</p>
             <p className="solution-description team-bio">
-              B.Tech CSE (AI & ML) student | Experienced in React, SQL |
+              AI & ML | Experienced in React, SQL |
               Passionate about AI, ML, and full-stack development.
             </p>
             <div className="social-links-premium1">

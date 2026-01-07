@@ -37,6 +37,7 @@
     opacity: 0;
     transform: translateX(400px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -49,10 +50,22 @@
   border-color: rgba(34, 197, 94, 0.4);
 }
 
+body.light-theme .notification-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.1));
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
+}
+
 /* Error Notification */
 .notification-error {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
   border-color: rgba(239, 68, 68, 0.4);
+}
+
+body.light-theme .notification-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1));
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
 }
 
 /* Warning Notification */
@@ -61,10 +74,22 @@
   border-color: rgba(245, 158, 11, 0.4);
 }
 
+body.light-theme .notification-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1));
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.2);
+}
+
 /* Info Notification */
 .notification-info {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.15));
   border-color: rgba(59, 130, 246, 0.4);
+}
+
+body.light-theme .notification-info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
 }
 
 .notification-icon {
@@ -74,9 +99,12 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }
@@ -95,10 +123,19 @@
   color: #e2e8f0;
 }
 
+body.light-theme .notification-title {
+  color: #0f172a;
+  font-weight: 700;
+}
+
 .notification-message {
   font-size: 13px;
   color: #cbd5f0;
   line-height: 1.4;
+}
+
+body.light-theme .notification-message {
+  color: #475569;
 }
 
 .notification-close {
@@ -117,9 +154,17 @@
   transition: all 0.2s ease;
 }
 
+body.light-theme .notification-close {
+  color: #64748b;
+}
+
 .notification-close:hover {
   color: #f1f5f9;
   transform: rotate(90deg);
+}
+
+body.light-theme .notification-close:hover {
+  color: #0f172a;
 }
 
 /* Exit animation */
@@ -132,6 +177,7 @@
     opacity: 1;
     transform: translateX(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(400px);

@@ -7,7 +7,7 @@ export default function ComplaintForm({ onResult, user }) {
   const [formData, setFormData] = useState({
     name: user?.full_name || "",
     email: user?.email || "",
-    category: "Technical",
+    category: "Select Category",
     subject: "",
     description: ""
   });
@@ -31,6 +31,16 @@ export default function ComplaintForm({ onResult, user }) {
   const validateForm = () => {
     if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.description.trim()) {
       setError("All fields marked with * are required");
+      return false;
+    }
+    if (formData.category === "Select Category") {
+      setError("Please select a valid category");
+      return false;
+    }
+    // Check if description has at least 10 words
+    const wordCount = formData.description.trim().split(/\s+/).length;
+    if (wordCount < 10) {
+      setError(`Description must be at least 10 words (currently ${wordCount} words)`);
       return false;
     }
     return true;
@@ -82,7 +92,7 @@ export default function ComplaintForm({ onResult, user }) {
       setFormData({
         name: user?.full_name || "",
         email: user?.email || "",
-        category: "Technical",
+        category: "Select Category",
         subject: "",
         description: ""
       });
@@ -98,10 +108,13 @@ export default function ComplaintForm({ onResult, user }) {
       showNotification("error", "Rating Required", "Please select a star rating", "⚠️");
       return;
     }
+    // Feedback text is now optional
     try {
       await submitReview(ticketId, rating, feedback);
       showNotification("success", "Feedback Received", "Thank you for reviewing our AI!", "⭐");
       setShowReview(false);
+      setRating(0);
+      setFeedback("");
     } catch (e) {
       console.error(e);
       showNotification("error", "Error", "Failed to submit review.", "❌");
@@ -150,20 +163,21 @@ export default function ComplaintForm({ onResult, user }) {
         </div>
 
         <div className="form-group">
-          <label>Category</label>
+          <label>Category *</label>
           <select name="category" value={formData.category} onChange={handleChange} className="form-select" disabled={loading}>
+            <option value="Select Category">Select Category</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
         <div className="form-group">
-          <label>Subject</label>
+          <label>Subject *</label>
           <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-input" placeholder="What's the issue?" disabled={loading} />
         </div>
 
         <div className="form-group">
-          <label>Full Description</label>
-          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened..." rows="5" disabled={loading} />
+          <label>Full Description * (minimum 10 words)</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened (at least 10 words)..." rows="5" disabled={loading} />
         </div>
 
         {error && <div className="error-msg">{error}</div>}
@@ -183,7 +197,7 @@ export default function ComplaintForm({ onResult, user }) {
             ))}
           </div>
           <textarea
-            placeholder="How could our AI have handled this better?"
+            placeholder="Additional feedback (optional) - How could our AI have handled this better?"
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             className="review-textarea"

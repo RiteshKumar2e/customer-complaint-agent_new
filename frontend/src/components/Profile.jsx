@@ -24,8 +24,8 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const [feedbackForm, setFeedbackForm] = useState({
         name: user?.full_name || "",
         email: user?.email || "",
-        rating: "5",
-        recommendation: "10",
+        rating: "",
+        recommendation: "",
         message: ""
     });
     const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -113,10 +113,20 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
 
     const handleFeedbackSubmit = async (e) => {
         e.preventDefault();
-        if (!feedbackForm.message.trim()) {
-            setFeedbackError("Please enter your message");
+
+        // Validate rating selection
+        if (!feedbackForm.rating) {
+            setFeedbackError("Please select an experience rating (1-5 stars)");
             return;
         }
+
+        // Validate recommendation selection
+        if (!feedbackForm.recommendation) {
+            setFeedbackError("Please select a recommendation score (0-10)");
+            return;
+        }
+
+        // Message is now optional - no validation needed
 
         setFeedbackLoading(true);
         setFeedbackError("");
@@ -134,7 +144,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
             // Redirect to dashboard after 3 seconds
             setTimeout(() => {
                 setFeedbackSuccess(false);
-                setFeedbackForm(prev => ({ ...prev, message: "" }));
+                setFeedbackForm(prev => ({ ...prev, rating: "", recommendation: "", message: "" }));
                 setActiveTab("dashboard");
             }, 3000);
         } catch (error) {
@@ -777,27 +787,29 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                         </div>
 
                                         <div className="form-group">
-                                            <label>Your Detailed Thoughts</label>
+                                            <label>Your Detailed Thoughts (Optional)</label>
                                             <textarea
                                                 value={feedbackForm.message}
                                                 onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
-                                                placeholder="What specific areas should we focus on improving? We're listening..."
-                                                rows="5"
-                                                required
+                                                placeholder="What specific areas should we focus on improving? (Optional)"
+                                                rows="8"
                                             ></textarea>
                                         </div>
 
+
                                         {feedbackError && <p className="error-message">{feedbackError}</p>}
 
-                                        <motion.button
-                                            type="submit"
-                                            className="action-btn primary"
-                                            disabled={feedbackLoading}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                        >
-                                            {feedbackLoading ? "Transmitting..." : "Send Feedback →"}
-                                        </motion.button>
+                                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+                                            <motion.button
+                                                type="submit"
+                                                className="action-btn primary feedback-submit-btn"
+                                                disabled={feedbackLoading}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                {feedbackLoading ? "Transmitting..." : "Send Feedback →"}
+                                            </motion.button>
+                                        </div>
                                     </form>
                                 </div>
                             )}

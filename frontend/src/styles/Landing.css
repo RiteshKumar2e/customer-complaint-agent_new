@@ -698,30 +698,47 @@ body.light-theme .hero-title {
 }
 
 /* Secondary */
+/* Dark Theme (Default) - Indigo */
 .btn-secondary {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-medium);
+  background: #6366f1 !important;
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #4f46e5 !important;
+  padding: 0.85rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
-  background: var(--bg-hover);
+  background: #4f46e5 !important;
+  background-color: #4f46e5 !important;
   transform: translateY(-2px);
-  border-color: var(--accent-primary);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  border-color: #4338ca !important;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4) !important;
 }
 
+/* Light Theme - Green */
 body.light-theme .btn-secondary {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  color: #475569;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2) !important;
 }
 
 body.light-theme .btn-secondary:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-  background: #f8fafc;
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3) !important;
 }
 
 .connect-title {
@@ -830,6 +847,174 @@ body.light-theme .feature-mini:hover {
 
 .feature-mini:hover .icon {
   transform: rotate(10deg) scale(1.1);
+}
+
+/* Vision & Mission Section Styling */
+.vision-mission-section {
+  padding: 100px 5%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.vision-mission-section .container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.vision-box {
+  text-align: center;
+  margin-bottom: 80px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--dark-bg-hover);
+  color: var(--accent-primary);
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  border: 1px solid var(--accent-glow);
+}
+
+body.light-theme .section-tag {
+  background: #f0fdf4;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.vision-text {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mission-content {
+  display: block;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.mission-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  padding: 50px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+body.light-theme .mission-card {
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.mission-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.mission-description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 35px;
+}
+
+.mission-stats {
+  display: flex;
+  gap: 40px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .vision-mission-section {
+    padding: 60px 5%;
+  }
+
+  .vision-box {
+    margin-bottom: 40px;
+  }
+
+  .mission-card {
+    padding: 30px 20px;
+    border-radius: 20px;
+  }
+
+  .mission-title {
+    font-size: 1.5rem;
+  }
+
+  .mission-description {
+    font-size: 1rem;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vision-mission-section {
+    padding: 50px 1rem;
+  }
+
+  .mission-stats {
+    flex-direction: column;
+    gap: 25px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .vision-text {
+    font-size: 1.35rem;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+  }
 }
 
 .feature-mini span {
@@ -1603,7 +1788,7 @@ body.light-theme .modal-body li {
 
 @media (max-width: 768px) {
   .landing-header {
-    height: 70px;
+    height: 65px;
     padding: 0 5%;
   }
 
@@ -1847,7 +2032,14 @@ body.light-theme .modal-body li {
 
 @media (max-width: 480px) {
   .hero-title {
-    font-size: 1.85rem;
+    font-size: clamp(1.6rem, 8vw, 2rem);
+    line-height: 1.2;
+    padding: 0 5%;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+    padding: 0 10%;
   }
 
   .section-title {
@@ -2319,4 +2511,31 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     color: #1e293b !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
   }
+}
+
+/* ULTIMATE OVERRIDE FOR LIGHT THEME LEARN MORE BUTTON */
+body.light-theme .hero-cta .btn-secondary,
+body.light-theme .btn-secondary {
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: linear-gradient(#22c55e, #22c55e) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #16a34a !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 5 !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+body.light-theme .hero-cta .btn-secondary:hover,
+body.light-theme .btn-secondary:hover {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  background-image: linear-gradient(#16a34a, #16a34a) !important;
+  border-color: #15803d !important;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4) !important;
+  transform: translateY(-2px) !important;
 }
