@@ -37,12 +37,7 @@ export default function ComplaintForm({ onResult, user }) {
       setError("Please select a valid category");
       return false;
     }
-    // Check if description has at least 10 words
-    const wordCount = formData.description.trim().split(/\s+/).length;
-    if (wordCount < 10) {
-      setError(`Description must be at least 10 words (currently ${wordCount} words)`);
-      return false;
-    }
+
     return true;
   };
 
@@ -176,8 +171,8 @@ export default function ComplaintForm({ onResult, user }) {
         </div>
 
         <div className="form-group">
-          <label>Full Description * (minimum 10 words)</label>
-          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened (at least 10 words)..." rows="5" disabled={loading} />
+          <label>Full Description *</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened..." rows="5" disabled={loading} />
         </div>
 
         {error && <div className="error-msg">{error}</div>}
