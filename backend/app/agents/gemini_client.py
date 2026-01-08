@@ -26,7 +26,6 @@ failed_keys = set()  # Track keys that have hit quota limits
 
 # ✅ List of supported models for fallback
 SUPPORTED_MODELS = [
-    "gemini-2.0-flash-exp",
     "gemini-2.0-flash",
     "gemini-exp-1206",
     "gemini-2.0-flash-lite",
