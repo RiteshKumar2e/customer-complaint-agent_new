@@ -1,3 +1,5 @@
+import sys
+import os
 from app.agents.gemini_client import async_ask_gemini
 
 # Import training data
