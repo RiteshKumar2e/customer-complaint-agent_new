@@ -30,17 +30,48 @@ async def suggest_solution(category: str, text: str) -> str:
     if not text or not text.strip():
         return "Please contact our support team for assistance."
 
-    prompt = f"""
-{SOLUTION_EXAMPLES}
+    # Enhanced prompt for high-quality solutions
+    prompt = f"""You are an expert customer service solution specialist with 10+ years of experience.
 
-You are a customer service solution expert.
-Based on this complaint category and details, suggest ONE specific, actionable solution.
+COMPLAINT CATEGORY: {category}
+CUSTOMER ISSUE: {text}
 
-Category: {category}
-Complaint: {text}
+YOUR TASK:
+Provide a comprehensive, professional solution that:
+1. Acknowledges the specific problem
+2. Provides concrete action steps with timelines
+3. Shows empathy and understanding
+4. Gives specific details (not generic responses)
+5. Includes what the customer can expect next
 
-Provide a practical, empathetic solution in 1-2 sentences.
-"""
+SOLUTION FORMAT:
+- Start with acknowledgment of the issue
+- Provide 2-3 specific action steps
+- Include realistic timelines (hours/days)
+- End with reassurance
+
+EXAMPLE QUALITY SOLUTIONS:
+
+For Billing Issues:
+"I sincerely apologize for the billing discrepancy you've encountered. Here's how we'll resolve this immediately: (1) I'm escalating your case to our senior billing specialist who will audit your account within the next 4 hours. (2) Any duplicate charges will be refunded to your original payment method within 3-5 business days. (3) You'll receive a detailed breakdown via email showing the corrections made. We'll also add a $10 courtesy credit to your account for the inconvenience."
+
+For Technical Issues:
+"I understand how frustrating technical issues can be, especially when they impact your work. Here's our resolution plan: (1) Our Level 2 technical team will investigate your specific error code within the next 2 hours. (2) We'll provide either a permanent fix or a temporary workaround by end of day. (3) I'm assigning you a dedicated support ticket number and you'll receive hourly updates via email until this is fully resolved."
+
+For Delivery Issues:
+"I apologize for the delay in your delivery. Let me take immediate action: (1) I've contacted our logistics partner and your package is now flagged for priority delivery. (2) Based on current tracking, you should receive it within 24-48 hours. (3) I'm applying a 20% discount to your next order and upgrading your delivery to express shipping at no cost. You'll receive SMS updates every 6 hours until delivery is confirmed."
+
+Now provide a similarly detailed, specific, and professional solution for the customer's {category} complaint above.
+
+IMPORTANT: 
+- Be specific with timelines (e.g., "within 4 hours", "by tomorrow", "3-5 business days")
+- Mention specific teams/departments that will help
+- Include compensation/goodwill gestures when appropriate
+- Use empathetic language
+- Keep it professional but warm
+- Length: 3-5 sentences with concrete details
+
+SOLUTION:"""
     
     # Layer 1: Try Gemini AI (Best quality, contextual)
     try:
