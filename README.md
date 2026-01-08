@@ -188,7 +188,7 @@ graph TB
         G[Suggester<br/>Solution Crafting]
         H[Recommender<br/>Action Planning]
     end
-    end
+  
     subgraph "🛡️ Safety & Audit Layer"
         I[Reflective Critic<br/>Red-Teaming AI]
         J[Validator<br/>Quality Audit]
