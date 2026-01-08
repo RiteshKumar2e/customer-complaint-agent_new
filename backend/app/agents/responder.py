@@ -17,7 +17,6 @@ except ImportError:
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     SUPPORTED_MODELS = [
-        "gemini-2.0-flash-exp",
         "gemini-2.0-flash",
         "gemini-exp-1206",
         "gemini-2.0-flash-lite",
@@ -30,7 +29,7 @@ if GEMINI_API_KEY:
                 return genai.GenerativeModel(m_name)
             except:
                 continue
-        return genai.GenerativeModel("gemini-2.5-flash")
+        return genai.GenerativeModel("gemini-2.0-flash")
     model = initialize_best_model()
 else:
     model = None
@@ -42,11 +41,21 @@ try:
 except ImportError:
     RESPONSE_TEMPLATES = {}
 
+# Category-specific professional fallback responses
+CATEGORY_RESPONSES = {
+    "Billing": "Thank you for contacting us about your billing concern. We understand how important accurate billing is, and we're reviewing your account details right away. Our billing team will reach out to you within 24-48 hours with a resolution.",
+    "Technical": "We appreciate you reporting this technical issue. Our technical team is investigating this matter with high priority. We'll work to provide you with a fix or workaround within 24 hours and keep you updated throughout the process.",
+    "Delivery": "We sincerely apologize for any delay with your delivery. We're actively tracking your order and will prioritize its delivery. You can expect an update from our logistics team within 12 hours.",
+    "Service": "Thank you for bringing this service matter to our attention. We're sorry for any inconvenience you've experienced. Our customer service team will personally reach out to you within 24 hours to ensure this is resolved to your satisfaction.",
+    "Security": "Your security and privacy are our top priorities. We're taking your concern very seriously and our security team is investigating immediately. You'll receive a detailed update within 6 hours.",
+    "Other": "Thank you for contacting us. We've received your message and our support team is reviewing your case carefully. We'll respond with a solution within 24 hours."
+}
+
 async def generate_response(category: str, text: str) -> str:
     if not text or not text.strip():
         return "Thank you for reaching out. We are here to help."
     
-    # Try Gemini first
+    # Layer 1: Try Gemini AI (Best quality, contextual)
     if model is not None:
         prompt = f"""You are a professional customer support assistant.
 Complaint: {text}
@@ -59,16 +68,23 @@ Write a polite, professional, and reassuring response in 2–3 sentences."""
         except Exception as e:
             print(f"Gemini generation error: {e}")
     
-    # Fallback to Local GPT-2 (No API quota, unlimited usage)
+    # Layer 2: Try Local LLM (No API quota, unlimited usage)
     if LOCAL_LLM_AVAILABLE:
         try:
             local_response = generate_local_response(
-                f"Customer complaint about {category}: {text[:200]}"
+                f"Write a professional customer support response for this {category} complaint: {text[:200]}"
             )
-            if local_response and len(local_response) > 20:
+            if local_response and len(local_response) > 30:
                 return local_response
-        except:
-            pass
+        except Exception as e:
+            print(f"Local LLM generation error: {e}")
     
-    # Final fallback to templates
-    return RESPONSE_TEMPLATES.get(category, {}).get("Medium", "We have received your complaint and are looking into it.")
+    # Layer 3: Try training data templates
+    if RESPONSE_TEMPLATES and category in RESPONSE_TEMPLATES:
+        template_response = RESPONSE_TEMPLATES.get(category, {}).get("Medium")
+        if template_response:
+            return template_response
+    
+    # Layer 4: Category-specific professional fallback (Always works)
+    return CATEGORY_RESPONSES.get(category, CATEGORY_RESPONSES["Other"])
+
