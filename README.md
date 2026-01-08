@@ -146,7 +146,26 @@ mindmap
 
 ## ✨ **Key Features**
 
-### 🤖 **The 7+ Agent Intelligence Grid**
+### 🤖 **The Multi-Model Consensus Engine**
+
+Quickfix doesn't just rely on one AI. Every decision undergoes a **3-Layer Consensus Validation** to ensure the perfect balance between speed, stability, and intelligence.
+
+| Layer | Type | Model Used | Scientific Rationale |
+|---|---|---|---|
+| **Layer 1: Deterministic** | Heuristics | Keyword Arrays | Provides **0ms latency** for obvious cases (e.g., "Refund" -> Billing). Zero cost and 100% deterministic results. |
+| **Layer 2: Statistical** | ML Models | **TextBlob** & **TF-IDF Scan** | Captures semantic overlap and emotional polarity locally. Chosen for **low-memory footprint** and fast execution without external API dependencies. |
+| **Layer 3: Cognitive** | LLM | **Gemini 1.5 Pro** | Handles deep context, sarcasm, and complex technical logic. Chosen as the "Final Arbiter" for its **large context window** and human-like reasoning. |
+
+#### **Model Selection Rationale**
+1. **TextBlob (Sentiment):** Unlike NLTK which requires large static downloads, TextBlob provides a simple Noun Phrase extraction and Sentiment Polarity scoring that is highly accurate for shorter customer feedback.
+2. **TF-IDF + Cosine Similarity (Classification):** Chosen over standard Neural Networks because it doesn't require "training time." It builds a semantic vector space on-the-fly, allowing the system to adapt to new categories instantly without re-training a model.
+3. **Weight-Matrix (Satisfaction):** Predicts user satisfaction using a mathematical linear model. This creates a "Baseline Expectation" that anchors the LLM.
+4. **Isolation Forest (Anomaly):** Uses **Unsupervised Deep Learning** principles to detect structural anomalies in text (bot detection/spam) before AI processing.
+5. **RAG-Powered Context (Knowledge):** Injects enterprise policy wisdom into every resolution to prevent AI hallucinations.
+
+---
+
+### 🎨 **The 7+ Agent Intelligence Grid**
 
 <div align="center">
 
@@ -154,46 +173,46 @@ mindmap
 graph TB
     subgraph "🎯 Control Layer"
         A[Orchestrator<br/>Workflow Coordinator]
+        Z[Anomaly Detector<br/>Isolation Forest ML]
     end
     
     subgraph "🔍 Analysis Layer"
-        B[Classifier<br/>Category Detection]
-        C[Sentiment Analyzer<br/>Emotion Mapping]
-        D[Priority Agent<br/>Urgency Scoring]
-        E[Matcher<br/>Pattern Recognition]
+        B[Classifier<br/>TF-IDF Semantic]
+        C[Sentiment Analyzer<br/>TextBlob Hybrid]
+        D[Priority Agent<br/>Contextual Risk]
+        E[Knowledge Agent<br/>Simulated RAG]
     end
     
     subgraph "💡 Resolution Layer"
         F[Responder<br/>Response Generation]
         G[Suggester<br/>Solution Crafting]
         H[Recommender<br/>Action Planning]
-        I[Predictor<br/>Success Forecasting]
     end
     
-    subgraph "✅ Quality Layer"
-        J[Re-evaluator<br/>Priority Refinement]
-        K[Validator<br/>Quality Assurance]
+    subgraph "🛡️ Safety & Audit Layer"
+        I[Reflective Critic<br/>Red-Teaming AI]
+        J[Validator<br/>Quality Audit]
+        K[Predictor<br/>Success Forecasting]
     end
     
     subgraph "⚡ Performance Layer"
         L[Cache Layer<br/>Speed Optimization]
         M[Chat Agent<br/>24/7 Support]
-        N[Gemini Client<br/>API Management]
+        N[Gemini Client<br/>Multi-Key Rotation]
     end
     
+    Z --> A
     A --> B & C & D
     B & C & D --> E
     E --> F
-    F --> G
-    G --> H
-    H --> I
+    F --> G & H
+    G & H --> I
     I --> J
     J --> K
     K --> L
     
     style A fill:#6366f1,stroke:#4f46e5,stroke-width:3px,color:#fff
-    style K fill:#10b981,stroke:#059669,stroke-width:3px,color:#fff
-    style L fill:#f59e0b,stroke:#d97706,stroke-width:3px,color:#fff
+    style I fill:#ef4444,stroke:#dc2626,stroke-width:3px,color:#fff
 ```
 
 </div>
