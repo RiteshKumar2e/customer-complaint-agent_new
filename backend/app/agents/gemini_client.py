@@ -103,7 +103,7 @@ async def async_ask_gemini(prompt: str) -> str:
         try:
             # Ensure we're using a valid key
             if not configure_current_key():
-                return "AI service is temporarily unavailable - all API keys exhausted."
+                raise Exception("All API keys exhausted - triggering fallback")
             
             # Recreate model with current key
             current_model = get_model()
@@ -114,7 +114,11 @@ async def async_ask_gemini(prompt: str) -> str:
             if response and response.text:
                 return response.text.strip()
                 
-            return "I couldn't generate a response right now."
+            # If no text in response, try next key
+            if attempt < max_key_attempts - 1:
+                continue
+            else:
+                raise Exception("No valid response from Gemini - triggering fallback")
 
         except Exception as e:
             error_msg = str(e).lower()
@@ -139,11 +143,13 @@ async def async_ask_gemini(prompt: str) -> str:
                 except:
                     pass
             
-            # If it's the last attempt or non-quota error, return error message
+            # If it's the last attempt, raise exception to trigger fallback
             if attempt == max_key_attempts - 1:
-                return "AI service is temporarily unavailable."
+                print("❌ All Gemini attempts failed - triggering local LLM fallback")
+                raise Exception("Gemini API unavailable - triggering fallback system")
     
-    return "AI service is temporarily unavailable - all API keys exhausted."
+    # This should never be reached, but just in case
+    raise Exception("All API keys exhausted - triggering fallback system")
 
 # Test it
 if __name__ == "__main__":
