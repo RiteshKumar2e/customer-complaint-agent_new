@@ -57,7 +57,7 @@ CATEGORY_SOLUTIONS = {
     }
 }
 
-async def suggest_solution(category: str, text: str, user_language: str = 'english') -> str:
+async def suggest_solution(category: str, text: str, user_language: str = None) -> str:
     if not text or not text.strip():
         fallback_msg = {
             'english': "Please contact our support team for assistance.",
@@ -65,7 +65,13 @@ async def suggest_solution(category: str, text: str, user_language: str = 'engli
             'hindi': "कृपया सहायता के लिए हमारी सहायता टीम से संपर्क करें।",
             'mixed': "Please humari support team se contact karein for help."
         }
-        return fallback_msg.get(user_language, fallback_msg['english'])
+        return fallback_msg.get(user_language or 'english', fallback_msg['english'])
+
+    # AUTO-DETECT LANGUAGE if not provided
+    if user_language is None:
+        from app.agents.language_detector import detect_language
+        user_language = detect_language(text)
+        print(f"🌐 Auto-detected language for solution: {user_language}")
 
     # Get language-specific instruction
     language_instruction = get_language_instruction(user_language)

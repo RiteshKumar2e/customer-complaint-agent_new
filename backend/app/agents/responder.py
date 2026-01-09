@@ -82,7 +82,7 @@ CATEGORY_RESPONSES = {
     }
 }
 
-async def generate_response(category: str, text: str, user_language: str = 'english') -> str:
+async def generate_response(category: str, text: str, user_language: str = None) -> str:
     if not text or not text.strip():
         fallback_msg = {
             'english': "Thank you for reaching out. We are here to help.",
@@ -90,7 +90,13 @@ async def generate_response(category: str, text: str, user_language: str = 'engl
             'hindi': "हमसे संपर्क करने के लिए धन्यवाद। हम आपकी मदद के लिए यहाँ हैं।",
             'mixed': "Thank you for reaching out. Hum help ke liye ready hain."
         }
-        return fallback_msg.get(user_language, fallback_msg['english'])
+        return fallback_msg.get(user_language or 'english', fallback_msg['english'])
+    
+    # AUTO-DETECT LANGUAGE if not provided
+    if user_language is None:
+        from app.agents.language_detector import detect_language
+        user_language = detect_language(text)
+        print(f"🌐 Auto-detected language: {user_language} for complaint: '{text[:50]}...'")
     
     # Get language-specific instruction
     language_instruction = get_language_instruction(user_language)
