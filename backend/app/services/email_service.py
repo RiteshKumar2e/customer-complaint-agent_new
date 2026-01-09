@@ -288,161 +288,33 @@ class EmailService:
         ticket_id = complaint_data.get('ticket_id', 'N/A')
         category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
+        complaint_text = complaint_data.get('complaint_text', 'N/A')
         sentiment = complaint_data.get('sentiment', 'Analyzing...')
         response = complaint_data.get('response', 'Processing your request...')
         solution = complaint_data.get('solution', 'Generating solution...')
         timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         
-        # Enhanced color schemes
+        # Enhanced color schemes with backgrounds
         priority_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981"}
         priority_bg = {"High": "#fee2e2", "Medium": "#fef3c7", "Low": "#d1fae5"}
         priority_color = priority_colors.get(priority, "#3b82f6")
         priority_bg_color = priority_bg.get(priority, "#dbeafe")
         
-        # Category icons
-        category_icons = {
-            "Billing": "💳", "Technical": "🔧", "Delivery": "📦",
-            "Service": "🛎️", "Security": "🔒", "Other": "📋"
+        # Category icons and colors
+        category_data = {
+            "Billing": {"icon": "💳", "color": "#3b82f6", "bg": "#dbeafe"},
+            "Technical": {"icon": "🔧", "color": "#8b5cf6", "bg": "#ede9fe"},
+            "Delivery": {"icon": "📦", "color": "#f59e0b", "bg": "#fef3c7"},
+            "Service": {"icon": "🛎️", "color": "#10b981", "bg": "#d1fae5"},
+            "Security": {"icon": "🔒", "color": "#ef4444", "bg": "#fee2e2"},
+            "Other": {"icon": "📋", "color": "#6b7280", "bg": "#f3f4f6"}
         }
-        category_icon = category_icons.get(category, "📋")
+        cat_info = category_data.get(category, category_data["Other"])
+        category_icon = cat_info["icon"]
+        category_color = cat_info["color"]
+        category_bg = cat_info["bg"]
         
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint Received - Quickfix</title>
-</head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:50px 20px;">
-        <tr><td align="center">
-            <table width="650" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                
-                <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:50px 40px;text-align:center;">
-                    <div style="background:rgba(255,255,255,0.2);width:80px;height:80px;border-radius:50%;margin:0 auto 20px;line-height:80px;">
-                        <span style="font-size:40px;">✅</span>
-                    </div>
-                    <h1 style="margin:0 0 10px 0;color:#fff;font-size:32px;font-weight:700;">Complaint Received!</h1>
-                    <p style="margin:0 0 20px 0;color:#e0e7ff;font-size:16px;">We're on it - Your issue is being analyzed by our AI system</p>
-                    <div style="display:inline-block;background:rgba(255,255,255,0.95);padding:12px 30px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-                        <p style="margin:0;color:#667eea;font-size:14px;font-weight:600;">TICKET ID</p>
-                        <p style="margin:5px 0 0 0;color:#1f2937;font-size:20px;font-weight:700;">{ticket_id}</p>
-                    </div>
-                </td></tr>
-
-                <tr><td style="padding:40px 40px 30px 40px;">
-                    <h2 style="margin:0 0 15px 0;color:#1f2937;font-size:24px;font-weight:700;">Hello {user_name}! 👋</h2>
-                    <p style="margin:0;color:#4b5563;font-size:16px;line-height:1.7;">Thank you for reaching out to <strong style="color:#667eea;">Quickfix</strong>. We've successfully received your complaint and our advanced AI system is already working to provide you with the best possible solution.</p>
-                </td></tr>
-
-                <tr><td style="padding:0 40px 30px 40px;">
-                    <div style="background:linear-gradient(135deg,#f9fafb 0%,#f3f4f6 100%);border-radius:16px;padding:30px;border-left:5px solid {priority_color};box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-                        <h3 style="margin:0 0 20px 0;color:#1f2937;font-size:18px;font-weight:700;">
-                            <span style="font-size:24px;margin-right:10px;">📋</span>Complaint Details
-                        </h3>
-                        
-                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                            <tr>
-                                <td width="50%" style="padding-right:10px;">
-                                    <div style="background:#fff;padding:15px;border-radius:12px;border:2px solid #e5e7eb;">
-                                        <p style="margin:0 0 5px 0;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Category</p>
-                                        <p style="margin:0;color:#1f2937;font-size:18px;font-weight:700;">{category_icon} {category}</p>
-                                    </div>
-                                </td>
-                                <td width="50%" style="padding-left:10px;">
-                                    <div style="background:{priority_bg_color};padding:15px;border-radius:12px;border:2px solid {priority_color};">
-                                        <p style="margin:0 0 5px 0;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Priority</p>
-                                        <p style="margin:0;color:{priority_color};font-size:18px;font-weight:700;">⚡ {priority}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-
-                        <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e5e7eb;">
-                            <p style="margin:0 0 8px 0;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Subject</p>
-                            <p style="margin:0;color:#1f2937;font-size:17px;font-weight:700;">{complaint_data.get('subject', 'No Subject')}</p>
-                        </div>
-
-                        <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e5e7eb;">
-                            <p style="margin:0 0 8px 0;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;">Description</p>
-                            <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.7;">{complaint_data.get('description', 'No Description')}</p>
-                        </div>
-
-                        <div style="text-align:right;">
-                            <p style="margin:0;color:#9ca3af;font-size:13px;">🕐 Submitted on {timestamp}</p>
-                        </div>
-                    </div>
-                </td></tr>
-
-                <tr><td style="padding:0 40px 30px 40px;">
-                    <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:16px;padding:30px;border:3px solid #f59e0b;position:relative;">
-                        <div style="position:absolute;top:-10px;right:-10px;background:#f59e0b;color:#fff;padding:8px 20px;border-radius:20px;font-size:11px;font-weight:700;transform:rotate(15deg);box-shadow:0 4px 10px rgba(245,158,11,0.4);">AI POWERED</div>
-                        
-                        <h3 style="margin:0 0 20px 0;color:#92400e;font-size:20px;font-weight:700;">
-                            <span style="font-size:28px;margin-right:12px;">🤖</span>AI Analysis Results
-                        </h3>
-
-                        <div style="background:rgba(255,255,255,0.8);padding:18px;border-radius:12px;margin-bottom:15px;border-left:4px solid #f59e0b;">
-                            <p style="margin:0 0 8px 0;color:#78350f;font-size:13px;font-weight:700;text-transform:uppercase;">😊 Sentiment Analysis</p>
-                            <p style="margin:0;color:#92400e;font-size:16px;font-weight:600;">{sentiment}</p>
-                        </div>
-
-                        <div style="background:rgba(255,255,255,0.8);padding:18px;border-radius:12px;margin-bottom:15px;border-left:4px solid #f59e0b;">
-                            <p style="margin:0 0 8px 0;color:#78350f;font-size:13px;font-weight:700;text-transform:uppercase;">💬 Our Response</p>
-                            <p style="margin:0;color:#92400e;font-size:15px;line-height:1.7;">{response}</p>
-                        </div>
-
-                        <div style="background:rgba(255,255,255,0.8);padding:18px;border-radius:12px;border-left:4px solid #f59e0b;">
-                            <p style="margin:0 0 8px 0;color:#78350f;font-size:13px;font-weight:700;text-transform:uppercase;">💡 Proposed Solution</p>
-                            <p style="margin:0;color:#92400e;font-size:15px;line-height:1.7;">{solution}</p>
-                        </div>
-                    </div>
-                </td></tr>
-
-                <tr><td style="padding:0 40px 30px 40px;text-align:center;">
-                    <a href="{self.app_url}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:18px 50px;border-radius:50px;font-weight:700;font-size:16px;box-shadow:0 10px 30px rgba(102,126,234,0.4);">📊 View Dashboard</a>
-                </td></tr>
-
-                <tr><td style="padding:0 40px 40px 40px;">
-                    <div style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border-radius:16px;padding:30px;border:2px solid #3b82f6;">
-                        <h3 style="margin:0 0 20px 0;color:#1e40af;font-size:18px;font-weight:700;">
-                            <span style="font-size:24px;margin-right:10px;">🚀</span>What Happens Next?
-                        </h3>
-                        <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr><td style="padding:12px 0;">
-                                <span style="background:#3b82f6;color:#fff;width:28px;height:28px;border-radius:50%;display:inline-block;text-align:center;line-height:28px;font-weight:700;margin-right:15px;">1</span>
-                                <span style="color:#1e3a8a;font-size:15px;font-weight:500;">Our AI system is analyzing your complaint in real-time</span>
-                            </td></tr>
-                            <tr><td style="padding:12px 0;">
-                                <span style="background:#3b82f6;color:#fff;width:28px;height:28px;border-radius:50%;display:inline-block;text-align:center;line-height:28px;font-weight:700;margin-right:15px;">2</span>
-                                <span style="color:#1e3a8a;font-size:15px;font-weight:500;">You'll receive email updates as we progress with your case</span>
-                            </td></tr>
-                            <tr><td style="padding:12px 0;">
-                                <span style="background:#3b82f6;color:#fff;width:28px;height:28px;border-radius:50%;display:inline-block;text-align:center;line-height:28px;font-weight:700;margin-right:15px;">3</span>
-                                <span style="color:#1e3a8a;font-size:15px;font-weight:500;">A dedicated support agent will review if additional assistance is needed</span>
-                            </td></tr>
-                        </table>
-                    </div>
-                </td></tr>
-
-                <tr><td style="background:linear-gradient(135deg,#f9fafb 0%,#f3f4f6 100%);padding:40px;text-align:center;border-top:3px solid #e5e7eb;">
-                    <p style="margin:0 0 15px 0;color:#6b7280;font-size:14px;">Need immediate assistance? Reply to this email or contact our support team.</p>
-                    <div style="margin:20px 0;">
-                        <a href="mailto:{self.admin_email}?subject=Help%20Request" style="color:#667eea;text-decoration:none;margin:0 15px;font-size:14px;font-weight:600;">📞 Help Center</a>
-                        <span style="color:#d1d5db;">|</span>
-                        <a href="{self.app_url}" style="color:#667eea;text-decoration:none;margin:0 15px;font-size:14px;font-weight:600;">🔒 Privacy Policy</a>
-                        <span style="color:#d1d5db;">|</span>
-                        <a href="mailto:{self.admin_email}?subject=Contact%20Request" style="color:#667eea;text-decoration:none;margin:0 15px;font-size:14px;font-weight:600;">✉️ Contact Us</a>
-                    </div>
-                    <p style="margin:20px 0 0 0;color:#9ca3af;font-size:13px;">© {get_ist_time().year} Quickfix. All rights reserved.</p>
-                    <p style="margin:5px 0 0 0;color:#9ca3af;font-size:12px;">Powered by Advanced AI Technology 🤖</p>
-                </td></tr>
-            </table>
-        </td></tr>
-    </table>
-</body>
-</html>"""
-    
+        return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
