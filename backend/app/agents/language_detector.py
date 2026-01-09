@@ -1,176 +1,159 @@
-"""
-Language Detection Utility
-Detects the language of user input and provides language-specific instructions for AI responses.
-"""
+import re
+from typing import Literal
 
-def detect_language(text: str) -> str:
+LanguageType = Literal['english', 'hindi', 'hinglish', 'mixed']
+
+def detect_language(text: str) -> LanguageType:
     """
-    Detect the language of the input text.
-    Returns: 'hinglish', 'hindi', 'english', or 'mixed'
+    Detects the language of the input text.
+    Returns: 'hindi', 'english', 'hinglish', or 'mixed'
+    
+    Examples:
+        >>> detect_language("My billing is wrong")
+        'english'
+        >>> detect_language("Mera bill galat hai")
+        'hinglish'
+        >>> detect_language("मेरा बिल गलत है")
+        'hindi'
+        >>> detect_language("My bill galat hai")
+        'mixed'
     """
     if not text or not text.strip():
         return 'english'
     
-    text = text.lower().strip()
+    text_lower = text.lower()
     
-    # Hindi/Devanagari character detection
-    hindi_chars = sum(1 for c in text if '\u0900' <= c <= '\u097F')
+    # Count Hindi/Devanagari characters
+    hindi_chars = len(re.findall(r'[\u0900-\u097F]', text))
+    total_chars = len(re.sub(r'\s', '', text))
     
-    # Common Hinglish patterns (Roman script Hindi words)
-    hinglish_words = [
-        'hai', 'nahi', 'kya', 'kaise', 'kab', 'kahan', 'kyun', 'kyu',
-        'mera', 'meri', 'mere', 'tumhara', 'tumhari', 'tumhare',
-        'aapka', 'aapki', 'aapke', 'hum', 'tum', 'aap',
-        'kar', 'karo', 'karna', 'ho', 'hoga', 'hogi', 'hoge',
-        'tha', 'thi', 'the', 'gaya', 'gayi', 'gaye',
-        'chahiye', 'chahta', 'chahti', 'chahte',
-        'problem', 'issue', 'help', 'please', 'kro', 'krna',
-        'dikkat', 'pareshani', 'madad', 'zarurat', 'jarurat',
-        'abhi', 'jaldi', 'turant', 'bahut', 'bohot', 'bht',
-        'theek', 'thik', 'sahi', 'galat', 'accha', 'achha',
-        'bhai', 'yaar', 'dost', 'sir', 'madam', 'ji',
-        'paise', 'paisa', 'rupay', 'rupaye', 'payment',
-        'order', 'delivery', 'product', 'service', 'account',
-        'nhi', 'ni', 'na', 'haan', 'ha', 'haa', 'yes', 'no',
-        'kuch', 'koi', 'sabhi', 'sab', 'sare', 'saare',
-        'wala', 'wali', 'wale', 'waala', 'waali', 'waale',
-        'se', 'ko', 'ka', 'ki', 'ke', 'me', 'mai', 'mein',
-        'par', 'pe', 'tak', 'liye', 'liy', 'lye',
-        'de', 'do', 'di', 'diya', 'diye', 'dena', 'deni',
-        'le', 'lo', 'li', 'liya', 'liye', 'lena', 'leni',
-        'raha', 'rahi', 'rahe', 'rhe', 'rhi', 'rha',
-        'aaya', 'aayi', 'aaye', 'aya', 'ayi', 'aye',
-        'chalu', 'chalao', 'chalta', 'chalti', 'chalte',
-        'samajh', 'samjh', 'samjha', 'samjhi', 'samjhe',
-        'dekh', 'dekho', 'dekha', 'dekhi', 'dekhe',
-        'mil', 'mila', 'mili', 'mile', 'milta', 'milti', 'milte',
-        'ban', 'bana', 'bani', 'bane', 'banta', 'banti', 'bante'
-    ]
-    
-    # Count Hinglish words
-    words = text.split()
-    hinglish_count = sum(1 for word in words if word in hinglish_words)
-    
-    # Common English-only words (to distinguish from Hinglish)
-    english_indicators = [
-        'the', 'is', 'are', 'was', 'were', 'been', 'being',
-        'have', 'has', 'had', 'will', 'would', 'should', 'could',
-        'can', 'may', 'might', 'must', 'shall',
-        'this', 'that', 'these', 'those', 'what', 'which', 'who',
-        'when', 'where', 'why', 'how',
-        'not', 'very', 'too', 'also', 'just', 'only',
-        'about', 'after', 'before', 'during', 'while',
-        'my', 'your', 'his', 'her', 'its', 'our', 'their'
-    ]
-    
-    english_count = sum(1 for word in words if word in english_indicators)
-    
-    total_words = len(words)
-    if total_words == 0:
+    if total_chars == 0:
         return 'english'
     
-    # Calculate percentages
-    hinglish_ratio = hinglish_count / total_words
-    english_ratio = english_count / total_words
-    hindi_char_ratio = hindi_chars / len(text)
+    hindi_ratio = hindi_chars / total_chars
     
-    # Decision logic
-    if hindi_char_ratio > 0.3:
-        return 'hindi'
-    elif hinglish_ratio > 0.15:
-        return 'hinglish'
-    elif hinglish_ratio > 0.05 and english_ratio > 0.1:
-        return 'mixed'
-    else:
-        return 'english'
-
-
-def get_language_instruction(language: str) -> str:
-    """
-    Get AI instruction based on detected language.
-    """
-    instructions = {
-        'hinglish': """
-CRITICAL LANGUAGE INSTRUCTION:
-The user has written in HINGLISH (Hindi + English mix). You MUST respond in the SAME HINGLISH style.
-
-RESPONSE RULES:
-- Mix Hindi and English words naturally (e.g., "Aapki problem solve ho jayegi")
-- Use Roman script (not Devanagari)
-- Use common Hinglish words: hai, nahi, kya, kaise, aapka, mera, etc.
-- Keep it conversational and friendly
-- Use words like: problem, issue, help, solution, account, order, payment mixed with Hindi
-
-EXAMPLES:
-❌ WRONG: "Your issue will be resolved within 24 hours."
-✅ CORRECT: "Aapki problem 24 hours mein solve ho jayegi."
-
-❌ WRONG: "हम आपकी मदद करेंगे।"
-✅ CORRECT: "Hum aapki help karenge."
-
-❌ WRONG: "We apologize for the inconvenience."
-✅ CORRECT: "Hume maafi hai is inconvenience ke liye."
-""",
-        'hindi': """
-CRITICAL LANGUAGE INSTRUCTION:
-The user has written in HINDI (Devanagari script). You MUST respond in HINDI using Devanagari script.
-
-RESPONSE RULES:
-- Use proper Hindi/Devanagari script (देवनागरी)
-- Be formal and respectful
-- Use शुद्ध हिंदी where possible
-- Technical terms can be in English if needed
-
-EXAMPLE:
-❌ WRONG: "Your problem will be solved."
-✅ CORRECT: "आपकी समस्या हल हो जाएगी।"
-""",
-        'mixed': """
-CRITICAL LANGUAGE INSTRUCTION:
-The user has written in a MIX of Hindi and English. You MUST respond in HINGLISH (Roman Hindi + English).
-
-RESPONSE RULES:
-- Use Hinglish (Roman script Hindi mixed with English)
-- Match the user's casual, mixed style
-- Use words like: aapka, problem, solve, help, hai, nahi, etc.
-
-EXAMPLE:
-✅ CORRECT: "Aapki complaint receive ho gayi hai. Hum jaldi se iska solution provide karenge."
-""",
-        'english': """
-LANGUAGE INSTRUCTION:
-The user has written in ENGLISH. Respond in clear, professional ENGLISH.
-"""
+    # Common Hinglish/Hindi words in Roman script
+    hinglish_words = {
+        # Verbs
+        'hai', 'hain', 'tha', 'the', 'thi', 'hoga', 'hogi', 'hoge',
+        'karna', 'karo', 'kare', 'karein', 'kiya', 'kiye', 'kar',
+        'hona', 'ho', 'hua', 'hui', 'hue',
+        'aana', 'aa', 'aaya', 'aayi', 'aayega', 'aayegi', 'aao',
+        'jaana', 'ja', 'gaya', 'gayi', 'jayega', 'jayegi', 'jao',
+        'lena', 'le', 'liya', 'liye', 'lega', 'legi', 'lo',
+        'dena', 'de', 'diya', 'diye', 'dega', 'degi', 'do',
+        'milna', 'mile', 'mila', 'mili', 'milega', 'milegi',
+        'chahiye', 'chahte', 'chahta', 'chahti', 'chahiye',
+        'samajh', 'samjha', 'samjhi', 'samjho', 'samajhna',
+        'dekh', 'dekha', 'dekhi', 'dekho', 'dekhna',
+        'sun', 'suna', 'suni', 'suno', 'sunna',
+        'bol', 'bola', 'boli', 'bolo', 'bolna',
+        'kar', 'kara', 'kari', 'karo', 'karna',
+        
+        # Pronouns & Possessives
+        'mera', 'meri', 'mere', 'mujhe', 'main', 'mai',
+        'tera', 'teri', 'tere', 'tujhe', 'tu', 'tum',
+        'aapka', 'aapki', 'aapke', 'aap', 'aapko',
+        'humara', 'humari', 'humare', 'hum', 'humko',
+        'tumhara', 'tumhari', 'tumhare', 'tumko',
+        'uska', 'uski', 'uske', 'usne', 'usको',
+        
+        # Postpositions
+        'ka', 'ki', 'ke', 'ko', 'se', 'mein', 'par', 'pe',
+        'tak', 'liye', 'saath', 'bina', 'baad', 'pehle',
+        
+        # Conjunctions
+        'aur', 'ya', 'lekin', 'par', 'kyunki', 'isliye',
+        'agar', 'to', 'toh', 'tab', 'jab',
+        
+        # Question words
+        'kya', 'kaise', 'kab', 'kahan', 'kyun', 'kyu', 'kaun',
+        'kitna', 'kitni', 'kitne', 'kaunsa', 'kaunsi',
+        
+        # Negation
+        'nahi', 'nahin', 'na', 'mat', 'naa',
+        
+        # Affirmation
+        'haan', 'han', 'ha', 'ji', 'theek', 'sahi', 'achha', 'accha',
+        
+        # Adjectives/Adverbs
+        'bahut', 'bohot', 'thoda', 'jyada', 'zyada', 'kam',
+        'bada', 'badi', 'bade', 'chota', 'choti', 'chote',
+        'achha', 'accha', 'achhi', 'achhe', 'bura', 'buri', 'bure',
+        'galat', 'sahi', 'theek', 'thik',
+        
+        # Common nouns
+        'problem', 'issue', 'complaint', 'help', 'support',
+        'order', 'delivery', 'payment', 'bill', 'account',
+        'time', 'din', 'baar', 'cheez', 'baat',
+        
+        # Others
+        'please', 'plz', 'pls', 'thanks', 'thank', 'sorry',
+        'dhanyavaad', 'shukriya', 'maaf', 'maafi',
     }
     
+    # Count Hinglish words
+    words = text_lower.split()
+    hinglish_count = sum(1 for word in words if word in hinglish_words)
+    hinglish_ratio = hinglish_count / len(words) if words else 0
+    
+    # Decision logic
+    if hindi_ratio > 0.5:
+        # More than 50% Devanagari characters
+        return 'hindi'
+    elif hinglish_ratio > 0.25:
+        # Significant Hinglish words (>25%)
+        return 'hinglish'
+    elif hindi_ratio > 0.1 or hinglish_ratio > 0.1:
+        # Some Hindi/Hinglish mixed with English
+        return 'mixed'
+    else:
+        # Mostly English
+        return 'english'
+
+
+def get_language_instruction(language: LanguageType) -> str:
+    """Returns instruction for AI to respond in specific language"""
+    instructions = {
+        'english': "Respond in professional English only.",
+        'hindi': "पूरी तरह से हिंदी (देवनागरी लिपि) में जवाब दें। कोई अंग्रेजी शब्द न use करें।",
+        'hinglish': "Respond in Hinglish (Hindi words written in Roman/English script). Example: 'Aapki complaint receive ho gayi hai. Hum jaldi resolve karenge.' Use natural Hinglish mixing.",
+        'mixed': "Respond in mixed English-Hindi style, matching the user's writing pattern. Use both English and Hinglish words naturally, just like the user did."
+    }
     return instructions.get(language, instructions['english'])
 
 
-def get_language_example(language: str, context: str = "general") -> str:
-    """
-    Get example responses in the detected language.
-    """
-    examples = {
-        'hinglish': {
-            'complaint_received': "Dhanyavaad! Aapki complaint successfully receive ho gayi hai. Humari team jaldi se iska solution provide karegi.",
-            'solution': "Aapki problem ko solve karne ke liye hum ye steps lenge: (1) Humari technical team 2 hours mein investigate karegi, (2) Aapko email se update milega, (3) 24 hours mein complete solution mil jayega.",
-            'question': "Bilkul! Main aapki help karne ke liye yahan hoon. Aap apna question pooch sakte hain."
-        },
-        'hindi': {
-            'complaint_received': "धन्यवाद! आपकी शिकायत सफलतापूर्वक प्राप्त हो गई है। हमारी टीम जल्द ही इसका समाधान प्रदान करेगी।",
-            'solution': "आपकी समस्या को हल करने के लिए हम ये कदम उठाएंगे: (1) हमारी तकनीकी टीम 2 घंटे में जांच करेगी, (2) आपको ईमेल से अपडेट मिलेगा, (3) 24 घंटे में पूर्ण समाधान मिल जाएगा।",
-            'question': "बिल्कुल! मैं आपकी मदद करने के लिए यहाँ हूँ। आप अपना प्रश्न पूछ सकते हैं।"
-        },
-        'mixed': {
-            'complaint_received': "Thank you! Aapki complaint receive ho gayi hai. Hum jaldi response denge.",
-            'solution': "Aapki issue solve karne ke liye: (1) Team investigate karegi, (2) Email update milega, (3) 24 hours mein solution milega.",
-            'question': "Sure! Main help kar sakta hoon. Aap question puch sakte hain."
-        },
-        'english': {
-            'complaint_received': "Thank you! Your complaint has been successfully received. Our team will provide a solution shortly.",
-            'solution': "To solve your problem, we will: (1) Our technical team will investigate within 2 hours, (2) You'll receive email updates, (3) Complete solution within 24 hours.",
-            'question': "Absolutely! I'm here to help you. Please feel free to ask your question."
-        }
-    }
+# Test function
+if __name__ == "__main__":
+    test_cases = [
+        ("My billing is wrong", "english"),
+        ("Mera bill galat hai", "hinglish"),
+        ("मेरा बिल गलत है", "hindi"),
+        ("My bill galat hai kya", "mixed"),
+        ("Delivery nahi aayi hai", "hinglish"),
+        ("Order kab milega?", "hinglish"),
+        ("I need help with my order", "english"),
+        ("Help chahiye order ke saath", "mixed"),
+        ("Aapka support bahut achha hai", "hinglish"),
+        ("यह सेवा बहुत अच्छी है", "hindi"),
+        ("This service bahut achhi hai", "mixed"),
+        ("Kya aap meri help kar sakte hain?", "hinglish"),
+        ("Can you help me please?", "english"),
+        ("Mujhe complaint karna hai", "hinglish"),
+        ("I want to complain about delivery", "english"),
+    ]
     
-    return examples.get(language, examples['english']).get(context, "")
+    print("🌐 Language Detection Tests:\n")
+    print(f"{'Input':<45} {'Detected':<12} {'Expected':<12} {'Match'}")
+    print("-" * 80)
+    
+    correct = 0
+    for text, expected in test_cases:
+        detected = detect_language(text)
+        match = "✅" if detected == expected else "❌"
+        if detected == expected:
+            correct += 1
+        print(f"{text:<45} {detected:<12} {expected:<12} {match}")
+    
+    print("-" * 80)
+    print(f"\nAccuracy: {correct}/{len(test_cases)} ({100*correct//len(test_cases)}%)")
