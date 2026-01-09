@@ -123,6 +123,34 @@ def get_language_instruction(language: LanguageType) -> str:
     return instructions.get(language, instructions['english'])
 
 
+def get_language_example(language: LanguageType, context: str = 'complaint_received') -> str:
+    """Returns example response in specific language for given context"""
+    examples = {
+        'complaint_received': {
+            'english': "Thank you for contacting us. We've received your complaint and our team is reviewing it carefully.",
+            'hindi': "हमसे संपर्क करने के लिए धन्यवाद। हमने आपकी शिकायत प्राप्त कर ली है और हमारी टीम इसकी समीक्षा कर रही है।",
+            'hinglish': "Humse contact karne ke liye dhanyavaad. Humne aapki complaint receive kar li hai aur humari team carefully review kar rahi hai.",
+            'mixed': "Thank you for contacting us. Humne aapki complaint receive kar li hai aur team review kar rahi hai."
+        },
+        'billing_issue': {
+            'english': "I sincerely apologize for the billing error. Our billing team will review your account within 4 hours.",
+            'hindi': "बिलिंग त्रुटि के लिए मुझे सचमुच खेद है। हमारी बिलिंग टीम 4 घंटों में आपके खाते की समीक्षा करेगी।",
+            'hinglish': "Billing error ke liye mujhe sachme maafi hai. Humari billing team 4 hours mein aapke account ko review karegi.",
+            'mixed': "Billing error ke liye I sincerely apologize. Humari team 4 hours mein review karegi."
+        },
+        'delivery_delay': {
+            'english': "We apologize for the delivery delay. Your order has been marked for priority delivery.",
+            'hindi': "डिलीवरी में देरी के लिए हमें खेद है। आपके ऑर्डर को प्राथमिकता डिलीवरी के लिए चिह्नित किया गया है।",
+            'hinglish': "Delivery delay ke liye hume maafi hai. Aapka order priority delivery ke liye mark ho gaya hai.",
+            'mixed': "Delivery delay ke lिए we apologize. Aapka order priority delivery ke liye mark ho gaya hai."
+        }
+    }
+    
+    context_examples = examples.get(context, examples['complaint_received'])
+    return context_examples.get(language, context_examples['english'])
+
+
+
 # Test function
 if __name__ == "__main__":
     test_cases = [
