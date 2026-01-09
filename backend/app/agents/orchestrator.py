@@ -12,10 +12,10 @@ from .anomaly_detector import check_anomaly
 from .kb_retrieval import get_kb_context
 from .reevaluator import reevaluate_response
 
-async def run_agent_pipeline(text: str):
-    return await run_agentic_loop(text)
+async def run_agent_pipeline(text: str, user_language: str = 'english'):
+    return await run_agentic_loop(text, user_language=user_language, iterations=0)
 
-async def run_agentic_loop(text: str, iterations: int = 0):
+async def run_agentic_loop(text: str, user_language: str = 'english', iterations: int = 0):
     """
     Agentic AI Orchestration Engine with Iterative Self-Correction.
     Features: Anomaly Detection, RAG Support, and Red-Teaming Validation.
@@ -45,8 +45,8 @@ async def run_agentic_loop(text: str, iterations: int = 0):
     steps.append({"step": "Knowledge Base Polled", "source": "Internal Policy DB"})
 
     # Phase 3: Resolution Generation
-    task4 = generate_response(category, f"Context: {kb_context}\nComplaint: {text}")
-    task5 = suggest_solution(category, text)
+    task4 = generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
+    task5 = suggest_solution(category, text, user_language)
     task6 = find_similar_complaints(text, category)
     
     response, solution, similar = await asyncio.gather(task4, task5, task6)
@@ -66,7 +66,7 @@ async def run_agentic_loop(text: str, iterations: int = 0):
         
         # Re-generate with critique context
         refined_prompt = f"CRITIQUE OF PREVIOUS ATTEMPT: {validation.get('critique_notes')}\n\nORIGINAL COMPLAINT: {text}\n\nFix the issues mentioned and provide a better resolution."
-        response = await generate_response(category, refined_prompt)
+        response = await generate_response(category, refined_prompt, user_language)
         
         # Second Validation pass
         validation = await reevaluate_response("Complaint Audit - Final Pass", text, response)

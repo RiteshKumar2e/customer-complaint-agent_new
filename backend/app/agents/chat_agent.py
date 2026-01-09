@@ -1,5 +1,6 @@
 from app.agents.gemini_client import async_ask_gemini
 from app.agents.orchestrator import run_agent_pipeline
+from app.agents.language_detector import detect_language, get_language_instruction, get_language_example
 import sys
 import os
 
@@ -15,11 +16,18 @@ except ImportError:
 async def handle_chat_message(message: str) -> dict:
     """
     Decides whether the message is a complaint (orchestrated) or a question.
+    Detects user's language and responds in the SAME language.
     Async to handle high traffic and concurrent users.
     """
     msg_len = len(message.strip())
     if msg_len == 0:
         return {"role": "agent", "type": "info", "response": "How can I help you today?"}
+
+    # 🌐 LANGUAGE DETECTION - Critical for multilingual support
+    user_language = detect_language(message)
+    language_instruction = get_language_instruction(user_language)
+    
+    print(f"🌐 Detected Language: {user_language}")
 
     # Intent detection with few-shot examples from training data
     intent_prompt = f"""
@@ -43,22 +51,34 @@ Only return ONE word.
 
     # Short query handling
     if msg_len < 10 and "COMPLAINT" not in intent:
-        return {"role": "agent", "type": "info", "response": "Hello! How can I assist you today?"}
+        # Return greeting in user's language
+        greetings = {
+            'hinglish': "Hello! Main aapki kaise help kar sakta hoon?",
+            'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?",
+            'mixed': "Hi! Main aapki help ke liye ready hoon.",
+            'english': "Hello! How can I assist you today?"
+        }
+        return {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
 
     if "QUESTION" in intent:
-        # Enhanced prompt for detailed, helpful answers
+        # Enhanced prompt for detailed, helpful answers IN USER'S LANGUAGE
         if msg_len < 30:
             # Short questions - concise but complete answers
-            answer_prompt = f"""You are a helpful AI assistant for Quickfix, a Customer Complaint Management platform.
+            answer_prompt = f"""{language_instruction}
+
+You are a helpful AI assistant for Quickfix, a Customer Complaint Management platform.
 
 USER QUESTION: {message}
 
 Provide a brief but complete answer (1-2 sentences). Be friendly and helpful.
+IMPORTANT: Respond in the SAME language/style as the user's question above.
 
 ANSWER:"""
         else:
             # Detailed questions - comprehensive answers
-            answer_prompt = f"""You are an expert AI assistant for Quickfix, a comprehensive Customer Complaint Management platform.
+            answer_prompt = f"""{language_instruction}
+
+You are an expert AI assistant for Quickfix, a comprehensive Customer Complaint Management platform.
 
 USER QUESTION: {message}
 
@@ -89,16 +109,10 @@ RESPONSE GUIDELINES:
 - Keep it professional but friendly
 - Length: 2-4 sentences for simple questions, more for complex ones
 
-EXAMPLE QUALITY ANSWERS:
+CRITICAL: Respond in the SAME language/style as the user's question.
 
-Question: "How do I submit a complaint?"
-Answer: "Submitting a complaint is easy! Simply click the 'Submit Complaint' button on the dashboard, fill in the subject and description of your issue, and click submit. Our AI will instantly analyze your complaint, categorize it, detect the priority level, and send you a confirmation email with a unique ticket ID. You'll receive updates as we work on resolving your issue."
-
-Question: "How long does it take to get a response?"
-Answer: "Response times vary based on priority: High-priority issues (like billing errors or security concerns) are escalated immediately and typically receive a response within 2-4 hours. Medium-priority issues are addressed within 24 hours, while low-priority requests are handled within 48 hours. You'll receive email updates at each stage, and you can track your complaint status in real-time through your dashboard."
-
-Question: "What is AI analysis?"
-Answer: "Our AI analysis system automatically processes your complaint through multiple layers: (1) It categorizes your issue (Billing, Technical, Delivery, etc.), (2) Detects the priority level based on urgency and impact, (3) Analyzes the sentiment to understand your emotional state, and (4) Suggests potential solutions based on similar past cases. This entire process happens in seconds, ensuring you get immediate acknowledgment and faster resolution."
+Language Example for {user_language}:
+{get_language_example(user_language, 'question')}
 
 Now provide a similarly detailed and helpful answer for the user's question above.
 
@@ -109,15 +123,21 @@ ANSWER:"""
             return {"role": "agent", "type": "info", "response": answer}
         except Exception as e:
             print(f"Chatbot answer generation failed: {e}")
-            # Fallback response
+            # Fallback response in user's language
+            fallbacks = {
+                'hinglish': "Main aapki help karna chahta hoon! Kya aap apna question dobara puch sakte hain?",
+                'hindi': "मैं आपकी मदद करना चाहता हूँ! क्या आप अपना प्रश्न दोबारा पूछ सकते हैं?",
+                'mixed': "I'm here to help! Kya aap apna question phir se puch sakte hain?",
+                'english': "I'm here to help! Could you please rephrase your question or ask about our complaint management features, submission process, or tracking system?"
+            }
             return {
                 "role": "agent", 
                 "type": "info", 
-                "response": "I'm here to help! Could you please rephrase your question or ask about our complaint management features, submission process, or tracking system?"
+                "response": fallbacks.get(user_language, fallbacks['english'])
             }
 
-    # If it's a complaint, run the full pipeline
-    result = await run_agent_pipeline(message)
+    # If it's a complaint, run the full pipeline with language context
+    result = await run_agent_pipeline(message, user_language=user_language)
     
     # Check if we have a template for this category/priority
     category = result["category"]
@@ -138,5 +158,6 @@ ANSWER:"""
         "solution": result.get("solution", ""),
         "satisfaction": result.get("satisfaction", "Medium"),
         "similar_issues": result.get("similar_issues", ""),
-        "steps": result.get("steps", [])
+        "steps": result.get("steps", []),
+        "language": user_language
     }

@@ -2,6 +2,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import google.generativeai as genai
+from app.agents.language_detector import get_language_instruction, get_language_example
 
 load_dotenv()
 
@@ -41,23 +42,65 @@ try:
 except ImportError:
     RESPONSE_TEMPLATES = {}
 
-# Category-specific professional fallback responses
+# Category-specific professional fallback responses (multilingual)
 CATEGORY_RESPONSES = {
-    "Billing": "Thank you for contacting us about your billing concern. We understand how important accurate billing is, and we're reviewing your account details right away. Our billing team will reach out to you within 24-48 hours with a resolution.",
-    "Technical": "We appreciate you reporting this technical issue. Our technical team is investigating this matter with high priority. We'll work to provide you with a fix or workaround within 24 hours and keep you updated throughout the process.",
-    "Delivery": "We sincerely apologize for any delay with your delivery. We're actively tracking your order and will prioritize its delivery. You can expect an update from our logistics team within 12 hours.",
-    "Service": "Thank you for bringing this service matter to our attention. We're sorry for any inconvenience you've experienced. Our customer service team will personally reach out to you within 24 hours to ensure this is resolved to your satisfaction.",
-    "Security": "Your security and privacy are our top priorities. We're taking your concern very seriously and our security team is investigating immediately. You'll receive a detailed update within 6 hours.",
-    "Other": "Thank you for contacting us. We've received your message and our support team is reviewing your case carefully. We'll respond with a solution within 24 hours."
+    "Billing": {
+        'english': "Thank you for contacting us about your billing concern. We understand how important accurate billing is, and we're reviewing your account details right away. Our billing team will reach out to you within 24-48 hours with a resolution.",
+        'hinglish': "Aapki billing concern ke liye dhanyavaad. Hum samajhte hain ki accurate billing kitni important hai, aur hum abhi aapke account details review kar rahe hain. Humari billing team 24-48 hours mein aapse contact karegi.",
+        'hindi': "आपकी बिलिंग चिंता के लिए धन्यवाद। हम समझते हैं कि सटीक बिलिंग कितनी महत्वपूर्ण है। हमारी बिलिंग टीम 24-48 घंटों में आपसे संपर्क करेगी।",
+        'mixed': "Thank you for contacting. Hum aapke billing concern ko samajhte hain aur 24-48 hours mein resolve kar denge."
+    },
+    "Technical": {
+        'english': "We appreciate you reporting this technical issue. Our technical team is investigating this matter with high priority. We'll work to provide you with a fix or workaround within 24 hours and keep you updated throughout the process.",
+        'hinglish': "Is technical issue ko report karne ke liye shukriya. Humari technical team high priority se is matter ko investigate kar rahi hai. 24 hours mein fix ya workaround provide karenge aur aapko update karte rahenge.",
+        'hindi': "इस तकनीकी समस्या की रिपोर्ट करने के लिए धन्यवाद। हमारी तकनीकी टीम उच्च प्राथमिकता से जांच कर रही है। 24 घंटों में समाधान मिलेगा।",
+        'mixed': "Thank you for reporting. Humari technical team high priority se investigate kar rahi hai, 24 hours mein fix mil jayega."
+    },
+    "Delivery": {
+        'english': "We sincerely apologize for any delay with your delivery. We're actively tracking your order and will prioritize its delivery. You can expect an update from our logistics team within 12 hours.",
+        'hinglish': "Delivery mein delay ke liye hume sachme maafi hai. Hum actively aapke order ko track kar rahe hain aur priority delivery ensure karenge. 12 hours mein logistics team se update milega.",
+        'hindi': "डिलीवरी में देरी के लिए हमें सचमुच खेद है। हम सक्रिय रूप से आपके ऑर्डर को ट्रैक कर रहे हैं। 12 घंटों में अपडेट मिलेगा।",
+        'mixed': "Delivery delay ke liye sorry. Hum order track kar rahe hain, 12 hours mein update milega."
+    },
+    "Service": {
+        'english': "Thank you for bringing this service matter to our attention. We're sorry for any inconvenience you've experienced. Our customer service team will personally reach out to you within 24 hours to ensure this is resolved to your satisfaction.",
+        'hinglish': "Is service matter ko batane ke liye dhanyavaad. Inconvenience ke liye hume maafi hai. Humari customer service team 24 hours mein personally aapse contact karegi aur issue resolve karegi.",
+        'hindi': "इस सेवा मामले को हमारे ध्यान में लाने के लिए धन्यवाद। असुविधा के लिए खेद है। हमारी टीम 24 घंटों में व्यक्तिगत रूप से संपर्क करेगी।",
+        'mixed': "Service matter batane ke liye thank you. Inconvenience ke liye sorry, 24 hours mein personally contact karenge."
+    },
+    "Security": {
+        'english': "Your security and privacy are our top priorities. We're taking your concern very seriously and our security team is investigating immediately. You'll receive a detailed update within 6 hours.",
+        'hinglish': "Aapki security aur privacy humari top priority hai. Hum aapki concern ko bahut seriously le rahe hain aur humari security team turant investigate kar rahi hai. 6 hours mein detailed update milega.",
+        'hindi': "आपकी सुरक्षा और गोपनीयता हमारी शीर्ष प्राथमिकताएं हैं। हमारी सुरक्षा टीम तुरंत जांच कर रही है। 6 घंटों में विस्तृत अपडेट मिलेगा।",
+        'mixed': "Your security is our top priority. Hum bahut seriously le rahe hain, 6 hours mein detailed update milega."
+    },
+    "Other": {
+        'english': "Thank you for contacting us. We've received your message and our support team is reviewing your case carefully. We'll respond with a solution within 24 hours.",
+        'hinglish': "Humse contact karne ke liye dhanyavaad. Humne aapka message receive kar liya hai aur humari support team carefully review kar rahi hai. 24 hours mein solution ke saath respond karenge.",
+        'hindi': "हमसे संपर्क करने के लिए धन्यवाद। हमने आपका संदेश प्राप्त कर लिया है। हमारी सहायता टीम 24 घंटों में समाधान प्रदान करेगी।",
+        'mixed': "Contact karne ke liye thank you. Humari support team review kar rahi hai, 24 hours mein solution milega."
+    }
 }
 
-async def generate_response(category: str, text: str) -> str:
+async def generate_response(category: str, text: str, user_language: str = 'english') -> str:
     if not text or not text.strip():
-        return "Thank you for reaching out. We are here to help."
+        fallback_msg = {
+            'english': "Thank you for reaching out. We are here to help.",
+            'hinglish': "Humse contact karne ke liye dhanyavaad. Hum aapki help ke liye yahan hain.",
+            'hindi': "हमसे संपर्क करने के लिए धन्यवाद। हम आपकी मदद के लिए यहाँ हैं।",
+            'mixed': "Thank you for reaching out. Hum help ke liye ready hain."
+        }
+        return fallback_msg.get(user_language, fallback_msg['english'])
+    
+    # Get language-specific instruction
+    language_instruction = get_language_instruction(user_language)
+    language_example = get_language_example(user_language, 'complaint_received')
     
     # Layer 1: Try AI (Groq/Gemini - Best quality, contextual)
     if model is not None:
-        prompt = f"""You are a senior customer support specialist with exceptional communication skills.
+        prompt = f"""{language_instruction}
+
+You are a senior customer support specialist with exceptional communication skills.
 
 COMPLAINT CATEGORY: {category}
 CUSTOMER COMPLAINT: {text}
@@ -77,16 +120,15 @@ RESPONSE GUIDELINES:
 - Keep it concise but meaningful (2-4 sentences)
 - End with reassurance or next steps
 
-EXAMPLE QUALITY RESPONSES:
+CRITICAL: Respond in {user_language.upper()} language/style.
 
-For Billing Complaint:
-"I sincerely apologize for the billing error you've experienced - I completely understand how frustrating it is to see unexpected charges on your account. I've immediately flagged your case for our senior billing team, and they'll audit your account within the next 4 hours to identify and correct any discrepancies. You have my commitment that we'll resolve this swiftly and ensure it doesn't happen again."
+Example response in {user_language}:
+{language_example}
 
-For Technical Issue:
-"I understand how disruptive technical issues can be, especially when you're trying to get work done. I've escalated your case to our Level 2 technical team who specialize in this exact issue, and they're already investigating the root cause. You'll receive an update within 2 hours with either a permanent fix or a reliable workaround, and I'll personally monitor this until it's fully resolved."
-
-For Delivery Delay:
-"I'm truly sorry for the delay in your delivery - I know how disappointing it is when a package doesn't arrive as expected. I've personally contacted our logistics partner and your order is now flagged for priority handling, with an expected delivery within 24-48 hours. As a gesture of goodwill for this inconvenience, I'm also upgrading your next delivery to express shipping at no charge."
+IMPORTANT:
+- MUST respond in the SAME language as the user's complaint
+- Match the user's tone and style (formal/informal)
+- Use culturally appropriate expressions
 
 Now write a similarly empathetic, specific, and professional response for the {category} complaint above.
 
@@ -115,6 +157,7 @@ RESPONSE:"""
         if template_response:
             return template_response
     
-    # Layer 4: Category-specific professional fallback (Always works)
-    return CATEGORY_RESPONSES.get(category, CATEGORY_RESPONSES["Other"])
+    # Layer 4: Category-specific professional fallback (Always works) - Language-aware
+    category_fallbacks = CATEGORY_RESPONSES.get(category, CATEGORY_RESPONSES["Other"])
+    return category_fallbacks.get(user_language, category_fallbacks.get('english', category_fallbacks['english']))
 
