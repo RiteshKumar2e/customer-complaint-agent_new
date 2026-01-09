@@ -14,18 +14,42 @@ class GroqClient:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
         
-        # List of available Groq models (in order of preference)
+        # Comprehensive list of 20+ Groq models (in order of preference)
+        # Organized by capability: Best Quality → Balanced → Fast → Ultra-Fast
         self.models: List[str] = [
-            "llama-3.3-70b-versatile",      # Best quality, versatile
-            "llama-3.1-70b-versatile",      # High quality, reliable
-            "llama-3.2-90b-text-preview",   # Very high quality
-            "llama-3.1-8b-instant",         # Fastest, good quality
-            "mixtral-8x7b-32768",           # Good for complex tasks (if available)
-            "gemma2-9b-it",                 # Fast, efficient
-            "llama3-70b-8192",              # Reliable fallback
-            "llama3-8b-8192",               # Fast fallback
-            "gemma-7b-it",                  # Lightweight fallback
-            "llama-3.2-3b-preview",         # Ultra-fast fallback
+            # === TIER 1: BEST QUALITY (70B+ parameters) ===
+            "llama-3.3-70b-versatile",          # 1. Best overall, latest Llama
+            "llama-3.1-70b-versatile",          # 2. Excellent quality, reliable
+            "llama-3.2-90b-text-preview",       # 3. Highest quality, preview
+            "llama3-70b-8192",                  # 4. Stable 70B variant
+            
+            # === TIER 2: BALANCED QUALITY & SPEED ===
+            "mixtral-8x7b-32768",               # 5. Mixture of experts, versatile
+            "llama-3.1-8b-instant",             # 6. Fast with good quality
+            "gemma2-9b-it",                     # 7. Google's efficient model
+            "llama3-8b-8192",                   # 8. Fast, reliable
+            
+            # === TIER 3: SPECIALIZED MODELS ===
+            "llama-3.2-11b-vision-preview",     # 9. Vision capabilities
+            "llama-3.2-11b-text-preview",       # 10. Text-focused 11B
+            "llama-3.2-3b-preview",             # 11. Lightweight, fast
+            "llama-3.2-1b-preview",             # 12. Ultra-lightweight
+            
+            # === TIER 4: ALTERNATIVE MODELS ===
+            "gemma-7b-it",                      # 13. Google Gemma 7B
+            "llama3-groq-70b-8192-tool-use-preview",  # 14. Tool-use optimized
+            "llama3-groq-8b-8192-tool-use-preview",   # 15. Fast tool-use
+            
+            # === TIER 5: LEGACY/BACKUP MODELS ===
+            "llama-guard-3-8b",                 # 16. Safety-focused
+            "llama2-70b-4096",                  # 17. Llama 2 large
+            "mixtral-8x7b-instruct-v0.1",       # 18. Mixtral instruct
+            "gemma2-7b-it",                     # 19. Gemma 2 variant
+            "llama2-7b-2048",                   # 20. Llama 2 small
+            
+            # === TIER 6: ULTRA-FAST FALLBACKS ===
+            "distil-whisper-large-v3-en",       # 21. Whisper variant (if available)
+            "whisper-large-v3",                 # 22. Audio model (fallback)
         ]
         
         # Track which models have failed

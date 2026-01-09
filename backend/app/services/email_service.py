@@ -474,11 +474,11 @@ class EmailService:
                                 © {get_ist_time().year} Quickfix. All rights reserved.
                             </p>
                             <div style="margin-top: 15px;">
-                                <a href="{self.admin_email}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Help Center</a>
+                                <a href="mailto:{self.admin_email}?subject=Help%20Request" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Help Center</a>
                                 <span style="color: #d1d5db;">|</span>
                                 <a href="{self.app_url}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Privacy Policy</a>
                                 <span style="color: #d1d5db;">|</span>
-                                <a href="{self.admin_email}" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Contact Us</a>
+                                <a href="mailto:{self.admin_email}?subject=Contact%20Request" style="color: #667eea; text-decoration: none; margin: 0 10px; font-size: 12px;">Contact Us</a>
                             </div>
                         </td>
                     </tr>
@@ -610,7 +610,7 @@ class EmailService:
                                     Still have questions or need further assistance?
                                 </p>
                                 <p style="margin: 0; color: #6b7280; font-size: 13px;">
-                                    Reply to this email or visit our <a href="{self.admin_email}" style="color: #10b981; text-decoration: none; font-weight: 600;">Help Center</a>
+                                    Reply to this email or visit our <a href="mailto:{self.admin_email}?subject=Help%20Request" style="color: #10b981; text-decoration: none; font-weight: 600;">Help Center</a>
                                 </p>
                             </div>
                         </td>
@@ -629,11 +629,11 @@ class EmailService:
                                 © {get_ist_time().year} Quickfix. All rights reserved.
                             </p>
                             <div style="margin-top: 15px;">
-                                <a href="{self.admin_email}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Help Center</a>
+                                <a href="mailto:{self.admin_email}?subject=Help%20Request" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Help Center</a>
                                 <span style="color: #d1d5db;">|</span>
                                 <a href="{self.app_url}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Privacy Policy</a>
                                 <span style="color: #d1d5db;">|</span>
-                                <a href="{self.admin_email}" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Contact Us</a>
+                                <a href="mailto:{self.admin_email}?subject=Contact%20Request" style="color: #10b981; text-decoration: none; margin: 0 10px; font-size: 12px; font-weight: 500;">Contact Us</a>
                             </div>
                         </td>
                     </tr>
