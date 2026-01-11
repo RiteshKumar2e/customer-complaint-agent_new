@@ -77,41 +77,44 @@ async def suggest_solution(category: str, text: str, user_language: str = None) 
     language_instruction = get_language_instruction(user_language)
     language_example = get_language_example(user_language, 'solution')
 
-    # Enhanced prompt for high-quality solutions IN USER'S LANGUAGE
-    prompt = f"""{language_instruction}
+    # HINGLISH-SPECIFIC ENFORCEMENT
+    if user_language == 'hinglish':
+        hinglish_words = "aapke, aapka, humari, team, review, karegi, karenge, mein, hours, milega, provide, strategies, techniques, guidance, personalized, case, issue, solution, contact, escalate"
+        language_instruction = f"MANDATORY: You MUST respond in Hinglish (Hindi words in Roman/English script). Use these words: {hinglish_words}. DO NOT use pure English."
 
-You are an expert customer service solution specialist with 10+ years of experience.
+    # Enhanced prompt for high-quality solutions IN USER'S LANGUAGE
+    prompt = f"""LANGUAGE DETECTED: {user_language.upper()}
+
+{language_instruction}
+
+You are an expert customer service solution specialist.
 
 COMPLAINT CATEGORY: {category}
 CUSTOMER ISSUE: {text}
 
+CRITICAL LANGUAGE RULE:
+- If language is 'hinglish', you MUST write in Hinglish (Hindi words in English script)
+- DO NOT use pure English if language is hinglish
+- Match the EXACT language style of the complaint
+
+HINGLISH SOLUTION EXAMPLE (MANDATORY FORMAT):
+Complaint: "Bhai bade hain to kya hua, humesha apni baatein manwaate hain"
+Solution: "Aapki family issue ka solution:
+1. Humari Family Dynamics team aapka case 24 hours mein review karegi
+2. Kal tak aapko personalized guidance milega on how to navigate this situation
+3. Communication strategies aur boundary-setting techniques provide karenge
+4. 3-5 business days mein specialist follow-up consultation schedule hoga"
+
+ENGLISH SOLUTION EXAMPLE:
+Complaint: "My brother dominates me"
+Solution: "Solution for your family issue:
+1. Our Family Dynamics team will review your case within 24 hours
+2. You'll receive personalized guidance by tomorrow on navigating this situation
+3. We'll provide communication strategies and boundary-setting techniques
+4. A specialist follow-up consultation will be scheduled within 3-5 business days"
+
 YOUR TASK:
-Provide a comprehensive, professional solution that:
-1. Acknowledges the specific problem
-2. Provides concrete action steps with timelines
-3. Shows empathy and understanding
-4. Gives specific details (not generic responses)
-5. Includes what the customer can expect next
-
-SOLUTION FORMAT:
-- Start with acknowledgment of the issue
-- Provide 2-3 specific action steps
-- Include realistic timelines (hours/days)
-- End with reassurance
-
-CRITICAL: Respond in {user_language.upper()} language/style.
-
-Example solution in {user_language}:
-{language_example}
-
-IMPORTANT GUIDELINES:
-- Be specific with timelines (e.g., "within 4 hours", "by tomorrow", "3-5 business days")
-- Mention specific teams/departments that will help
-- Include compensation/goodwill gestures when appropriate
-- Use empathetic language
-- Keep it professional but warm
-- Length: 3-5 sentences with concrete details
-- MUST respond in the SAME language as the user's complaint
+Provide actionable solution (3-4 steps with timelines) in {user_language.upper()} language.
 
 SOLUTION:"""
     

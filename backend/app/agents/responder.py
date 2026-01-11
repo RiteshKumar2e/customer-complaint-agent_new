@@ -102,41 +102,37 @@ async def generate_response(category: str, text: str, user_language: str = None)
     language_instruction = get_language_instruction(user_language)
     language_example = get_language_example(user_language, 'complaint_received')
     
+    # HINGLISH-SPECIFIC ENFORCEMENT
+    if user_language == 'hinglish':
+        hinglish_words = "hai, hain, aapka, aapke, aapki, hume, humne, humari, mera, meri, mere, kya, kaise, ke, liye, se, ko, ka, ki, mein, par, issue, problem, team, maafi, sachme, immediately, escalate, kar, diya, denge, karenge, milega, hoga"
+        language_instruction = f"MANDATORY: You MUST respond in Hinglish (Hindi words in Roman/English script). Use these words: {hinglish_words}. DO NOT use pure English."
+    
     # Layer 1: Try AI (Groq/Gemini - Best quality, contextual)
     if model is not None:
-        prompt = f"""{language_instruction}
+        prompt = f"""LANGUAGE DETECTED: {user_language.upper()}
 
-You are a senior customer support specialist with exceptional communication skills.
+{language_instruction}
+
+You are a senior customer support specialist.
 
 COMPLAINT CATEGORY: {category}
 CUSTOMER COMPLAINT: {text}
 
+CRITICAL LANGUAGE RULE:
+- If language is 'hinglish', you MUST write in Hinglish (Hindi words in English script)
+- DO NOT use pure English if language is hinglish
+- Match the EXACT language style of the complaint
+
+HINGLISH EXAMPLE (MANDATORY FORMAT):
+Complaint: "Bhai bade hain to kya hua, humesha apni baatein manwaate hain"
+Response: "Aapki family issue ke liye hume bahut maafi hai. Humari counseling team aapka case review kar rahi hai aur 24 hours mein aapko personalized guidance milega. Communication strategies aur boundary-setting techniques provide karenge."
+
+ENGLISH EXAMPLE:
+Complaint: "My brother dominates me"
+Response: "I sincerely apologize for your family situation. Our counseling team is reviewing your case and will provide personalized guidance within 24 hours."
+
 YOUR TASK:
-Write a professional, empathetic response that:
-1. Acknowledges the customer's specific issue and validates their feelings
-2. Takes ownership and apologizes sincerely (if applicable)
-3. Reassures them that action is being taken
-4. Maintains a warm, professional tone
-
-RESPONSE GUIDELINES:
-- Address the specific issue mentioned (don't be generic)
-- Show genuine empathy and understanding
-- Use phrases like "I understand", "I sincerely apologize", "Let me help you"
-- Be personal and human (avoid robotic language)
-- Keep it concise but meaningful (2-4 sentences)
-- End with reassurance or next steps
-
-CRITICAL: Respond in {user_language.upper()} language/style.
-
-Example response in {user_language}:
-{language_example}
-
-IMPORTANT:
-- MUST respond in the SAME language as the user's complaint
-- Match the user's tone and style (formal/informal)
-- Use culturally appropriate expressions
-
-Now write a similarly empathetic, specific, and professional response for the {category} complaint above.
+Write empathetic response (2-3 sentences) in {user_language.upper()} language.
 
 RESPONSE:"""
         try:
