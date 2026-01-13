@@ -75,48 +75,46 @@ async def suggest_solution(category: str, text: str, user_language: str = None) 
 
     # Get language-specific instruction
     language_instruction = get_language_instruction(user_language)
-    language_example = get_language_example(user_language, 'solution')
 
-    # HINGLISH-SPECIFIC ENFORCEMENT
-    if user_language == 'hinglish':
-        hinglish_words = "aapke, aapka, humari, team, review, karegi, karenge, mein, hours, milega, provide, strategies, techniques, guidance, personalized, case, issue, solution, contact, escalate"
-        language_instruction = f"MANDATORY: You MUST respond in Hinglish (Hindi words in Roman/English script). Use these words: {hinglish_words}. DO NOT use pure English."
+    # COMPREHENSIVE SOLUTION PROMPT
+    prompt = f"""You are an expert {category} support specialist. Provide a DETAILED, ACTIONABLE solution.
 
-    # Enhanced prompt for high-quality solutions IN USER'S LANGUAGE
-    prompt = f"""LANGUAGE DETECTED: {user_language.upper()}
+COMPLAINT: "{text}"
+CATEGORY: {category}
+LANGUAGE: Must respond in {user_language.upper()}
 
 {language_instruction}
 
-You are an expert customer service solution specialist.
+SOLUTION STRUCTURE (Follow exactly):
 
-COMPLAINT CATEGORY: {category}
-CUSTOMER ISSUE: {text}
+**Solution for your {category} issue:**
 
-CRITICAL LANGUAGE RULE:
-- If language is 'hinglish', you MUST write in Hinglish (Hindi words in English script)
-- DO NOT use pure English if language is hinglish
-- Match the EXACT language style of the complaint
+**Step 1: Immediate Action (Next 2-4 hours)**
+• Our {category} team will personally review your case
+• You'll receive a case ID and dedicated support contact
+• Initial assessment sent to your email
 
-HINGLISH SOLUTION EXAMPLE (MANDATORY FORMAT):
-Complaint: "Bhai bade hain to kya hua, humesha apni baatein manwaate hain"
-Solution: "Aapki family issue ka solution:
-1. Humari Family Dynamics team aapka case 24 hours mein review karegi
-2. Kal tak aapko personalized guidance milega on how to navigate this situation
-3. Communication strategies aur boundary-setting techniques provide karenge
-4. 3-5 business days mein specialist follow-up consultation schedule hoga"
+**Step 2: Detailed Investigation (Within 24 hours)**
+• Analyze root cause of your specific issue
+• Gather all relevant case information
+• Provide detailed explanation
 
-ENGLISH SOLUTION EXAMPLE:
-Complaint: "My brother dominates me"
-Solution: "Solution for your family issue:
-1. Our Family Dynamics team will review your case within 24 hours
-2. You'll receive personalized guidance by tomorrow on navigating this situation
-3. We'll provide communication strategies and boundary-setting techniques
-4. A specialist follow-up consultation will be scheduled within 3-5 business days"
+**Step 3: Resolution (Within 24-48 hours)**
+• Implement specific fix for your issue
+• Verify solution works correctly
+• Process refund/compensation if applicable
 
-YOUR TASK:
-Provide actionable solution (3-4 steps with timelines) in {user_language.upper()} language.
+**Step 4: Follow-up (Within 3-5 days)**
+• Follow-up call for satisfaction
+• Prevent issue recurrence
+• Direct contact for future support
 
-SOLUTION:"""
+**Timeline:**
+✓ Immediate acknowledgment
+✓ Initial response: 2-4 hours
+✓ Full resolution: 24-48 hours
+
+Write in {user_language.upper()}. Be SPECIFIC and ACTIONABLE."""
     
     # Layer 1: Try Gemini AI (Best quality, contextual)
     try:
