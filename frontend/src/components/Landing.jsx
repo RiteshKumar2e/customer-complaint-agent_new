@@ -166,6 +166,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }}>About</button>
           <button onClick={() => { scrollToSection('goals'); setIsMenuOpen(false); }}>Goals</button>
           <button onClick={() => { scrollToSection('team'); setIsMenuOpen(false); }}>Team</button>
+          <button onClick={() => { scrollToSection('testimonials'); setIsMenuOpen(false); }}>Testimonials</button>
           <button onClick={() => { scrollToSection('contact'); setIsMenuOpen(false); }}>Contact</button>
         </nav>
 
@@ -452,6 +453,54 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
               </a>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="testimonials-section" id="testimonials">
+        <div className="section-header">
+          <h2 className="section-title">Client <span>Feedback</span></h2>
+          <p className="section-subtitle">What industry leaders are saying about Quickfix AI.</p>
+        </div>
+        <div className="testimonials-grid">
+          {[
+            {
+              name: "S. Johnson",
+              role: "Operations Head",
+              text: "The AI agent clusters have reduced our resolution cycles from hours to seconds. A scalable solution for enterprise-level support.",
+              rating: 5
+            },
+            {
+              name: "M. Chen",
+              role: "Support Director",
+              text: "Surgical precision in classification. The sentiment-aware routing ensures our high-priority tickets reach the right team instantly.",
+              rating: 5
+            },
+            {
+              name: "E. Rodriguez",
+              role: "Tech Lead",
+              text: "Seamless API integration and enterprise-grade security. Quickfix is the benchmark for autonomous customer success systems.",
+              rating: 5
+            }
+          ].map((testimonial, idx) => (
+            <div key={idx} className="testimonial-card">
+              <div className="testimonial-header">
+                <div className="testimonial-id-badge">
+                  <span>{testimonial.name.charAt(0)}</span>
+                </div>
+                <div className="testimonial-info">
+                  <h4>{testimonial.name}</h4>
+                  <p className="testimonial-role">{testimonial.role}</p>
+                </div>
+              </div>
+              <div className="rating-stars">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <span key={i} className="star">★</span>
+                ))}
+              </div>
+              <p className="testimonial-text">{testimonial.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 

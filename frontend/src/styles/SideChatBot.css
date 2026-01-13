@@ -381,3 +381,88 @@ body.light-theme .chat-input input {
     padding: 10px 14px;
   }
 }
+
+/* ===== NEW ADDITIONS ===== */
+
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background: #022c22;
+  border-radius: 50%;
+  animation: typing 1s infinite ease-in-out;
+}
+
+body.light-theme .typing-indicator span {
+  background: #ffffff;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Voice Button */
+.voice-btn {
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: #fff !important;
+  padding: 10px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.voice-btn:hover {
+  background: rgba(139, 92, 246, 0.4) !important;
+  transform: scale(1.1) rotate(10deg) !important;
+}
+
+.voice-btn.active {
+  background: #ef4444 !important;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.chat-input input.listening {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}

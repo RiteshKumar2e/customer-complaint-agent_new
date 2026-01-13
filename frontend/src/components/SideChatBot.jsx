@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import api from "../api";
 import "../styles/SideChatBot.css";
 
@@ -12,6 +12,49 @@ export default function SideChatBot({ open, onClose }) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const recognitionRef = useRef(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+
+      setVoiceSupported(true);
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -71,17 +114,35 @@ export default function SideChatBot({ open, onClose }) {
             )}
           </div>
         ))}
+        {loading && (
+          <div className="chat-msg agent">
+            <div className="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="chat-input">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
+          placeholder={isListening ? "Listening..." : "Type your message..."}
           onKeyDown={handleKeyDown}
-          disabled={loading} // Optional: Disable input while sending
+          disabled={loading || isListening}
         />
-        <button onClick={sendMessage} disabled={loading}>
+        {voiceSupported && (
+          <button
+            className={`voice-btn ${isListening ? 'active' : ''}`}
+            onClick={toggleVoiceInput}
+            title={isListening ? "Stop Listening" : "Voice Search"}
+          >
+            {isListening ? "🛑" : "🎤"}
+          </button>
+        )}
+        <button onClick={sendMessage} disabled={loading || isListening}>
           {loading ? "…" : "Send"}
         </button>
       </div>
