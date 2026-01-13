@@ -42,43 +42,43 @@ try:
 except ImportError:
     RESPONSE_TEMPLATES = {}
 
-# Category-specific professional fallback responses (multilingual)
+# Category-specific professional fallback responses (multilingual) - CONCISE VERSION
 CATEGORY_RESPONSES = {
     "Billing": {
-        'english': "Thank you for contacting us about your billing concern. We understand how important accurate billing is, and we're reviewing your account details right away. Our billing team will reach out to you within 24-48 hours with a resolution.",
-        'hinglish': "Aapki billing concern ke liye dhanyavaad. Hum samajhte hain ki accurate billing kitni important hai, aur hum abhi aapke account details review kar rahe hain. Humari billing team 24-48 hours mein aapse contact karegi.",
-        'hindi': "आपकी बिलिंग चिंता के लिए धन्यवाद। हम समझते हैं कि सटीक बिलिंग कितनी महत्वपूर्ण है। हमारी बिलिंग टीम 24-48 घंटों में आपसे संपर्क करेगी।",
-        'mixed': "Thank you for contacting. Hum aapke billing concern ko samajhte hain aur 24-48 hours mein resolve kar denge."
+        'english': "Thank you for contacting us about your billing concern. Our billing team will review your account and reach out within 24-48 hours with a resolution.",
+        'hinglish': "Aapki billing concern ke liye dhanyavaad. Humari billing team 24-48 hours mein aapke account ko review karke solution provide karegi.",
+        'hindi': "आपकी बिलिंग चिंता के लिए धन्यवाद। हमारी टीम 24-48 घंटों में समाधान प्रदान करेगी।",
+        'mixed': "Thank you for contacting. Hum 24-48 hours mein billing issue resolve kar denge."
     },
     "Technical": {
-        'english': "We appreciate you reporting this technical issue. Our technical team is investigating this matter with high priority. We'll work to provide you with a fix or workaround within 24 hours and keep you updated throughout the process.",
-        'hinglish': "Is technical issue ko report karne ke liye shukriya. Humari technical team high priority se is matter ko investigate kar rahi hai. 24 hours mein fix ya workaround provide karenge aur aapko update karte rahenge.",
-        'hindi': "इस तकनीकी समस्या की रिपोर्ट करने के लिए धन्यवाद। हमारी तकनीकी टीम उच्च प्राथमिकता से जांच कर रही है। 24 घंटों में समाधान मिलेगा।",
-        'mixed': "Thank you for reporting. Humari technical team high priority se investigate kar rahi hai, 24 hours mein fix mil jayega."
+        'english': "We appreciate you reporting this technical issue. Our technical team is investigating with high priority and will provide a fix within 24 hours.",
+        'hinglish': "Technical issue report karne ke liye shukriya. Humari team high priority se investigate kar rahi hai aur 24 hours mein fix provide karegi.",
+        'hindi': "तकनीकी समस्या की रिपोर्ट के लिए धन्यवाद। हमारी टीम 24 घंटों में समाधान देगी।",
+        'mixed': "Thank you for reporting. Technical team 24 hours mein fix provide karegi."
     },
     "Delivery": {
-        'english': "We sincerely apologize for any delay with your delivery. We're actively tracking your order and will prioritize its delivery. You can expect an update from our logistics team within 12 hours.",
-        'hinglish': "Delivery mein delay ke liye hume sachme maafi hai. Hum actively aapke order ko track kar rahe hain aur priority delivery ensure karenge. 12 hours mein logistics team se update milega.",
-        'hindi': "डिलीवरी में देरी के लिए हमें सचमुच खेद है। हम सक्रिय रूप से आपके ऑर्डर को ट्रैक कर रहे हैं। 12 घंटों में अपडेट मिलेगा।",
-        'mixed': "Delivery delay ke liye sorry. Hum order track kar rahe hain, 12 hours mein update milega."
+        'english': "We sincerely apologize for the delivery delay. We're tracking your order and will prioritize delivery. Expect an update within 12 hours.",
+        'hinglish': "Delivery delay ke liye maafi chahte hain. Hum aapka order track kar rahe hain aur 12 hours mein update milega.",
+        'hindi': "डिलीवरी में देरी के लिए खेद है। 12 घंटों में अपडेट मिलेगा।",
+        'mixed': "Delivery delay ke liye sorry. 12 hours mein update milega."
     },
     "Service": {
-        'english': "Thank you for bringing this service matter to our attention. We're sorry for any inconvenience you've experienced. Our customer service team will personally reach out to you within 24 hours to ensure this is resolved to your satisfaction.",
-        'hinglish': "Is service matter ko batane ke liye dhanyavaad. Inconvenience ke liye hume maafi hai. Humari customer service team 24 hours mein personally aapse contact karegi aur issue resolve karegi.",
-        'hindi': "इस सेवा मामले को हमारे ध्यान में लाने के लिए धन्यवाद। असुविधा के लिए खेद है। हमारी टीम 24 घंटों में व्यक्तिगत रूप से संपर्क करेगी।",
-        'mixed': "Service matter batane ke liye thank you. Inconvenience ke liye sorry, 24 hours mein personally contact karenge."
+        'english': "Thank you for bringing this to our attention. Our customer service team will personally reach out within 24 hours to resolve this.",
+        'hinglish': "Is matter ko batane ke liye dhanyavaad. Humari team 24 hours mein personally contact karke issue resolve karegi.",
+        'hindi': "इस मामले को बताने के लिए धन्यवाद। हमारी टीम 24 घंटों में संपर्क करेगी।",
+        'mixed': "Thank you for informing. Team 24 hours mein personally contact karegi."
     },
     "Security": {
-        'english': "Your security and privacy are our top priorities. We're taking your concern very seriously and our security team is investigating immediately. You'll receive a detailed update within 6 hours.",
-        'hinglish': "Aapki security aur privacy humari top priority hai. Hum aapki concern ko bahut seriously le rahe hain aur humari security team turant investigate kar rahi hai. 6 hours mein detailed update milega.",
-        'hindi': "आपकी सुरक्षा और गोपनीयता हमारी शीर्ष प्राथमिकताएं हैं। हमारी सुरक्षा टीम तुरंत जांच कर रही है। 6 घंटों में विस्तृत अपडेट मिलेगा।",
-        'mixed': "Your security is our top priority. Hum bahut seriously le rahe hain, 6 hours mein detailed update milega."
+        'english': "Your security is our top priority. Our security team is investigating immediately and you'll receive an update within 6 hours.",
+        'hinglish': "Aapki security humari top priority hai. Security team turant investigate kar rahi hai aur 6 hours mein update milega.",
+        'hindi': "आपकी सुरक्षा हमारी प्राथमिकता है। 6 घंटों में अपडेट मिलेगा।",
+        'mixed': "Your security is top priority. 6 hours mein detailed update milega."
     },
     "Other": {
-        'english': "Thank you for contacting us. We've received your message and our support team is reviewing your case carefully. We'll respond with a solution within 24 hours.",
-        'hinglish': "Humse contact karne ke liye dhanyavaad. Humne aapka message receive kar liya hai aur humari support team carefully review kar rahi hai. 24 hours mein solution ke saath respond karenge.",
-        'hindi': "हमसे संपर्क करने के लिए धन्यवाद। हमने आपका संदेश प्राप्त कर लिया है। हमारी सहायता टीम 24 घंटों में समाधान प्रदान करेगी।",
-        'mixed': "Contact karne ke liye thank you. Humari support team review kar rahi hai, 24 hours mein solution milega."
+        'english': "Thank you for contacting us. Our support team is reviewing your case and will respond with a solution within 24 hours.",
+        'hinglish': "Contact karne ke liye dhanyavaad. Humari support team review kar rahi hai aur 24 hours mein solution provide karegi.",
+        'hindi': "संपर्क के लिए धन्यवाद। हमारी टीम 24 घंटों में समाधान देगी।",
+        'mixed': "Thank you for contacting. 24 hours mein solution milega."
     }
 }
 
@@ -109,32 +109,32 @@ async def generate_response(category: str, text: str, user_language: str = None)
     
     # Layer 1: Try AI (Groq/Gemini - Best quality, contextual)
     if model is not None:
-        prompt = f"""LANGUAGE DETECTED: {user_language.upper()}
+        prompt = f"""You are an empathetic customer support specialist. Write a SHORT, SPECIFIC response.
+
+COMPLAINT: "{text}"
+CATEGORY: {category}
+LANGUAGE: {user_language.upper()}
 
 {language_instruction}
 
-You are a senior customer support specialist.
+INSTRUCTIONS:
+1. Write in {user_language.upper()} language ONLY
+2. Be SPECIFIC to this exact complaint (not generic)
+3. Keep it SHORT (2-3 sentences maximum)
+4. Show EMPATHY and acknowledge their specific concern
+5. Mention next steps briefly
 
-COMPLAINT CATEGORY: {category}
-CUSTOMER COMPLAINT: {text}
+EXAMPLES:
 
-CRITICAL LANGUAGE RULE:
-- If language is 'hinglish', you MUST write in Hinglish (Hindi words in English script)
-- DO NOT use pure English if language is hinglish
-- Match the EXACT language style of the complaint
+Hinglish:
+Complaint: "Mere red blood cells badh gaye hain"
+Response: "Aapki health concern ke liye thank you. Humari Medical Support team 24 hours mein aapka case review karegi aur root cause identify karegi. Kal tak personalized report aur recommendations mil jayenge."
 
-HINGLISH EXAMPLE (MANDATORY FORMAT):
-Complaint: "Bhai bade hain to kya hua, humesha apni baatein manwaate hain"
-Response: "Aapki family issue ke liye hume bahut maafi hai. Humari counseling team aapka case review kar rahi hai aur 24 hours mein aapko personalized guidance milega. Communication strategies aur boundary-setting techniques provide karenge."
+English:
+Complaint: "My red blood cells are increased"
+Response: "Thank you for sharing your health concern. Our Medical Support team will review your case within 24 hours to identify the cause. You'll receive a personalized report with recommendations by tomorrow."
 
-ENGLISH EXAMPLE:
-Complaint: "My brother dominates me"
-Response: "I sincerely apologize for your family situation. Our counseling team is reviewing your case and will provide personalized guidance within 24 hours."
-
-YOUR TASK:
-Write empathetic response (2-3 sentences) in {user_language.upper()} language.
-
-RESPONSE:"""
+NOW WRITE A CONCISE RESPONSE (2-3 sentences only):"""
         try:
             response = await model.generate_content_async(prompt)
             if response and response.text:

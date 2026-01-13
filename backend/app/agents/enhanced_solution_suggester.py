@@ -86,78 +86,37 @@ async def suggest_enhanced_solution(
     kb = KNOWLEDGE_BASE.get(category, {})
     sla = kb.get('sla', {}).get(priority, "24-48 hours")
     
-    # Build enhanced prompt
-    prompt = f"""You are a SENIOR TECHNICAL SOLUTIONS ARCHITECT with expertise in customer issue resolution.
+    # Build concise, actionable prompt
+    prompt = f"""You are an expert customer support specialist. Generate a CONCISE, SPECIFIC solution.
 
-🎯 TASK: Generate a detailed, actionable solution plan
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-COMPLAINT DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Category: {category}
-Priority: {priority}
-Language: {user_language.upper()}
-SLA Timeline: {sla}
-Complaint: "{complaint}"
+COMPLAINT: "{complaint}"
+CATEGORY: {category}
+PRIORITY: {priority}
+TIMELINE: {sla}
 
 {solution_examples}
 
-{standard_solutions}
+INSTRUCTIONS:
+1. Write in {user_language.upper()} language ONLY
+2. Be SPECIFIC to this exact complaint
+3. Keep it SHORT and ACTIONABLE (3-4 bullet points maximum)
+4. Include timeline and next steps
+5. Make it PERSONAL and EMPATHETIC
 
-🌐 LANGUAGE REQUIREMENT:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {language_instruction}
 
-CRITICAL: Respond in {user_language.upper()} language only!
-
-📋 SOLUTION FRAMEWORK (Include ALL 5 steps):
+FORMAT (Example for Hinglish):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Humari Medical Support team aapka case 24 hours mein review karegi aur root cause identify karegi.
+• Aapko personalized report kal tak mil jayega with specific recommendations.
+• Specialist consultation 3-5 business days mein schedule hoga for detailed discussion.
+• 7-10 days mein follow-up review hoga to ensure your condition is improving.
 
-1. IMMEDIATE ACTION (What to do in next 1 hour)
-   - First emergency step
-   - Who will handle it
-   - Expected immediate outcome
-
-2. ROOT CAUSE INVESTIGATION (Next 2-6 hours)
-   - What to check/analyze
-   - Tools/systems to use
-   - Data to collect
-
-3. PERMANENT FIX (Within SLA timeline)
-   - Specific technical/process fix
-   - Implementation steps
-   - Testing/verification
-
-4. CUSTOMER COMMUNICATION (Throughout process)
-   - What to tell customer now
-   - Update frequency
-   - Contact method
-
-5. PREVENTION & COMPENSATION (After resolution)
-   - How to prevent recurrence
-   - What to offer customer
-   - Follow-up plan
-
-EXAMPLE FORMAT (Hinglish):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. IMMEDIATE ACTION: Customer ka account temporarily secure kar do aur unauthorized sessions terminate karo. Security team ko immediately notify karo.
-
-2. ROOT CAUSE: Login logs aur IP addresses check karo. Suspicious activity patterns identify karo. Last 7 days ka activity audit karo.
-
-3. PERMANENT FIX: Password reset force karo, 2FA enable karo, aur security alerts setup karo. 24 hours mein complete security audit karo.
-
-4. COMMUNICATION: Customer ko immediately email aur SMS bhejo ki account secure kar diya gaya hai. Har 6 hours mein update do.
-
-5. PREVENTION: Security monitoring enhance karo, login alerts enable karo, aur customer ko 1 month free premium security service do.
-
-NOW GENERATE THE SOLUTION:
-Write a detailed 5-step solution plan in {user_language.upper()} language.
-
-SOLUTION:"""
+NOW GENERATE A CONCISE SOLUTION (3-4 points only):"""
 
     try:
         solution = await async_ask_gemini(prompt)
-        if solution and len(solution) > 100:
+        if solution and len(solution) > 50:  # Accept shorter, concise solutions
             return solution.strip()
     except Exception as e:
         print(f"❌ Solution generation error: {e}")
@@ -179,43 +138,37 @@ def get_fallback_solution(category: str, priority: str, language: str) -> str:
     if examples:
         return examples[0].get('solution', '')
     
-    # Ultimate fallback with detailed steps
+    # Ultimate fallback with concise steps
     kb = KNOWLEDGE_BASE.get(category, {})
     solutions = kb.get('solutions', [])
+    sla = kb.get('sla', {}).get(priority, "24-48 hours")
     
     if language == 'hinglish':
-        fallback = f"**{category} Issue Resolution Plan:**\n\n"
-        fallback += "1. IMMEDIATE ACTION: Customer ka case high priority pe mark karo aur dedicated team assign karo.\n\n"
-        fallback += "2. INVESTIGATION: Issue ko detail mein analyze karo aur root cause identify karo.\n\n"
-        fallback += "3. SOLUTION: "
+        fallback = f"**{category} Issue - Solution:**\n\n"
+        fallback += f"• Humari team aapka case immediately review karegi aur {sla} mein detailed analysis provide karegi.\n"
         if solutions:
-            fallback += f"{solutions[0]} implement karo.\n\n"
-        else:
-            fallback += "Appropriate fix apply karo aur testing karo.\n\n"
-        fallback += "4. COMMUNICATION: Customer ko regular updates do (har 6-12 hours mein).\n\n"
-        fallback += "5. FOLLOW-UP: Resolution ke baad customer satisfaction confirm karo aur compensation offer karo."
+            fallback += f"• {solutions[0]}\n"
+        fallback += f"• Aapko regular updates milenge aur dedicated support team assigned hogi.\n"
+        fallback += f"• Issue resolve hone ke baad follow-up aur compensation discuss karenge."
     
     elif language == 'hindi':
-        fallback = f"**{category} समस्या समाधान योजना:**\n\n"
-        fallback += "1. तत्काल कार्रवाई: ग्राहक के मामले को उच्च प्राथमिकता पर चिह्नित करें।\n\n"
-        fallback += "2. जांच: समस्या का विस्तार से विश्लेषण करें।\n\n"
-        fallback += "3. समाधान: उपयुक्त सुधार लागू करें।\n\n"
-        fallback += "4. संचार: ग्राहक को नियमित अपडेट दें।\n\n"
-        fallback += "5. अनुवर्ती: समाधान के बाद संतुष्टि की पुष्टि करें।"
+        fallback = f"**{category} समस्या - समाधान:**\n\n"
+        fallback += f"• हमारी टीम आपके मामले की तुरंत समीक्षा करेगी और {sla} में विस्तृत विश्लेषण प्रदान करेगी।\n"
+        if solutions:
+            fallback += f"• {solutions[0]}\n"
+        fallback += f"• आपको नियमित अपडेट मिलेंगे और समर्पित सहायता टीम नियुक्त की जाएगी।\n"
+        fallback += f"• समस्या हल होने के बाद फॉलो-अप और मुआवजे पर चर्चा करेंगे।"
     
     else:  # English
-        fallback = f"**{category} Issue Resolution Plan:**\n\n"
-        fallback += "1. IMMEDIATE ACTION: Mark customer's case as high priority and assign dedicated team.\n\n"
-        fallback += "2. INVESTIGATION: Analyze the issue in detail and identify root cause.\n\n"
-        fallback += "3. SOLUTION: "
+        fallback = f"**{category} Issue - Solution:**\n\n"
+        fallback += f"• Our team will immediately review your case and provide detailed analysis within {sla}.\n"
         if solutions:
-            fallback += f"{solutions[0]}\n\n"
-        else:
-            fallback += "Implement appropriate fix and test thoroughly.\n\n"
-        fallback += "4. COMMUNICATION: Provide regular updates to customer (every 6-12 hours).\n\n"
-        fallback += "5. FOLLOW-UP: Confirm customer satisfaction after resolution and offer compensation."
+            fallback += f"• {solutions[0]}\n"
+        fallback += f"• You'll receive regular updates and a dedicated support team will be assigned.\n"
+        fallback += f"• After resolution, we'll discuss follow-up and compensation options."
     
     return fallback
+
 
 
 # Backward compatibility wrapper
