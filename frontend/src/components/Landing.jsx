@@ -114,6 +114,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           utter.voice = v;
           utter.lang = v.lang;
         }
+        utter.volume = 1.0; // Force maximum software volume
         utter.rate = 1.05; // Slightly faster for mobile engagement
         utter.pitch = 1.0;
         synth.speak(utter);
