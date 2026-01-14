@@ -90,31 +90,33 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction Logic (Improved Hinglish Version)
+  // AI Voice Introduction Logic (Gesture-Locked for Browser Policy)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Yeh ek powerful multi-agent ecosystem hai jo aapki complaints ko smartly prioritize karta hai. Explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support transform karte hain.";
 
     const speakIntro = () => {
+      // Important: Use sessionStorage to prevent annoying repeats on navigation
       if (sessionStorage.getItem('intro_spoken')) return;
 
       const synth = window.speechSynthesis;
       if (!synth) return;
 
-      // Chrome and other browsers load voices asynchronously
+      synth.resume(); // Fixes stuck state in some browsers
+
       let voices = synth.getVoices();
       if (voices.length === 0) {
+        // If voices aren't ready, wait for them.
         synth.onvoiceschanged = () => {
-          synth.onvoiceschanged = null; // Unregister to avoid repetition
+          synth.onvoiceschanged = null;
           speakIntro();
         };
         return;
       }
 
-      synth.cancel();
+      synth.cancel(); // Clear any existing queue
 
-      const utterance = new SpeechSynthesisUtterance(introText);
+      window.currentUtterance = new SpeechSynthesisUtterance(introText);
 
-      // Try to find a natural-sounding Hindi or Indian English voice
       const preferredVoice = voices.find(v =>
         v.lang.includes('hi-IN') ||
         v.lang.includes('en-IN') ||
@@ -125,33 +127,36 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       );
 
       if (preferredVoice) {
-        utterance.voice = preferredVoice;
-        utterance.lang = preferredVoice.lang;
+        window.currentUtterance.voice = preferredVoice;
+        window.currentUtterance.lang = preferredVoice.lang;
       } else {
-        utterance.lang = 'hi-IN';
+        window.currentUtterance.lang = 'hi-IN';
       }
 
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1;
+      window.currentUtterance.rate = 0.95;
+      window.currentUtterance.pitch = 1.0;
 
-      utterance.onend = () => {
+      window.currentUtterance.onend = () => {
         sessionStorage.setItem('intro_spoken', 'true');
+        window.currentUtterance = null;
       };
 
-      // Handle speech error (e.g., autoplay block)
-      utterance.onerror = (event) => {
-        console.warn("Speech synthesis failed or was blocked:", event);
+      window.currentUtterance.onerror = (e) => {
+        // Only log serious errors, not the policy ones if we handle them
+        if (e.error !== 'not-allowed') {
+          console.error("AI Voice Error:", e);
+        }
+        window.currentUtterance = null;
       };
 
-      synth.speak(utterance);
+      synth.speak(window.currentUtterance);
     };
 
-    // Initial attempt after a short delay
-    const timer = setTimeout(speakIntro, 1500);
-
-    // Fallback: Bind to any user interaction to bypass autoplay restrictions
     const handleFirstInteraction = () => {
+      // Must call speakIntro directly in the handler to register user intent
       speakIntro();
+
+      // Clean up listeners immediately
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
@@ -162,10 +167,10 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
     window.addEventListener('touchstart', handleFirstInteraction);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, []);
 
