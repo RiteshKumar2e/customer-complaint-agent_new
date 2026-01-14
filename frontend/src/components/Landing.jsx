@@ -87,62 +87,42 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction Logic (Mobile-First Architecture)
+  // AI Voice Introduction (The "Mobile-Bulletproof" Version)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
 
-    const handleSpeech = () => {
+    const handleInteraction = () => {
       const synth = window.speechSynthesis;
-      if (!synth || synth.speaking) return;
+      if (!synth) return;
 
-      // PRIMING: Silent wake-up for mobile audio engines
+      // MUST be synchronous for Mobile Security Policy
       synth.cancel();
-      const wakeup = new SpeechSynthesisUtterance("");
-      wakeup.volume = 0;
-      synth.speak(wakeup);
 
-      // REAL SPEECH
       const utter = new SpeechSynthesisUtterance(introText);
+      utter.lang = 'hi-IN'; // Essential for mobile Hindi support
+      utter.volume = 1.0;
+      utter.rate = 1.0;
 
-      const setVoiceAndSpeak = () => {
-        const voices = synth.getVoices();
-        // Priority: Indian Hindi -> Indian English -> Mobile Standard
-        const v = voices.find(v => v.lang.includes('hi-IN')) ||
-          voices.find(v => v.lang.includes('en-IN')) ||
-          voices[0];
-        if (v) {
-          utter.voice = v;
-          utter.lang = v.lang;
-        }
-        utter.volume = 1.0; // Force maximum software volume
-        utter.rate = 1.05; // Slightly faster for mobile engagement
-        utter.pitch = 1.0;
-        synth.speak(utter);
-      };
+      // Try to pick a natural voice if already loaded
+      const voices = synth.getVoices();
+      const indianVoice = voices.find(v => v.lang.includes('hi-IN') || v.lang.includes('en-IN'));
+      if (indianVoice) utter.voice = indianVoice;
 
-      if (synth.getVoices().length === 0) {
-        synth.onvoiceschanged = () => {
-          setVoiceAndSpeak();
-          synth.onvoiceschanged = null;
-        };
-      } else {
-        setVoiceAndSpeak();
-      }
+      synth.speak(utter);
 
-      // Cleanup
-      ['click', 'touchend', 'keydown'].forEach(e =>
-        window.removeEventListener(e, handleSpeech)
+      // Remove all listeners immediately
+      ['click', 'touchstart', 'mousedown'].forEach(e =>
+        window.removeEventListener(e, handleInteraction)
       );
     };
 
-    // 'touchend' and 'click' are the most reliable for mobile audio activation
-    ['click', 'touchend', 'keydown'].forEach(e =>
-      window.addEventListener(e, handleSpeech)
+    ['click', 'touchstart', 'mousedown'].forEach(e =>
+      window.addEventListener(e, handleInteraction)
     );
 
     return () => {
-      ['click', 'touchend', 'keydown'].forEach(e =>
-        window.removeEventListener(e, handleSpeech)
+      ['click', 'touchstart', 'mousedown'].forEach(e =>
+        window.removeEventListener(e, handleInteraction)
       );
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
