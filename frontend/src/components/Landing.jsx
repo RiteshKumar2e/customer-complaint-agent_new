@@ -87,7 +87,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction Logic (Ultra-Responsive & Zero-Delay)
+  // AI Voice Introduction Logic (Mobile-First Architecture)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
 
@@ -95,12 +95,18 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       const synth = window.speechSynthesis;
       if (!synth || synth.speaking) return;
 
+      // PRIMING: Silent wake-up for mobile audio engines
       synth.cancel();
+      const wakeup = new SpeechSynthesisUtterance("");
+      wakeup.volume = 0;
+      synth.speak(wakeup);
+
+      // REAL SPEECH
       const utter = new SpeechSynthesisUtterance(introText);
 
       const setVoiceAndSpeak = () => {
         const voices = synth.getVoices();
-        // Priority: Indian Hindi -> Indian English -> Any Mobile Voice
+        // Priority: Indian Hindi -> Indian English -> Mobile Standard
         const v = voices.find(v => v.lang.includes('hi-IN')) ||
           voices.find(v => v.lang.includes('en-IN')) ||
           voices[0];
@@ -108,7 +114,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           utter.voice = v;
           utter.lang = v.lang;
         }
-        utter.rate = 1.0;
+        utter.rate = 1.05; // Slightly faster for mobile engagement
         utter.pitch = 1.0;
         synth.speak(utter);
       };
@@ -122,19 +128,19 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         setVoiceAndSpeak();
       }
 
-      // Important: Cleanup listeners so it only plays once
-      ['click', 'mousedown', 'keydown', 'touchstart'].forEach(e =>
+      // Cleanup
+      ['click', 'touchend', 'keydown'].forEach(e =>
         window.removeEventListener(e, handleSpeech)
       );
     };
 
-    // Listen for the very first user interaction anywhere
-    ['click', 'mousedown', 'keydown', 'touchstart'].forEach(e =>
+    // 'touchend' and 'click' are the most reliable for mobile audio activation
+    ['click', 'touchend', 'keydown'].forEach(e =>
       window.addEventListener(e, handleSpeech)
     );
 
     return () => {
-      ['click', 'mousedown', 'keydown', 'touchstart'].forEach(e =>
+      ['click', 'touchend', 'keydown'].forEach(e =>
         window.removeEventListener(e, handleSpeech)
       );
       if (window.speechSynthesis) window.speechSynthesis.cancel();
