@@ -90,7 +90,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction Logic (Expanded Hinglish Version)
+  // AI Voice Introduction Logic (Improved Hinglish Version)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Yeh ek powerful multi-agent ecosystem hai jo aapki complaints ko smartly prioritize karta hai. Explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support transform karte hain.";
 
@@ -100,53 +100,72 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       const synth = window.speechSynthesis;
       if (!synth) return;
 
+      // Chrome and other browsers load voices asynchronously
+      let voices = synth.getVoices();
+      if (voices.length === 0) {
+        synth.onvoiceschanged = () => {
+          synth.onvoiceschanged = null; // Unregister to avoid repetition
+          speakIntro();
+        };
+        return;
+      }
+
       synth.cancel();
 
       const utterance = new SpeechSynthesisUtterance(introText);
 
-      // Try to find a Hindi or Indian English voice for natural Hinglish flow
-      const voices = synth.getVoices();
+      // Try to find a natural-sounding Hindi or Indian English voice
       const preferredVoice = voices.find(v =>
         v.lang.includes('hi-IN') ||
         v.lang.includes('en-IN') ||
         v.name.includes('India') ||
-        v.name.includes('Google hi-IN')
+        v.name.includes('Google hi-IN') ||
+        v.name.includes('Microsoft Hemant') ||
+        v.name.includes('Microsoft Kalpana')
       );
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
         utterance.lang = preferredVoice.lang;
       } else {
-        utterance.lang = 'hi-IN'; // Fallback to Hindi lang code
+        utterance.lang = 'hi-IN';
       }
 
       utterance.rate = 1.0;
-      utterance.pitch = 1.1; // Slightly higher pitch for a friendly assistant tone
+      utterance.pitch = 1.1;
 
       utterance.onend = () => {
         sessionStorage.setItem('intro_spoken', 'true');
       };
 
+      // Handle speech error (e.g., autoplay block)
+      utterance.onerror = (event) => {
+        console.warn("Speech synthesis failed or was blocked:", event);
+      };
+
       synth.speak(utterance);
     };
 
-    // Browsers often block auto-speech without interaction. 
-    // We try immediately, but also add a one-time click listener as a fallback.
-    const timer = setTimeout(speakIntro, 1000);
+    // Initial attempt after a short delay
+    const timer = setTimeout(speakIntro, 1500);
 
+    // Fallback: Bind to any user interaction to bypass autoplay restrictions
     const handleFirstInteraction = () => {
       speakIntro();
       window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('scroll', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
 
     window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('scroll', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('scroll', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, []);
 
