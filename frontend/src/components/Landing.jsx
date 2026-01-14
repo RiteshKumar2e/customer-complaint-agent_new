@@ -92,7 +92,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
   // AI Voice Introduction Logic (Expanded Hinglish Version)
   useEffect(() => {
-    const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Ye website koi ordinary chatbot nahi, balki ek powerful multi-agent ecosystem hai. Yahan hamare AI agents aapki complaints ko smartly categorize karte hain—chahe wo billing ho, technical issue ho, ya security concern. Hum aapke emotions ko bhi samajhte hain sentiment analysis ke through, taaki urgent problems ko hamesha high priority mile. Admins ke liye yahan deep analytics dashboard hai, aur users ke liye ek seamless complaint tracking portal. Toh aaiye, explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support ko poori tarah se transform karte hain.";
+    const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Yeh ek powerful multi-agent ecosystem hai jo aapki complaints ko smartly prioritize karta hai. Explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support transform karte hain.";
 
     const speakIntro = () => {
       if (sessionStorage.getItem('intro_spoken')) return;
