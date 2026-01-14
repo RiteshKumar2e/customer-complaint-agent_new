@@ -1,7 +1,87 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Points, PointMaterial, Stars } from "@react-three/drei";
+import * as random from "maath/random/dist/maath-random.esm";
 import "./../styles/Landing.css";
 import CookieConsent from "./CookieConsent";
 import ThemeToggle from "./ThemeToggle";
+
+// --- Internal 3D Components (Conditional Dark Mode) ---
+function ParticleGlobe() {
+  const ref = useRef();
+  const [sphere] = useState(() => random.inSphere(new Float32Array(3000), { radius: 1.5 }));
+
+  useFrame((state, delta) => {
+    ref.current.rotation.x -= delta / 15;
+    ref.current.rotation.y -= delta / 20;
+  });
+
+  return (
+    <group rotation={[0, 0, Math.PI / 4]}>
+      <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
+        <PointMaterial
+          transparent
+          color="#818cf8"
+          size={0.005}
+          sizeAttenuation={true}
+          depthWrite={false}
+          blending={1}
+        />
+      </Points>
+    </group>
+  );
+}
+
+function FloatingGeometry() {
+  const group = useRef();
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    group.current.rotation.y = Math.sin(time / 4) / 4;
+    group.current.rotation.x = Math.cos(time / 4) / 4;
+  });
+
+  return (
+    <group ref={group}>
+      <mesh position={[-1.2, 0.5, -0.5]}>
+        <icosahedronGeometry args={[0.2, 1]} />
+        <meshStandardMaterial color="#6366f1" wireframe transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[1.2, -0.5, -0.5]}>
+        <icosahedronGeometry args={[0.25, 1]} />
+        <meshStandardMaterial color="#818cf8" wireframe transparent opacity={0.15} />
+      </mesh>
+    </group>
+  );
+}
+
+function HeroBackground() {
+  const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsLight(document.body.classList.contains('light-theme'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Return null if light theme to keep it "as usual"
+  if (isLight) return null;
+
+  return (
+    <div className="three-bg-overlay-landing">
+      <Canvas camera={{ position: [0, 0, 1.2] }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} />
+        <Stars radius={100} depth={50} count={4000} factor={4} saturation={0} fade speed={1} />
+        <ParticleGlobe />
+        <FloatingGeometry />
+      </Canvas>
+    </div>
+  );
+}
+
+// ----------------------------------------------------
 
 export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
@@ -9,19 +89,67 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeModal, setActiveModal] = useState(null); // 'privacy' or 'terms'
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const mouseGlowRef = useRef(null);
 
-  // Mouse Glow Effect Logic
+  // AI Voice Introduction Logic (Expanded Hinglish Version)
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.left = `${e.clientX}px`;
-        mouseGlowRef.current.style.top = `${e.clientY}px`;
+    const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Ye website koi ordinary chatbot nahi, balki ek powerful multi-agent ecosystem hai. Yahan hamare AI agents aapki complaints ko smartly categorize karte hain—chahe wo billing ho, technical issue ho, ya security concern. Hum aapke emotions ko bhi samajhte hain sentiment analysis ke through, taaki urgent problems ko hamesha high priority mile. Admins ke liye yahan deep analytics dashboard hai, aur users ke liye ek seamless complaint tracking portal. Toh aaiye, explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support ko poori tarah se transform karte hain.";
+
+    const speakIntro = () => {
+      if (sessionStorage.getItem('intro_spoken')) return;
+
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(introText);
+
+      // Try to find a Hindi or Indian English voice for natural Hinglish flow
+      const voices = synth.getVoices();
+      const preferredVoice = voices.find(v =>
+        v.lang.includes('hi-IN') ||
+        v.lang.includes('en-IN') ||
+        v.name.includes('India') ||
+        v.name.includes('Google hi-IN')
+      );
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+        utterance.lang = preferredVoice.lang;
+      } else {
+        utterance.lang = 'hi-IN'; // Fallback to Hindi lang code
       }
+
+      utterance.rate = 1.0;
+      utterance.pitch = 1.1; // Slightly higher pitch for a friendly assistant tone
+
+      utterance.onend = () => {
+        sessionStorage.setItem('intro_spoken', 'true');
+      };
+
+      synth.speak(utterance);
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+
+    // Browsers often block auto-speech without interaction. 
+    // We try immediately, but also add a one-time click listener as a fallback.
+    const timer = setTimeout(speakIntro, 1000);
+
+    const handleFirstInteraction = () => {
+      speakIntro();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('scroll', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('scroll', handleFirstInteraction);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('scroll', handleFirstInteraction);
+    };
   }, []);
+
 
   // Scroll to Top Logic
   useEffect(() => {
@@ -103,24 +231,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
   return (
     <div className="landing-container">
+      <HeroBackground />
       {/* Background Effects */}
-      <div className="particles-container">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="particle"
-            style={{
-              width: `${Math.random() * 8 + 4}px`,
-              height: `${Math.random() * 8 + 4}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${Math.random() * 12 + 12}s`
-            }}
-          />
-        ))}
-      </div>
-      <div ref={mouseGlowRef} className="mouse-glow" />
 
       {/* Header */}
       <header className={`landing-header ${isMenuOpen ? 'menu-open' : ''}`}>

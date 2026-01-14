@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Landing from "./components/Landing";
+import chatbotImg from "./assets/chatbot.png";
 import ComplaintForm from "./components/ComplaintForm";
 import ComplaintCard from "./components/ComplaintCard";
 import SideChatBot from "./components/SideChatBot";
@@ -16,6 +17,125 @@ import { getAllComplaints } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
 import "./styles/Profile.css";
+
+function CursorTrail() {
+  const canvasRef = useRef(null);
+  const mousePos = useRef({ x: 0, y: 0 });
+  const particles = useRef([]);
+  const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsLight(document.body.classList.contains('light-theme'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    if (isLight) {
+      document.body.style.cursor = 'default';
+      return () => observer.disconnect();
+    }
+
+    document.body.style.cursor = 'none';
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    const handleMouseMove = (e) => {
+      mousePos.current = { x: e.clientX, y: e.clientY };
+      // Spawn particles
+      for (let i = 0; i < 5; i++) {
+        particles.current.push({
+          x: e.clientX,
+          y: e.clientY,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          life: 1.0,
+          size: Math.random() * 4 + 1,
+          color: Math.random() > 0.3 ? '#0ea5e9' : '#ffffff'
+        });
+      }
+      if (particles.current.length > 200) particles.current.shift();
+    };
+
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Core
+      const glow = ctx.createRadialGradient(
+        mousePos.current.x, mousePos.current.y, 0,
+        mousePos.current.x, mousePos.current.y, 25
+      );
+      glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      glow.addColorStop(0.2, 'rgba(14, 165, 233, 0.8)');
+      glow.addColorStop(1, 'rgba(14, 165, 233, 0)');
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(mousePos.current.x, mousePos.current.y, 25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Update and Draw Particles
+      particles.current.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.015;
+        p.size *= 0.98;
+
+        if (p.life <= 0) {
+          particles.current.splice(index, 1);
+          return;
+        }
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalAlpha = 1.0;
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    render();
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      document.body.style.cursor = 'default';
+    };
+  }, [isLight]);
+
+  if (isLight) return null;
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        pointerEvents: 'none',
+        zIndex: 9999,
+        mixBlendMode: 'screen'
+      }}
+    />
+  );
+}
 
 export default function App() {
   const [page, setPage] = useState(() => {
@@ -123,6 +243,7 @@ export default function App() {
   if (page === "landing") {
     return (
       <>
+        <CursorTrail />
         <Landing
           user={user}
           onStart={() => {
@@ -137,6 +258,27 @@ export default function App() {
           onFeedback={() => setFeedbackOpen(true)}
         />
         <NotificationCenter />
+
+        {/* Floating Chatbot Toggle for Landing */}
+        <motion.button
+          className="chatbot-toggle"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowChatbot(!showChatbot)}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <img
+            src={chatbotImg}
+            alt="Bot"
+            loading="lazy"
+            width="130"
+            height="130"
+            style={{ color: 'transparent' }}
+          />
+        </motion.button>
+        <SideChatBot open={showChatbot} onClose={() => setShowChatbot(false)} />
 
         {/* Feedback Modal */}
         {feedbackOpen && (
@@ -201,6 +343,7 @@ export default function App() {
   if (page === "profile") {
     return (
       <>
+        <CursorTrail />
         <Profile
           user={user}
           onNavigate={navigateTo}
@@ -218,13 +361,14 @@ export default function App() {
           animate={{ scale: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="10" rx="2" />
-            <circle cx="12" cy="5" r="2" />
-            <path d="M12 7v4" />
-            <line x1="8" y1="16" x2="8" y2="16" />
-            <line x1="16" y1="16" x2="16" y2="16" />
-          </svg>
+          <img
+            src={chatbotImg}
+            alt="Bot"
+            loading="lazy"
+            width="130"
+            height="130"
+            style={{ color: 'transparent' }}
+          />
         </motion.button>
         <SideChatBot open={showChatbot} onClose={() => setShowChatbot(false)} />
       </>
@@ -236,6 +380,7 @@ export default function App() {
   if (page === "admin") {
     return (
       <>
+        <CursorTrail />
         <AdminDashboard
           user={user}
           onNavigate={navigateTo}
@@ -249,6 +394,7 @@ export default function App() {
   return (
     <>
       <div className="app-container">
+        <CursorTrail />
         {/* Consistent Profile-style Header for Form Page */}
         <header className="profile-header">
           <div className="header-content">
@@ -292,13 +438,7 @@ export default function App() {
           animate={{ scale: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="10" rx="2" />
-            <circle cx="12" cy="5" r="2" />
-            <path d="M12 7v4" />
-            <line x1="8" y1="16" x2="8" y2="16" />
-            <line x1="16" y1="16" x2="16" y2="16" />
-          </svg>
+          <img src={chatbotImg} alt="AI Assistant" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </motion.button>
 
         {/* Global Side Chatbot Panel */}

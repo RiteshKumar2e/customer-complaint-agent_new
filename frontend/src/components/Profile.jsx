@@ -1,8 +1,85 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Points, PointMaterial, Stars } from "@react-three/drei";
+import * as random from "maath/random/dist/maath-random.esm";
 import { updateProfile, deleteAllComplaints, getAllComplaints, submitFeedback } from "../api";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/Profile.css";
+
+// --- Internal 3D Components ---
+function ParticleGlobe({ isLight }) {
+    const ref = useRef();
+    const [sphere] = useState(() => random.inSphere(new Float32Array(3000), { radius: 1.5 }));
+
+    useFrame((state, delta) => {
+        ref.current.rotation.x -= delta / 15;
+        ref.current.rotation.y -= delta / 20;
+    });
+
+    return (
+        <group rotation={[0, 0, Math.PI / 4]}>
+            <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
+                <PointMaterial
+                    transparent
+                    color={isLight ? "#6366f1" : "#818cf8"}
+                    size={0.005}
+                    sizeAttenuation={true}
+                    depthWrite={false}
+                    blending={1}
+                />
+            </Points>
+        </group>
+    );
+}
+
+function FloatingShape({ position, color }) {
+    const mesh = useRef();
+    useFrame((state) => {
+        const time = state.clock.getElapsedTime();
+        mesh.current.position.y = position[1] + Math.sin(time + position[0]) * 0.1;
+        mesh.current.rotation.x = mesh.current.rotation.y += 0.005;
+    });
+
+    return (
+        <mesh position={position} ref={mesh}>
+            <icosahedronGeometry args={[0.2, 1]} />
+            <meshStandardMaterial
+                color={color}
+                wireframe
+                transparent
+                opacity={0.2}
+            />
+        </mesh>
+    );
+}
+
+function HeroBackground() {
+    const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsLight(document.body.classList.contains('light-theme'));
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div className="three-bg-overlay">
+            <Canvas camera={{ position: [0, 0, 1.5] }}>
+                <ambientLight intensity={isLight ? 1.5 : 0.5} />
+                <pointLight position={[10, 10, 10]} intensity={isLight ? 2 : 1} />
+                <Stars radius={100} depth={50} count={isLight ? 1000 : 4000} factor={4} saturation={0} fade speed={1} />
+                <ParticleGlobe isLight={isLight} />
+                <FloatingShape position={[-1, 0.5, -0.5]} color={isLight ? "#4f46e5" : "#6366f1"} />
+                <FloatingShape position={[1, -0.5, -0.5]} color={isLight ? "#6366f1" : "#818cf8"} />
+                <FloatingShape position={[0.5, 0.8, -1]} color={isLight ? "#a855f7" : "#c084fc"} />
+            </Canvas>
+        </div>
+    );
+}
+// ------------------------------
 
 export default function Profile({ user, onNavigate, onLogout, complaints = [], setComplaints }) {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -157,6 +234,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
 
     return (
         <div className="profile-container">
+            <HeroBackground />
             {/* Header */}
             <motion.header
                 className="profile-header"

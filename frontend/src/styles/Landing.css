@@ -13,6 +13,10 @@ html {
   scroll-behavior: smooth;
 }
 
+body:not(.light-theme) {
+  background-color: #020617;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
@@ -28,6 +32,25 @@ h4,
 .section-title {
   font-family: 'Outfit', sans-serif;
   letter-spacing: -0.02em;
+  position: relative;
+  z-index: 5;
+}
+
+body:not(.light-theme) h1,
+body:not(.light-theme) h2,
+body:not(.light-theme) h3,
+body:not(.light-theme) h4 {
+  color: #ffffff;
+}
+
+body:not(.light-theme) p,
+body:not(.light-theme) span:not(.icon):not(.star) {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body:not(.light-theme) .section-subtitle,
+body:not(.light-theme) .hero-subtitle {
+  color: #cbd5e1 !important;
 }
 
 .landing-container {
@@ -38,6 +61,12 @@ h4,
   overflow-x: hidden;
   position: relative;
   font-family: 'Inter', 'Outfit', sans-serif;
+}
+
+body:not(.light-theme) .landing-container {
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 body.light-theme .landing-container {
@@ -66,6 +95,21 @@ body.light-theme .landing-container::before {
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
+}
+
+body:not(.light-theme) .particles-container {
+  display: none;
+}
+
+.three-bg-overlay-landing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, #0a0a1a 0%, #020617 100%);
 }
 
 body.light-theme .particles-container,
@@ -125,13 +169,42 @@ body.light-theme .mouse-glow {
   opacity: 0.5;
 }
 
-/* Logo Styles */
-.ecohealth-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  transition: transform 0.3s ease, filter 0.3s ease;
+/* Cursor Trail Effect */
+.cursor-trail-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.trail-dot {
+  position: absolute;
+  background: #0ea5e9;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 12px #0ea5e9, 0 0 24px #22d3ee, 0 0 36px rgba(14, 165, 233, 0.4);
+  transition: opacity 0.05s linear;
+  filter: blur(0.5px);
+}
+
+.cursor-core {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 10001;
+  box-shadow:
+    0 0 10px #ffffff,
+    0 0 25px #0ea5e9,
+    0 0 50px #0ea5e9,
+    0 0 100px rgba(14, 165, 233, 0.7),
+    0 0 150px rgba(14, 165, 233, 0.3);
 }
 
 .ecohealth-logo:hover {
@@ -854,7 +927,7 @@ body.light-theme .feature-mini:hover {
   padding: 100px 5%;
   position: relative;
   overflow: hidden;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 .vision-mission-section .container {
@@ -894,8 +967,8 @@ body.light-theme .section-tag {
   font-size: clamp(1.5rem, 4vw, 2.5rem);
   font-weight: 700;
   line-height: 1.3;
-  color: var(--text-primary);
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #6366f1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1261,8 +1334,8 @@ body.light-theme .impact-label {
   font-size: clamp(2.5rem, 5vw, 3.5rem);
   font-weight: 800;
   margin-bottom: 1.5rem;
-  background: var(--text-primary);
-  background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-primary) 100%);
+  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 30%, #818cf8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1271,7 +1344,7 @@ body.light-theme .impact-label {
 
 .section-subtitle {
   font-size: 1.25rem;
-  color: var(--text-secondary);
+  color: #94a3b8;
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
@@ -1495,6 +1568,18 @@ body.light-theme .author span {
 /* FAQ Section */
 .faq-section {
   padding: 4.5rem 8%;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+body:not(.light-theme) .faq-section .section-title,
+body:not(.light-theme) .faq-section .section-subtitle {
+  color: #ffffff;
+}
+
+body:not(.light-theme) .faq-question h3 {
+  color: #ffffff;
 }
 
 .faq-grid {
@@ -1558,8 +1643,23 @@ body.light-theme .faq-answer {
 /* Footer */
 .footer {
   padding: 100px 5% 40px;
-  background: var(--bg-primary);
+  background: transparent;
   border-top: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: 2;
+}
+
+body:not(.light-theme) .footer {
+  color: #ffffff;
+}
+
+body:not(.light-theme) .footer-section h4 {
+  color: #ffffff;
+}
+
+body:not(.light-theme) .footer-section p,
+body:not(.light-theme) .footer-btn {
+  color: #cbd5e1;
 }
 
 body.light-theme .footer {
@@ -2546,7 +2646,7 @@ body.light-theme .btn-secondary:hover {
 
 .testimonials-section {
   padding: 6rem 8%;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 .testimonials-grid {
