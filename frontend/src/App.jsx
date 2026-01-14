@@ -30,11 +30,6 @@ function CursorTrail() {
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-    if (isLight) {
-      document.body.style.cursor = 'default';
-      return () => observer.disconnect();
-    }
-
     document.body.style.cursor = 'none';
 
     const canvas = canvasRef.current;
@@ -53,6 +48,10 @@ function CursorTrail() {
       mousePos.current = { x: e.clientX, y: e.clientY };
       // Spawn particles
       for (let i = 0; i < 5; i++) {
+        const pColor = isLight
+          ? (Math.random() > 0.5 ? '#6366f1' : '#8b5cf6') // Indigo/Violet for Light
+          : (Math.random() > 0.3 ? '#0ea5e9' : '#ffffff'); // Cyan/White for Dark
+
         particles.current.push({
           x: e.clientX,
           y: e.clientY,
@@ -60,7 +59,7 @@ function CursorTrail() {
           vy: (Math.random() - 0.5) * 4,
           life: 1.0,
           size: Math.random() * 4 + 1,
-          color: Math.random() > 0.3 ? '#0ea5e9' : '#ffffff'
+          color: pColor
         });
       }
       if (particles.current.length > 200) particles.current.shift();
@@ -69,14 +68,17 @@ function CursorTrail() {
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Core
+      // Draw Core with theme-based colors
+      const coreColor = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(14, 165, 233, 0.8)';
+      const coreCenter = isLight ? 'rgba(139, 92, 246, 1)' : 'rgba(255, 255, 255, 1)';
+
       const glow = ctx.createRadialGradient(
         mousePos.current.x, mousePos.current.y, 0,
         mousePos.current.x, mousePos.current.y, 25
       );
-      glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      glow.addColorStop(0.2, 'rgba(14, 165, 233, 0.8)');
-      glow.addColorStop(1, 'rgba(14, 165, 233, 0)');
+      glow.addColorStop(0, coreCenter);
+      glow.addColorStop(0.2, coreColor);
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
       ctx.fillStyle = glow;
       ctx.beginPath();
@@ -96,7 +98,7 @@ function CursorTrail() {
         }
 
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life;
+        ctx.globalAlpha = p.life * 0.8;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -118,8 +120,6 @@ function CursorTrail() {
     };
   }, [isLight]);
 
-  if (isLight) return null;
-
   return (
     <canvas
       ref={canvasRef}
@@ -131,7 +131,7 @@ function CursorTrail() {
         height: '100vh',
         pointerEvents: 'none',
         zIndex: 9999,
-        mixBlendMode: 'screen'
+        mixBlendMode: isLight ? 'multiply' : 'screen'
       }}
     />
   );
