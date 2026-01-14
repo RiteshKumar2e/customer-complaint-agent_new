@@ -87,42 +87,43 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction (The "Mobile-Bulletproof" Version)
+  // AI Voice Introduction (The Ultimate Mobile Hinglish Version)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
 
-    const handleInteraction = () => {
+    const handleHinglishIntro = () => {
       const synth = window.speechSynthesis;
       if (!synth) return;
 
-      // MUST be synchronous for Mobile Security Policy
-      synth.cancel();
-
       const utter = new SpeechSynthesisUtterance(introText);
-      utter.lang = 'hi-IN'; // Essential for mobile Hindi support
+      // Reverted to hi-IN for the best Hindi voice quality
+      utter.lang = 'hi-IN';
       utter.volume = 1.0;
       utter.rate = 1.0;
+      utter.pitch = 1.0;
 
-      // Try to pick a natural voice if already loaded
       const voices = synth.getVoices();
-      const indianVoice = voices.find(v => v.lang.includes('hi-IN') || v.lang.includes('en-IN'));
+      // Prioritize Google or Microsoft's high-quality Hindi voices if available
+      const indianVoice = voices.find(v => v.lang === 'hi-IN' && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+        voices.find(v => v.lang === 'hi-IN') ||
+        voices.find(v => v.name.includes('India'));
+
       if (indianVoice) utter.voice = indianVoice;
 
       synth.speak(utter);
 
-      // Remove all listeners immediately
-      ['click', 'touchstart', 'mousedown'].forEach(e =>
-        window.removeEventListener(e, handleInteraction)
+      ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
+        window.removeEventListener(e, handleHinglishIntro)
       );
     };
 
-    ['click', 'touchstart', 'mousedown'].forEach(e =>
-      window.addEventListener(e, handleInteraction)
+    ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
+      window.addEventListener(e, handleHinglishIntro)
     );
 
     return () => {
-      ['click', 'touchstart', 'mousedown'].forEach(e =>
-        window.removeEventListener(e, handleInteraction)
+      ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
+        window.removeEventListener(e, handleHinglishIntro)
       );
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
