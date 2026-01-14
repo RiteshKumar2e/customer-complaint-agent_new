@@ -81,99 +81,82 @@ function HeroBackground() {
   );
 }
 
-// ----------------------------------------------------
-
 export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [activeModal, setActiveModal] = useState(null); // 'privacy' or 'terms'
+  const [activeModal, setActiveModal] = useState(null);
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction Logic (Gesture-Locked for Browser Policy)
+  // AI Voice Introduction Logic (Unified & Browser-Policy Compliant)
   useEffect(() => {
-    const introText = "Welcome to Quickfix AI! Main aapka digital neural guide hoon. Yeh ek powerful multi-agent ecosystem hai jo aapki complaints ko smartly prioritize karta hai. Explore kijiye Quickfix AI ko, jahan technology aur empathy milkar customer support transform karte hain.";
+    const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
 
-    const speakIntro = () => {
-      // Important: Use sessionStorage to prevent annoying repeats on navigation
+    const handleFirstInteraction = () => {
       if (sessionStorage.getItem('intro_spoken')) return;
 
       const synth = window.speechSynthesis;
       if (!synth) return;
 
-      synth.resume(); // Fixes stuck state in some browsers
+      synth.cancel();
+      synth.resume();
 
-      let voices = synth.getVoices();
-      if (voices.length === 0) {
-        // If voices aren't ready, wait for them.
-        synth.onvoiceschanged = () => {
-          synth.onvoiceschanged = null;
-          speakIntro();
-        };
-        return;
-      }
+      const utterance = new SpeechSynthesisUtterance(introText);
 
-      synth.cancel(); // Clear any existing queue
-
-      window.currentUtterance = new SpeechSynthesisUtterance(introText);
-
+      const voices = synth.getVoices();
       const preferredVoice = voices.find(v =>
         v.lang.includes('hi-IN') ||
         v.lang.includes('en-IN') ||
         v.name.includes('India') ||
-        v.name.includes('Google hi-IN') ||
-        v.name.includes('Microsoft Hemant') ||
-        v.name.includes('Microsoft Kalpana')
+        v.name.includes('Google') ||
+        v.name.includes('Microsoft Hemant')
       );
 
       if (preferredVoice) {
-        window.currentUtterance.voice = preferredVoice;
-        window.currentUtterance.lang = preferredVoice.lang;
+        utterance.voice = preferredVoice;
+        utterance.lang = preferredVoice.lang;
       } else {
-        window.currentUtterance.lang = 'hi-IN';
+        utterance.lang = 'hi-IN';
       }
 
-      window.currentUtterance.rate = 0.95;
-      window.currentUtterance.pitch = 1.0;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
 
-      window.currentUtterance.onend = () => {
+      utterance.onstart = () => {
         sessionStorage.setItem('intro_spoken', 'true');
-        window.currentUtterance = null;
+        console.log("AI Voice Guide activated.");
       };
 
-      window.currentUtterance.onerror = (e) => {
-        // Only log serious errors, not the policy ones if we handle them
-        if (e.error !== 'not-allowed') {
-          console.error("AI Voice Error:", e);
-        }
-        window.currentUtterance = null;
+      utterance.onerror = () => {
+        sessionStorage.removeItem('intro_spoken');
       };
 
-      synth.speak(window.currentUtterance);
-    };
+      synth.speak(utterance);
 
-    const handleFirstInteraction = () => {
-      // Must call speakIntro directly in the handler to register user intent
-      speakIntro();
-
-      // Clean up listeners immediately
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
+      window.removeEventListener('scroll', handleFirstInteraction);
+      window.removeEventListener('wheel', handleFirstInteraction);
     };
 
-    window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('keydown', handleFirstInteraction);
-    window.addEventListener('touchstart', handleFirstInteraction);
+    if (!sessionStorage.getItem('intro_spoken')) {
+      window.addEventListener('click', handleFirstInteraction);
+      window.addEventListener('keydown', handleFirstInteraction);
+      window.addEventListener('touchstart', handleFirstInteraction);
+      window.addEventListener('scroll', handleFirstInteraction);
+      window.addEventListener('wheel', handleFirstInteraction);
+    }
 
     return () => {
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
+      window.removeEventListener('scroll', handleFirstInteraction);
+      window.removeEventListener('wheel', handleFirstInteraction);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, []);
-
 
   // Scroll to Top Logic
   useEffect(() => {
@@ -349,12 +332,9 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           </p>
 
           <div className="hero-cta">
-            {/* Primary Button: Scrolls to demo solutions section */}
             <button className="btn-cta btn-primary" onClick={() => scrollToSection('solutions-demo')}>
               Explore Solutions <span className="arrow">→</span>
             </button>
-
-            {/* Secondary Button: Scrolls to features section using ID */}
             <button className="btn-secondary" onClick={() => scrollToSection('features')}>
               Learn More
             </button>
@@ -379,8 +359,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             </div>
           </div>
         </div>
-
-
       </section>
 
       {/* Vision & Mission Section */}
@@ -415,7 +393,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -507,7 +484,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </div>
       </section>
 
-      {/* Demo Solutions / Use Cases Section */}
+      {/* Demo Solutions */}
       <section className="demo-section" id="solutions-demo">
         <div className="section-header">
           <h2 className="section-title">Intelligence <span>In Action</span></h2>
@@ -557,11 +534,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             </div>
           ))}
         </div>
-
       </section>
-
-
-
 
       {/* Team Section */}
       <section className="about-section" id="team">
@@ -592,7 +565,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials */}
       <section className="testimonials-section" id="testimonials">
         <div className="section-header">
           <h2 className="section-title">Client <span>Feedback</span></h2>
@@ -603,19 +576,19 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             {
               name: "S. Johnson",
               role: "Operations Head",
-              text: "The AI agent clusters have reduced our resolution cycles from hours to seconds. A scalable solution for enterprise-level support.",
+              text: "The AI agent clusters have reduced our resolution cycles from hours to seconds.",
               rating: 5
             },
             {
               name: "M. Chen",
               role: "Support Director",
-              text: "Surgical precision in classification. The sentiment-aware routing ensures our high-priority tickets reach the right team instantly.",
+              text: "Surgical precision in classification. The sentiment-aware routing is game-changing.",
               rating: 5
             },
             {
               name: "E. Rodriguez",
               role: "Tech Lead",
-              text: "Seamless API integration and enterprise-grade security. Quickfix is the benchmark for autonomous customer success systems.",
+              text: "Seamless API integration and enterprise-grade security. A benchmark system.",
               rating: 5
             }
           ].map((testimonial, idx) => (
@@ -640,7 +613,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </div>
       </section>
 
-      {/* FAQ Section */}
+      {/* FAQ */}
       <section className="faq-section">
         <div className="section-header">
           <h2 className="section-title">Common <span>Questions</span></h2>
@@ -689,32 +662,19 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
             </div>
             <h3 className="connect-title">Connect With Us</h3>
             <div className="social-links-premium2">
-              <a href="https://github.com/RiteshKumar2e" target="_blank" rel="noopener noreferrer" title="GitHub">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>
-              </a>
-              <a href="https://www.linkedin.com/in/ritesh-kumar-b3a654253" target="_blank" rel="noopener noreferrer" title="LinkedIn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.238 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
-              </a>
-              <a href="mailto:riteshkumar90359@gmail.com" title="Email">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              </a>
+              <a href="https://github.com/RiteshKumar2e" target="_blank" rel="noopener noreferrer"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg></a>
+              <a href="https://www.linkedin.com/in/ritesh-kumar-b3a654253" target="_blank" rel="noopener noreferrer"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.238 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg></a>
             </div>
           </div>
           <div className="footer-section">
             <h4>Ecosystem</h4>
             <button onClick={() => scrollToSection('features')} className="footer-btn">Neural Grid</button>
             <button onClick={() => scrollToSection('team')} className="footer-btn">The Team</button>
-            <button onClick={() => window.open('https://github.com/RiteshKumar2e', '_blank')} className="footer-btn">Dev Source</button>
-          </div>
-          <div className="footer-section">
-            <h4>Direct Contact</h4>
-            <p>📧 riteshkumar90359@gmail.com</p>
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
             <button onClick={() => setActiveModal('privacy')} className="footer-btn">Privacy Policy</button>
-            <button onClick={() => setActiveModal('terms')} className="footer-btn">Terms of Service</button>
-            <button onClick={() => setActiveModal('cookie')} className="footer-btn">Cookie Policy</button>
+            <button onClick={() => setActiveModal('terms')} className="footer-btn">Terms</button>
           </div>
         </div>
         <div className="footer-bottom">
@@ -722,110 +682,26 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </div>
       </footer>
 
-      {/* Modal Components */}
-      {
-        activeModal && (
-          <div className="modal-overlay" onClick={() => setActiveModal(null)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <button className="modal-close" onClick={() => setActiveModal(null)}>&times;</button>
-
-              {activeModal === 'privacy' && (
-                <div className="modal-body">
-                  <h2>Privacy Policy</h2>
-                  <p className="last-updated">Last Updated: October 12, 2025</p>
-                  <section>
-                    <h3>1. Information We Collect</h3>
-                    <p>We collect information you provide directly to us, including name, email address, and any other information you choose to provide through our contact forms or process clusters.</p>
-                  </section>
-                  <section>
-                    <h3>2. How We Use Your Information</h3>
-                    <ul>
-                      <li>To provide, maintain, and improve our agentic services</li>
-                      <li>To communicate with you about support resolutions</li>
-                      <li>To monitor and analyze architectural trends and usage</li>
-                      <li>To detect, prevent, and address technical issues</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3>3. Data Security</h3>
-                    <p>We implement appropriate technical and organizational measures to protect your agentic data against unauthorized access, alteration, disclosure, or destruction.</p>
-                  </section>
-                  <section>
-                    <h3>4. Your Rights</h3>
-                    <p>You have the right to access, update, or delete your personal information. Contact us at riteshkumar90359@gmail.com for any privacy-related requests.</p>
-                  </section>
-                  <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
-                </div>
-              )}
-
-              {activeModal === 'terms' && (
-                <div className="modal-body">
-                  <h2>Terms of Service</h2>
-                  <p className="last-updated">Last Updated: October 12, 2025</p>
-                  <section>
-                    <h3>1. Acceptance of Terms</h3>
-                    <p>By accessing and using Quickfix AI's services, you accept and agree to be bound by these Terms of Service.</p>
-                  </section>
-                  <section>
-                    <h3>2. Use of Services</h3>
-                    <p>You agree to use our services only for lawful purposes and in accordance with these Terms. You must not:</p>
-                    <ul>
-                      <li>Violate any applicable laws or regulations</li>
-                      <li>Infringe upon the architecture rights of others</li>
-                      <li>Transmit any harmful or malicious code</li>
-                      <li>Attempt to gain unauthorized access to our neural systems</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3>3. Intellectual Property</h3>
-                    <p>All content, features, and functionality of our services are owned by Quickfix AI and protected by international copyright and trade secret laws.</p>
-                  </section>
-                  <section>
-                    <h3>4. Limitation of Liability</h3>
-                    <p>Quickfix AI shall not be liable for any indirect, incidental, or consequential damages resulting from your use of our neural support clusters.</p>
-                  </section>
-                  <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
-                </div>
-              )}
-
-              {activeModal === 'cookie' && (
-                <div className="modal-body">
-                  <h2>Cookie Policy</h2>
-                  <p className="last-updated">Last Updated: October 12, 2025</p>
-                  <section>
-                    <h3>1. What are Cookies?</h3>
-                    <p>Cookies are small text files stored on your device that help us improve your experience and understand how our agentic platform is used.</p>
-                  </section>
-                  <section>
-                    <h3>2. How We Use Cookies</h3>
-                    <ul>
-                      <li><strong>Essential:</strong> Required for the platform to function securely.</li>
-                      <li><strong>Performance:</strong> Help us measure how agents interact with the interface.</li>
-                      <li><strong>Functionality:</strong> Remember your preferences and dashboard layout.</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3>3. Managing Cookies</h3>
-                    <p>Most browsers allow you to control cookies through their settings. However, disabling essential cookies may impact the performance of our neural resolution clusters.</p>
-                  </section>
-                  <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>I Understand</button>
-                </div>
-              )}
+      {/* Modals */}
+      {activeModal && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>&times;</button>
+            <div className="modal-body">
+              <h2>{activeModal === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}</h2>
+              <p>This is a placeholder for the {activeModal} content. Your data is handled with enterprise-grade security within our neural ecosystem.</p>
+              <button className="btn-primary" onClick={() => setActiveModal(null)} style={{ marginTop: '2rem', width: '100%' }}>Close</button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* Scroll to Top */}
-      {
-        showScrollTop && (
-          <button className="scroll-to-top" onClick={scrollToTop}>
-            <span>↑</span>
-          </button>
-        )
-      }
+      {showScrollTop && (
+        <button className="scroll-to-top" onClick={scrollToTop}>
+          <span>↑</span>
+        </button>
+      )}
 
-      {/* Cookie Consent Banner */}
       <CookieConsent />
     </div >
   );
