@@ -273,8 +273,8 @@ export default function App() {
             src={chatbotImg}
             alt="Bot"
             loading="lazy"
-            width="130"
-            height="130"
+            width="110"
+            height="110"
             style={{ color: 'transparent' }}
           />
         </motion.button>
@@ -365,8 +365,8 @@ export default function App() {
             src={chatbotImg}
             alt="Bot"
             loading="lazy"
-            width="130"
-            height="130"
+            width="110"
+            height="110"
             style={{ color: 'transparent' }}
           />
         </motion.button>
