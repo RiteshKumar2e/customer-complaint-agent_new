@@ -44,25 +44,29 @@ function CursorTrail() {
     window.addEventListener('resize', resize);
     resize();
 
-    const handleMouseMove = (e) => {
-      mousePos.current = { x: e.clientX, y: e.clientY };
-      // Spawn particles
-      for (let i = 0; i < 5; i++) {
-        const pColor = isLight
-          ? (Math.random() > 0.5 ? '#6366f1' : '#8b5cf6') // Indigo/Violet for Light
-          : (Math.random() > 0.3 ? '#0ea5e9' : '#ffffff'); // Cyan/White for Dark
-
+    const handleMove = (x, y) => {
+      mousePos.current = { x, y };
+      for (let i = 0; i < 3; i++) {
         particles.current.push({
-          x: e.clientX,
-          y: e.clientY,
-          vx: (Math.random() - 0.5) * 4,
-          vy: (Math.random() - 0.5) * 4,
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
           life: 1.0,
-          size: Math.random() * 4 + 1,
-          color: pColor
+          size: Math.random() * 3 + 1,
+          color: isLight
+            ? (Math.random() > 0.5 ? '#6366f1' : '#8b5cf6')
+            : (Math.random() > 0.3 ? '#0ea5e9' : '#ffffff')
         });
       }
-      if (particles.current.length > 200) particles.current.shift();
+      if (particles.current.length > 100) particles.current.shift();
+    };
+
+    const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
     };
 
     const render = () => {
@@ -74,7 +78,7 @@ function CursorTrail() {
 
       const glow = ctx.createRadialGradient(
         mousePos.current.x, mousePos.current.y, 0,
-        mousePos.current.x, mousePos.current.y, 25
+        mousePos.current.x, mousePos.current.y, 20
       );
       glow.addColorStop(0, coreCenter);
       glow.addColorStop(0.2, coreColor);
@@ -82,14 +86,14 @@ function CursorTrail() {
 
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(mousePos.current.x, mousePos.current.y, 25, 0, Math.PI * 2);
+      ctx.arc(mousePos.current.x, mousePos.current.y, 20, 0, Math.PI * 2);
       ctx.fill();
 
       // Update and Draw Particles
       particles.current.forEach((p, index) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.015;
+        p.life -= 0.02;
         p.size *= 0.98;
 
         if (p.life <= 0) {
@@ -98,7 +102,7 @@ function CursorTrail() {
         }
 
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life * 0.8;
+        ctx.globalAlpha = p.life * 0.7;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -109,10 +113,12 @@ function CursorTrail() {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove);
     render();
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();

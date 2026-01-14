@@ -516,3 +516,105 @@ body.light-theme .submit-review-btn {
     transform: translateY(0);
   }
 }
+
+/* Mobile Adjustments Overhaul */
+@media (max-width: 768px) {
+  .complaint-form-container {
+    padding: 30px 20px;
+    margin: 20px auto;
+    border-radius: 16px;
+  }
+
+  .form-header h2 {
+    font-size: 28px;
+  }
+
+  .form-header p {
+    font-size: 14px;
+  }
+
+  .form-section-wrapper {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+
+  .launch-btn {
+    font-size: 16px;
+    padding: 15px;
+  }
+
+  .processing-card {
+    padding: 30px 20px;
+  }
+
+  .ai-brain-pulse {
+    font-size: 60px;
+  }
+
+  .step-row {
+    padding: 12px 15px;
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .star-btn {
+    font-size: 32px;
+  }
+
+  .review-block {
+    padding: 24px 15px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .complaint-form-container {
+    padding: 20px 15px;
+    margin: 10px auto;
+  }
+
+  .form-header h2 {
+    font-size: 24px;
+  }
+
+  .ai-processing-overlay {
+    padding: 15px;
+  }
+
+  .processing-card {
+    padding: 24px 15px;
+    border-radius: 24px;
+  }
+
+  .processing-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .live-badge {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+
+  .step-row {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .star-btn {
+    font-size: 28px;
+    gap: 8px;
+  }
+
+  .submit-review-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+  }
+}

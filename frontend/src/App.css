@@ -211,15 +211,6 @@ body.light-theme .chat-fab {
 
 /* ===== RESPONSIVE DESIGN ===== */
 
-@media (max-width: 1024px) {
-  .chatbot-toggle {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 55px;
-    height: 55px;
-  }
-}
-
 /* Tablet View */
 @media (max-width: 768px) {
   .app-header {
@@ -256,10 +247,9 @@ body.light-theme .chat-fab {
   }
 
   .chatbot-toggle {
-    bottom: 1.25rem;
-    right: 1.25rem;
-    width: 50px;
-    height: 50px;
+    height: 80px;
+    bottom: 1.5rem;
+    right: 1.5rem;
   }
 }
 
@@ -307,6 +297,12 @@ body.light-theme .chat-fab {
     right: 20px;
     font-size: 22px;
   }
+
+  .chatbot-toggle {
+    height: 70px;
+    bottom: 1rem;
+    right: 1rem;
+  }
 }
 
 /* Extra Small Devices */
@@ -338,5 +334,11 @@ body.light-theme .chat-fab {
     bottom: 16px;
     right: 16px;
     font-size: 20px;
+  }
+
+  .chatbot-toggle {
+    height: 60px;
+    bottom: 0.75rem;
+    right: 0.75rem;
   }
 }
