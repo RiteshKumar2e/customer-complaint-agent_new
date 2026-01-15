@@ -87,43 +87,71 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction (The Ultimate Mobile Hinglish Version)
+  // AI Voice Introduction - Auto-play on page load
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
 
-    const handleHinglishIntro = () => {
+    let hasPlayed = false;
+
+    const playVoiceIntro = () => {
+      if (hasPlayed) return;
+
       const synth = window.speechSynthesis;
       if (!synth) return;
 
+      // Cancel any ongoing speech
+      synth.cancel();
+
       const utter = new SpeechSynthesisUtterance(introText);
-      // Reverted to hi-IN for the best Hindi voice quality
       utter.lang = 'hi-IN';
       utter.volume = 1.0;
       utter.rate = 1.0;
       utter.pitch = 1.0;
 
-      const voices = synth.getVoices();
-      // Prioritize Google or Microsoft's high-quality Hindi voices if available
-      const indianVoice = voices.find(v => v.lang === 'hi-IN' && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
-        voices.find(v => v.lang === 'hi-IN') ||
-        voices.find(v => v.name.includes('India'));
+      // Wait for voices to load
+      const setVoiceAndSpeak = () => {
+        const voices = synth.getVoices();
+        const indianVoice = voices.find(v => v.lang === 'hi-IN' && (v.name.includes('Google') || v.name.includes('Microsoft'))) ||
+          voices.find(v => v.lang === 'hi-IN') ||
+          voices.find(v => v.name.includes('India'));
 
-      if (indianVoice) utter.voice = indianVoice;
+        if (indianVoice) utter.voice = indianVoice;
 
-      synth.speak(utter);
+        try {
+          synth.speak(utter);
+          hasPlayed = true;
+          console.log('✅ Voice intro playing automatically');
 
-      ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
-        window.removeEventListener(e, handleHinglishIntro)
-      );
+          // Remove event listeners after successful play
+          ['click', 'touchstart', 'mousedown', 'keydown', 'scroll'].forEach(e =>
+            window.removeEventListener(e, playVoiceIntro)
+          );
+        } catch (error) {
+          console.log('⚠️ Autoplay blocked, waiting for user interaction:', error);
+        }
+      };
+
+      if (synth.getVoices().length > 0) {
+        setVoiceAndSpeak();
+      } else {
+        synth.addEventListener('voiceschanged', setVoiceAndSpeak, { once: true });
+      }
     };
 
-    ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
-      window.addEventListener(e, handleHinglishIntro)
+    // Try to play immediately on page load
+    const autoPlayTimer = setTimeout(() => {
+      playVoiceIntro();
+    }, 500); // Small delay to ensure page is ready
+
+    // Fallback: Play on first user interaction if autoplay fails
+    ['click', 'touchstart', 'mousedown', 'keydown', 'scroll'].forEach(e =>
+      window.addEventListener(e, playVoiceIntro, { once: true })
     );
 
     return () => {
-      ['click', 'touchend', 'mousedown', 'keydown'].forEach(e =>
-        window.removeEventListener(e, handleHinglishIntro)
+      clearTimeout(autoPlayTimer);
+      ['click', 'touchstart', 'mousedown', 'keydown', 'scroll'].forEach(e =>
+        window.removeEventListener(e, playVoiceIntro)
       );
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
