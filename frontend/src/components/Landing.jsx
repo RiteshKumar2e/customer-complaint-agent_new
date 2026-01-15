@@ -9,11 +9,15 @@ import ThemeToggle from "./ThemeToggle";
 // --- Internal 3D Components (Conditional Dark Mode) ---
 function ParticleGlobe() {
   const ref = useRef();
-  const [sphere] = useState(() => random.inSphere(new Float32Array(3000), { radius: 1.5 }));
+  const [isMobile] = useState(() => window.innerWidth < 768);
+  const particleCount = isMobile ? 800 : 2000;
+  const [sphere] = useState(() => random.inSphere(new Float32Array(particleCount * 3), { radius: 1.5 }));
 
   useFrame((state, delta) => {
-    ref.current.rotation.x -= delta / 15;
-    ref.current.rotation.y -= delta / 20;
+    if (ref.current) {
+      ref.current.rotation.x -= delta / 20;
+      ref.current.rotation.y -= delta / 25;
+    }
   });
 
   return (
@@ -69,10 +73,10 @@ function HeroBackground() {
 
   return (
     <div className="three-bg-overlay-landing">
-      <Canvas camera={{ position: [0, 0, 1.2] }}>
+      <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 1.2] }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
-        <Stars radius={100} depth={50} count={4000} factor={4} saturation={0} fade speed={1} />
+        <Stars radius={100} depth={50} count={isLight ? 500 : 2000} factor={4} saturation={0} fade speed={1} />
         <ParticleGlobe />
         <FloatingGeometry />
       </Canvas>

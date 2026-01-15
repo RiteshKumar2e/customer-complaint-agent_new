@@ -179,30 +179,17 @@ button {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* ===== GLOBAL CURSOR OVERRIDE ===== */
-* {
+/* ===== GLOBAL CURSOR OVERRIDE (Enabled via App.jsx) ===== */
+body.custom-cursor-active,
+body.custom-cursor-active * {
   cursor: none !important;
 }
 
-html,
-body {
-  cursor: none !important;
-}
+/* On mobile/touch, we want the default cursor behavior for accessibility */
+@media (pointer: coarse) {
 
-button,
-a,
-input,
-textarea,
-select,
-[role="button"],
-[onclick] {
-  cursor: none !important;
-}
-
-.chatbot-toggle {
-  cursor: none !important;
-}
-
-.side-chat * {
-  cursor: none !important;
+  body.custom-cursor-active,
+  body.custom-cursor-active * {
+    cursor: auto !important;
+  }
 }

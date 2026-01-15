@@ -24,15 +24,23 @@ function CursorTrail() {
   const targetPos = useRef({ x: 0, y: 0 });
   const particles = useRef([]);
   const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
+    const touchCheck = window.matchMedia('(pointer: coarse)').matches;
+    setIsTouchDevice(touchCheck);
+
+    if (touchCheck) {
+      document.body.classList.remove('custom-cursor-active');
+      return;
+    }
+
+    document.body.classList.add('custom-cursor-active');
+
     const observer = new MutationObserver(() => {
-      const light = document.body.classList.contains('light-theme');
-      setIsLight(light);
+      setIsLight(document.body.classList.contains('light-theme'));
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-    document.body.style.cursor = 'none';
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -46,68 +54,52 @@ function CursorTrail() {
     window.addEventListener('resize', resize);
     resize();
 
-    // Throttling mousemove for better performance
     let lastMove = 0;
     const handleMove = (x, y) => {
       targetPos.current = { x, y };
-
       const now = Date.now();
-      if (now - lastMove < 16) return; // ~60fps throttle
+      if (now - lastMove < 20) return;
       lastMove = now;
 
-      // Fewer but better particles
-      const count = isLight ? 3 : 4;
+      const count = isLight ? 2 : 3;
       for (let i = 0; i < count; i++) {
         particles.current.push({
-          x,
-          y,
-          vx: (Math.random() - 0.5) * 4,
-          vy: (Math.random() - 0.5) * 4,
+          x, y,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
           life: 1.0,
-          size: Math.random() * 6 + 1,
+          size: Math.random() * 4 + 1,
           color: isLight
             ? (Math.random() > 0.5 ? '#2563eb' : '#3b82f6')
             : (Math.random() > 0.3 ? '#00d2ff' : '#ffffff')
         });
       }
 
-      // Keep array size small but enough for a good trail
-      if (particles.current.length > 120) {
-        particles.current.splice(0, particles.current.length - 120);
+      if (particles.current.length > 80) {
+        particles.current.splice(0, particles.current.length - 80);
       }
     };
 
     const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
-    const handleTouchMove = (e) => {
-      if (e.touches.length > 0) {
-        handleMove(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    };
+    window.addEventListener('mousemove', handleMouseMove);
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Smooth lerp (fixed speed for less jitter)
-      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.18;
-      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.18;
+      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.15;
+      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.15;
 
       const { x, y } = mousePos.current;
-
-      // Draw Intense Core Glow (Simplified for performance - no shadowBlur)
-      const outerRadius = isLight ? 50 : 65;
+      const outerRadius = isLight ? 40 : 55;
       const innerRadius = 2;
-
       const glow = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
 
       if (isLight) {
-        glow.addColorStop(0, '#ffffff');
-        glow.addColorStop(0.2, '#3b82f6');
-        glow.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
+        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0.3, 'rgba(59, 130, 246, 0.4)');
         glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
       } else {
-        glow.addColorStop(0, '#ffffff');
-        glow.addColorStop(0.1, '#00d2ff');
-        glow.addColorStop(0.4, 'rgba(0, 210, 255, 0.2)');
+        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0.2, 'rgba(0, 210, 255, 0.4)');
         glow.addColorStop(1, 'rgba(0, 210, 255, 0)');
       }
 
@@ -118,50 +110,44 @@ function CursorTrail() {
       ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bright center dot
       ctx.fillStyle = isLight ? '#2563eb' : '#ffffff';
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
-      // Update and Draw Particles
       for (let i = particles.current.length - 1; i >= 0; i--) {
         const p = particles.current[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.02;
-        p.size *= 0.97;
-
+        p.life -= 0.025;
+        p.size *= 0.96;
         if (p.life <= 0 || p.size < 0.5) {
           particles.current.splice(i, 1);
           continue;
         }
-
-        ctx.globalAlpha = p.life * 0.8;
+        ctx.globalAlpha = p.life * 0.7;
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1.0;
-
       animationFrameId = requestAnimationFrame(render);
     };
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
     render();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
-      document.body.style.cursor = 'default';
+      document.body.classList.remove('custom-cursor-active');
     };
   }, [isLight]);
+
+  if (isTouchDevice) return null;
 
   return (
     <canvas
@@ -170,11 +156,10 @@ function CursorTrail() {
         position: 'fixed',
         top: 0,
         left: 0,
-        width: '100vw',
-        height: '100vh',
+        width: '100%',
+        height: '100%',
         pointerEvents: 'none',
-        zIndex: 10001,
-        transition: 'opacity 0.5s ease-in-out'
+        zIndex: 9999,
       }}
     />
   );
@@ -182,7 +167,6 @@ function CursorTrail() {
 
 export default function App() {
   const [page, setPage] = useState(() => {
-    // Initial page load from localStorage if logged in
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
     const lastPage = localStorage.getItem("lastPage");
@@ -197,10 +181,8 @@ export default function App() {
   const [showChatbot, setShowChatbot] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
-  // Check for existing session and URL routes
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
@@ -208,11 +190,9 @@ export default function App() {
       setUser(JSON.parse(savedUser));
     }
 
-    // Handle deep links from email
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
     } else if (window.location.pathname === "/dashboard") {
-      // If user is logged in, show profile, else landing will handle sign-in button
       const savedUser = localStorage.getItem("user");
       if (savedUser) {
         setPage("profile");
@@ -225,39 +205,31 @@ export default function App() {
     }
   }, []);
 
-  // Save lastPage to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("lastPage", page);
   }, [page]);
 
-  // Load complaints from database
   useEffect(() => {
-    if ((page === "dashboard" || page === "form" || page === "profile") && user?.email) {
+    if (user && user.email) {
       loadComplaints();
     }
-  }, [page, user?.email]);
+  }, [user]);
 
   const loadComplaints = async () => {
     if (!user?.email) return;
     try {
-      setLoading(true);
       const data = await getAllComplaints(user.email);
-      setComplaints(data.complaints || []);
+      setComplaints(data);
     } catch (error) {
       console.error("Error loading complaints:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleComplaintSubmit = async (data) => {
     setResult(data);
-    await loadComplaints(); // Reload complaints after submission
-
-    // Redirect to profile page after a short delay to show result
+    await loadComplaints();
     setTimeout(() => {
       navigateTo("profile");
-      // Scroll to top
       window.scrollTo(0, 0);
     }, 3000);
   };
@@ -265,7 +237,7 @@ export default function App() {
   const navigateTo = (newPage) => {
     setPage(newPage);
     if (newPage === "landing") {
-      setResult(null); // Clear result when going back to landing
+      setResult(null);
     }
   };
 
@@ -274,16 +246,11 @@ export default function App() {
     localStorage.removeItem("user");
     localStorage.removeItem("lastPage");
     setUser(null);
-    setIsAdminMode(false); // Reset admin mode on logout
+    setIsAdminMode(false);
     navigateTo("landing");
   };
 
-  const handleChatToggle = () => {
-    setShowChatbot(!showChatbot);
-  };
-
   const renderPage = () => {
-    // Landing Page
     if (page === "landing") {
       return (
         <Landing
@@ -302,7 +269,6 @@ export default function App() {
       );
     }
 
-    // Login Page
     if (page === "login") {
       return (
         <Login
@@ -320,22 +286,18 @@ export default function App() {
       );
     }
 
-    // Signup Page
     if (page === "signup") {
       return <Signup onNavigate={navigateTo} />;
     }
 
-    // Forgot Password Page
     if (page === "forgot-password") {
       return <ForgotPassword onNavigate={navigateTo} />;
     }
 
-    // Reset Password Page
     if (page === "reset-password") {
       return <ResetPassword onNavigate={navigateTo} />;
     }
 
-    // Profile Page
     if (page === "profile") {
       return (
         <Profile
@@ -348,7 +310,6 @@ export default function App() {
       );
     }
 
-    // Admin Dashboard Page
     if (page === "admin") {
       return (
         <AdminDashboard
@@ -359,7 +320,6 @@ export default function App() {
       );
     }
 
-    // Complaint Form Page (Default)
     return (
       <div className="app-container">
         <header className="profile-header">
@@ -400,14 +360,12 @@ export default function App() {
     <>
       <CursorTrail />
       <NotificationCenter />
-      {/* Global Theme Toggle - Only show on pages without a built-in toggle */}
       {['login', 'signup', 'forgot-password', 'reset-password'].includes(page) && (
         <ThemeToggle className="fixed" />
       )}
 
       {renderPage()}
 
-      {/* Global Chatbot Elements */}
       {(page === "landing" || page === "profile" || page === "form" || !["login", "signup", "forgot-password", "reset-password"].includes(page)) && (
         <>
           <motion.button
@@ -432,7 +390,6 @@ export default function App() {
         </>
       )}
 
-      {/* Feedback Modal */}
       {feedbackOpen && (
         <Feedback onClose={() => setFeedbackOpen(false)} />
       )}
