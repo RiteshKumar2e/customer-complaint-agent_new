@@ -974,6 +974,15 @@ body.light-theme .section-tag {
   background-clip: text;
 }
 
+body.light-theme .vision-text {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: #0f172a;
+  font-weight: 800;
+}
+
 .mission-content {
   display: block;
   max-width: 900px;
