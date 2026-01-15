@@ -119,7 +119,7 @@ function CursorTrail() {
       ctx.fill();
 
       // Bright center dot
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = isLight ? '#2563eb' : '#ffffff';
       ctx.beginPath();
       ctx.arc(x, y, 3, 0, Math.PI * 2);
       ctx.fill();
@@ -282,11 +282,10 @@ export default function App() {
     setShowChatbot(!showChatbot);
   };
 
-  // Landing Page
-  if (page === "landing") {
-    return (
-      <>
-        <CursorTrail />
+  const renderPage = () => {
+    // Landing Page
+    if (page === "landing") {
+      return (
         <Landing
           user={user}
           onStart={() => {
@@ -300,42 +299,12 @@ export default function App() {
           onDashboard={() => user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login")}
           onFeedback={() => setFeedbackOpen(true)}
         />
-        <NotificationCenter />
+      );
+    }
 
-        {/* Floating Chatbot Toggle for Landing */}
-        <motion.button
-          className="chatbot-toggle"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowChatbot(!showChatbot)}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <img
-            src={chatbotImg}
-            alt="Bot"
-            loading="lazy"
-            width="110"
-            height="110"
-            style={{ color: 'transparent' }}
-          />
-        </motion.button>
-        <SideChatBot open={showChatbot} onClose={() => setShowChatbot(false)} />
-
-        {/* Feedback Modal */}
-        {feedbackOpen && (
-          <Feedback onClose={() => setFeedbackOpen(false)} />
-        )}
-      </>
-    );
-  }
-
-  // Login Page
-  if (page === "login") {
-    return (
-      <>
-        <ThemeToggle className="fixed" />
+    // Login Page
+    if (page === "login") {
+      return (
         <Login
           onNavigate={(p) => {
             setIsAdminMode(false);
@@ -348,45 +317,27 @@ export default function App() {
           }}
           isAdminMode={isAdminMode}
         />
-      </>
-    );
-  }
+      );
+    }
 
-  // Signup Page
-  if (page === "signup") {
-    return (
-      <>
-        <ThemeToggle className="fixed" />
-        <Signup onNavigate={navigateTo} />
-      </>
-    );
-  }
+    // Signup Page
+    if (page === "signup") {
+      return <Signup onNavigate={navigateTo} />;
+    }
 
-  // Forgot Password Page
-  if (page === "forgot-password") {
-    return (
-      <>
-        <ThemeToggle className="fixed" />
-        <ForgotPassword onNavigate={navigateTo} />
-      </>
-    );
-  }
+    // Forgot Password Page
+    if (page === "forgot-password") {
+      return <ForgotPassword onNavigate={navigateTo} />;
+    }
 
-  // Reset Password Page
-  if (page === "reset-password") {
-    return (
-      <>
-        <ThemeToggle className="fixed" />
-        <ResetPassword onNavigate={navigateTo} />
-      </>
-    );
-  }
+    // Reset Password Page
+    if (page === "reset-password") {
+      return <ResetPassword onNavigate={navigateTo} />;
+    }
 
-  // Profile Page
-  if (page === "profile") {
-    return (
-      <>
-        <CursorTrail />
+    // Profile Page
+    if (page === "profile") {
+      return (
         <Profile
           user={user}
           onNavigate={navigateTo}
@@ -394,51 +345,23 @@ export default function App() {
           complaints={complaints}
           setComplaints={setComplaints}
         />
-        {/* Standardized Chatbot - Global for Profile */}
-        <motion.button
-          className="chatbot-toggle"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowChatbot(!showChatbot)}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <img
-            src={chatbotImg}
-            alt="Bot"
-            loading="lazy"
-            width="110"
-            height="110"
-            style={{ color: 'transparent' }}
-          />
-        </motion.button>
-        <SideChatBot open={showChatbot} onClose={() => setShowChatbot(false)} />
-      </>
-    );
-  }
+      );
+    }
 
-
-  // Admin Dashboard Page
-  if (page === "admin") {
-    return (
-      <>
-        <CursorTrail />
+    // Admin Dashboard Page
+    if (page === "admin") {
+      return (
         <AdminDashboard
           user={user}
           onNavigate={navigateTo}
           onLogout={handleLogout}
         />
-      </>
-    );
-  }
+      );
+    }
 
-  // Complaint Form Page
-  return (
-    <>
+    // Complaint Form Page (Default)
+    return (
       <div className="app-container">
-        <CursorTrail />
-        {/* Consistent Profile-style Header for Form Page */}
         <header className="profile-header">
           <div className="header-content">
             <div className="header-left">
@@ -461,7 +384,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="form-content-wrapper">
           <ComplaintForm onResult={handleComplaintSubmit} user={user} />
           {result && (
@@ -470,29 +392,50 @@ export default function App() {
             </div>
           )}
         </main>
-
-        {/* Standardized Chatbot Toggle */}
-        <motion.button
-          className="chatbot-toggle"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowChatbot(!showChatbot)}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <img src={chatbotImg} alt="AI Assistant" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-        </motion.button>
-
-        {/* Global Side Chatbot Panel */}
-        <SideChatBot
-          open={showChatbot}
-          onClose={() => setShowChatbot(false)}
-        />
-
-        {/* Notification System */}
-        <NotificationCenter />
       </div>
+    );
+  };
+
+  return (
+    <>
+      <CursorTrail />
+      <NotificationCenter />
+      {/* Global Theme Toggle - Only show on pages without a built-in toggle */}
+      {['login', 'signup', 'forgot-password', 'reset-password'].includes(page) && (
+        <ThemeToggle className="fixed" />
+      )}
+
+      {renderPage()}
+
+      {/* Global Chatbot Elements */}
+      {(page === "landing" || page === "profile" || page === "form" || !["login", "signup", "forgot-password", "reset-password"].includes(page)) && (
+        <>
+          <motion.button
+            className="chatbot-toggle"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowChatbot(!showChatbot)}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <img
+              src={chatbotImg}
+              alt="Bot"
+              loading="lazy"
+              width="110"
+              height="110"
+              style={{ color: 'transparent' }}
+            />
+          </motion.button>
+          <SideChatBot open={showChatbot} onClose={() => setShowChatbot(false)} />
+        </>
+      )}
+
+      {/* Feedback Modal */}
+      {feedbackOpen && (
+        <Feedback onClose={() => setFeedbackOpen(false)} />
+      )}
     </>
   );
 }

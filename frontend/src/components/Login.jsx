@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { googleAuth, googleVerifyOTP, loginWithPassword } from "../api";
-import CustomCursor from "./CustomCursor";
 import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
 import "../styles/AuthAnimations.css";
@@ -211,7 +210,6 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
-            <CustomCursor />
 
             {/* Background Animations */}
             <div className="floating-glow glow-1" />

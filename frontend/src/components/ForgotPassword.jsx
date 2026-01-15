@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { forgotPassword } from "../api";
-import CustomCursor from "./CustomCursor";
 import "../styles/Auth.css";
 
 export default function ForgotPassword({ onNavigate }) {
@@ -33,7 +32,6 @@ export default function ForgotPassword({ onNavigate }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
-            <CustomCursor />
             <div className="auth-content">
                 <motion.div className="back-link" onClick={() => onNavigate("login")} whileHover={{ x: -10 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>

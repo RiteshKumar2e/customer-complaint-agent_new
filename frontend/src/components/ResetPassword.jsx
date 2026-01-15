@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { resetPassword } from "../api";
-import CustomCursor from "./CustomCursor";
 import "../styles/Auth.css";
 
 export default function ResetPassword({ onNavigate }) {
@@ -58,7 +57,6 @@ export default function ResetPassword({ onNavigate }) {
 
     return (
         <motion.div className="auth-container">
-            <CustomCursor />
             <div className="auth-content">
                 <motion.div className="auth-form-container">
                     <div className="auth-header">
