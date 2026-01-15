@@ -22,19 +22,11 @@ function CursorTrail() {
   const canvasRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
   const targetPos = useRef({ x: 0, y: 0 });
+  const velocity = useRef({ x: 0, y: 0 });
   const particles = useRef([]);
   const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
-    const touchCheck = window.matchMedia('(pointer: coarse)').matches;
-    setIsTouchDevice(touchCheck);
-
-    if (touchCheck) {
-      document.body.classList.remove('custom-cursor-active');
-      return;
-    }
-
     document.body.classList.add('custom-cursor-active');
 
     const observer = new MutationObserver(() => {
@@ -55,99 +47,151 @@ function CursorTrail() {
     resize();
 
     let lastMove = 0;
-    const handleMove = (x, y) => {
+    const handleMove = (x, y, isTouch = false) => {
+      const dx = x - targetPos.current.x;
+      const dy = y - targetPos.current.y;
+      velocity.current = { x: dx, y: dy };
       targetPos.current = { x, y };
+
       const now = Date.now();
-      if (now - lastMove < 20) return;
+      const throttleLimit = isTouch ? 20 : 16;
+      if (now - lastMove < throttleLimit) return;
       lastMove = now;
 
-      const count = isLight ? 2 : 3;
+      const speed = Math.sqrt(dx * dx + dy * dy);
+      // Spawn more particles when moving fast
+      const baseCount = isTouch ? 2 : 3;
+      const count = Math.min(baseCount + Math.floor(speed / 8), 8);
+
       for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const force = Math.random() * 2;
         particles.current.push({
           x, y,
-          vx: (Math.random() - 0.5) * 3,
-          vy: (Math.random() - 0.5) * 3,
+          vx: (dx * 0.1) + Math.cos(angle) * force,
+          vy: (dy * 0.1) + Math.sin(angle) * force,
           life: 1.0,
-          size: Math.random() * 4 + 1,
+          orbit: Math.random() * 0.1,
+          angle: Math.random() * Math.PI * 2,
+          size: Math.random() * (isTouch ? 3 : 5) + (speed * 0.05) + 1,
           color: isLight
-            ? (Math.random() > 0.5 ? '#2563eb' : '#3b82f6')
-            : (Math.random() > 0.3 ? '#00d2ff' : '#ffffff')
+            ? (Math.random() > 0.5 ? '#2563eb' : '#60a5fa')
+            : (Math.random() > 0.4 ? '#00d2ff' : '#ffffff'),
+          shimmer: Math.random() * 10
         });
       }
 
-      if (particles.current.length > 80) {
-        particles.current.splice(0, particles.current.length - 80);
+      const maxParticles = isTouch ? 80 : 120;
+      if (particles.current.length > maxParticles) {
+        particles.current.splice(0, particles.current.length - maxParticles);
       }
     };
 
-    const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
-    window.addEventListener('mousemove', handleMouseMove);
+    const handleMouseMove = (e) => handleMove(e.clientX, e.clientY, false);
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, true);
+      }
+    };
 
-    const render = () => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+
+    const render = (time) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.15;
-      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.15;
+
+      // Elastic smoothing
+      const lerpFactor = 0.18;
+      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * lerpFactor;
+      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * lerpFactor;
 
       const { x, y } = mousePos.current;
-      const outerRadius = isLight ? 40 : 55;
-      const innerRadius = 2;
-      const glow = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
 
-      if (isLight) {
-        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-        glow.addColorStop(0.3, 'rgba(59, 130, 246, 0.4)');
-        glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
-      } else {
-        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-        glow.addColorStop(0.2, 'rgba(0, 210, 255, 0.4)');
-        glow.addColorStop(1, 'rgba(0, 210, 255, 0)');
-      }
-
+      // Premium Multi-Layered Glow
       ctx.save();
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'screen';
-      ctx.fillStyle = glow;
+
+      // Outer aura
+      const auraRadius = isLight ? 45 : 60;
+      const aura = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
+      if (isLight) {
+        aura.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+        aura.addColorStop(1, 'rgba(59, 130, 246, 0)');
+      } else {
+        aura.addColorStop(0, 'rgba(0, 210, 255, 0.25)');
+        aura.addColorStop(1, 'rgba(0, 210, 255, 0)');
+      }
+      ctx.fillStyle = aura;
       ctx.beginPath();
-      ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+      ctx.arc(x, y, auraRadius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Core glow
+      const coreRadius = isLight ? 15 : 20;
+      const core = ctx.createRadialGradient(x, y, 0, x, y, coreRadius);
+      core.addColorStop(0, '#ffffff');
+      core.addColorStop(0.4, isLight ? '#3b82f6' : '#00d2ff');
+      core.addColorStop(1, 'transparent');
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(x, y, coreRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner dot
       ctx.fillStyle = isLight ? '#2563eb' : '#ffffff';
       ctx.beginPath();
-      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
+      // Organic Particles
       for (let i = particles.current.length - 1; i >= 0; i--) {
         const p = particles.current[i];
+
+        // Add slight orbital drift
+        p.angle += p.orbit;
+        p.vx += Math.cos(p.angle) * 0.1;
+        p.vy += Math.sin(p.angle) * 0.1;
+
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.025;
-        p.size *= 0.96;
+        p.life -= 0.015;
+        p.size *= 0.97;
+
         if (p.life <= 0 || p.size < 0.5) {
           particles.current.splice(i, 1);
           continue;
         }
-        ctx.globalAlpha = p.life * 0.7;
+
+        const shimmer = Math.sin(time * 0.01 + p.shimmer) * 0.2 + 0.8;
+        ctx.globalAlpha = p.life * shimmer * 0.8;
         ctx.fillStyle = p.color;
+
+        // Draw glow for each particle
+        ctx.shadowBlur = p.size * 2;
+        ctx.shadowColor = p.color;
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
+
       ctx.globalAlpha = 1.0;
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
       document.body.classList.remove('custom-cursor-active');
     };
   }, [isLight]);
-
-  if (isTouchDevice) return null;
 
   return (
     <canvas
@@ -219,9 +263,10 @@ export default function App() {
     if (!user?.email) return;
     try {
       const data = await getAllComplaints(user.email);
-      setComplaints(data);
+      setComplaints(data.complaints || []);
     } catch (error) {
       console.error("Error loading complaints:", error);
+      setComplaints([]);
     }
   };
 

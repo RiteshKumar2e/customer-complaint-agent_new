@@ -184,12 +184,3 @@ body.custom-cursor-active,
 body.custom-cursor-active * {
   cursor: none !important;
 }
-
-/* On mobile/touch, we want the default cursor behavior for accessibility */
-@media (pointer: coarse) {
-
-  body.custom-cursor-active,
-  body.custom-cursor-active * {
-    cursor: auto !important;
-  }
-}

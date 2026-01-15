@@ -113,14 +113,17 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const [feedbackSuccess, setFeedbackSuccess] = useState(false);
     const [feedbackError, setFeedbackError] = useState("");
 
+    // Ensure complaints is always an array
+    const complaintsList = Array.isArray(complaints) ? complaints : [];
+
     // Get user stats
-    const totalComplaints = complaints.length;
-    const resolvedComplaints = complaints.filter(c => c.is_resolved).length;
+    const totalComplaints = complaintsList.length;
+    const resolvedComplaints = complaintsList.filter(c => c.is_resolved).length;
     const pendingComplaints = totalComplaints - resolvedComplaints;
-    const highPriorityCount = complaints.filter(c => c.priority === "High").length;
+    const highPriorityCount = complaintsList.filter(c => c.priority === "High").length;
 
     const categories = { Billing: 0, Technical: 0, Delivery: 0, Service: 0, Security: 0, Other: 0 };
-    complaints.forEach(c => {
+    complaintsList.forEach(c => {
         if (categories.hasOwnProperty(c.category)) {
             categories[c.category]++;
         } else {
@@ -752,7 +755,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                         >
                             <h1 className="page-title">My Complaints</h1>
 
-                            {complaints.length === 0 ? (
+                            {complaintsList.length === 0 ? (
                                 <div className="empty-state">
                                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -771,7 +774,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                 </div>
                             ) : (
                                 <div className="complaints-list">
-                                    {complaints.map((complaint, index) => (
+                                    {complaintsList.map((complaint, index) => (
                                         <motion.div
                                             key={complaint.id}
                                             className="complaint-item"
