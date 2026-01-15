@@ -56,24 +56,24 @@ function CursorTrail() {
       lastMove = now;
 
       // Fewer but better particles
-      const count = isLight ? 2 : 3;
+      const count = isLight ? 3 : 4;
       for (let i = 0; i < count; i++) {
         particles.current.push({
           x,
           y,
-          vx: (Math.random() - 0.5) * 3,
-          vy: (Math.random() - 0.5) * 3,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
           life: 1.0,
-          size: Math.random() * 4 + 1,
+          size: Math.random() * 6 + 1,
           color: isLight
             ? (Math.random() > 0.5 ? '#2563eb' : '#3b82f6')
             : (Math.random() > 0.3 ? '#00d2ff' : '#ffffff')
         });
       }
 
-      // Keep array size small
-      if (particles.current.length > 80) {
-        particles.current.splice(0, particles.current.length - 80);
+      // Keep array size small but enough for a good trail
+      if (particles.current.length > 120) {
+        particles.current.splice(0, particles.current.length - 120);
       }
     };
 
@@ -88,13 +88,13 @@ function CursorTrail() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Smooth lerp (fixed speed for less jitter)
-      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.2;
-      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.2;
+      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.18;
+      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.18;
 
       const { x, y } = mousePos.current;
 
       // Draw Intense Core Glow (Simplified for performance - no shadowBlur)
-      const outerRadius = isLight ? 35 : 45;
+      const outerRadius = isLight ? 50 : 65;
       const innerRadius = 2;
 
       const glow = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
@@ -102,12 +102,12 @@ function CursorTrail() {
       if (isLight) {
         glow.addColorStop(0, '#ffffff');
         glow.addColorStop(0.2, '#3b82f6');
-        glow.addColorStop(0.5, 'rgba(59, 130, 246, 0.3)');
+        glow.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
         glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
       } else {
         glow.addColorStop(0, '#ffffff');
         glow.addColorStop(0.1, '#00d2ff');
-        glow.addColorStop(0.4, 'rgba(0, 210, 255, 0.3)');
+        glow.addColorStop(0.4, 'rgba(0, 210, 255, 0.2)');
         glow.addColorStop(1, 'rgba(0, 210, 255, 0)');
       }
 

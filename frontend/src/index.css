@@ -178,23 +178,31 @@ button {
 *::after {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
 /* ===== GLOBAL CURSOR OVERRIDE ===== */
 * {
   cursor: none !important;
 }
 
-html, body {
+html,
+body {
   cursor: none !important;
 }
 
-button, a, input, textarea, select, [role=" button\], [onclick] {
- cursor: none !important;
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[onclick] {
+  cursor: none !important;
 }
 
 .chatbot-toggle {
- cursor: none !important;
+  cursor: none !important;
 }
 
 .side-chat * {
- cursor: none !important;
+  cursor: none !important;
 }
