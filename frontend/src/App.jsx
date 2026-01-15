@@ -21,12 +21,14 @@ import "./styles/Profile.css";
 function CursorTrail() {
   const canvasRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
+  const targetPos = useRef({ x: 0, y: 0 });
   const particles = useRef([]);
   const [isLight, setIsLight] = useState(() => document.body.classList.contains('light-theme'));
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      setIsLight(document.body.classList.contains('light-theme'));
+      const light = document.body.classList.contains('light-theme');
+      setIsLight(light);
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
@@ -34,7 +36,7 @@ function CursorTrail() {
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     let animationFrameId;
 
     const resize = () => {
@@ -44,22 +46,35 @@ function CursorTrail() {
     window.addEventListener('resize', resize);
     resize();
 
+    // Throttling mousemove for better performance
+    let lastMove = 0;
     const handleMove = (x, y) => {
-      mousePos.current = { x, y };
-      for (let i = 0; i < 3; i++) {
+      targetPos.current = { x, y };
+
+      const now = Date.now();
+      if (now - lastMove < 16) return; // ~60fps throttle
+      lastMove = now;
+
+      // Fewer but better particles
+      const count = isLight ? 2 : 3;
+      for (let i = 0; i < count; i++) {
         particles.current.push({
           x,
           y,
           vx: (Math.random() - 0.5) * 3,
           vy: (Math.random() - 0.5) * 3,
           life: 1.0,
-          size: Math.random() * 3 + 1,
+          size: Math.random() * 4 + 1,
           color: isLight
-            ? (Math.random() > 0.5 ? '#6366f1' : '#8b5cf6')
-            : (Math.random() > 0.3 ? '#0ea5e9' : '#ffffff')
+            ? (Math.random() > 0.5 ? '#2563eb' : '#3b82f6')
+            : (Math.random() > 0.3 ? '#00d2ff' : '#ffffff')
         });
       }
-      if (particles.current.length > 100) particles.current.shift();
+
+      // Keep array size small
+      if (particles.current.length > 80) {
+        particles.current.splice(0, particles.current.length - 80);
+      }
     };
 
     const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
@@ -72,48 +87,70 @@ function CursorTrail() {
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Core with theme-based colors
-      const coreColor = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(14, 165, 233, 0.8)';
-      const coreCenter = isLight ? 'rgba(139, 92, 246, 1)' : 'rgba(255, 255, 255, 1)';
+      // Smooth lerp (fixed speed for less jitter)
+      mousePos.current.x += (targetPos.current.x - mousePos.current.x) * 0.2;
+      mousePos.current.y += (targetPos.current.y - mousePos.current.y) * 0.2;
 
-      const glow = ctx.createRadialGradient(
-        mousePos.current.x, mousePos.current.y, 0,
-        mousePos.current.x, mousePos.current.y, 20
-      );
-      glow.addColorStop(0, coreCenter);
-      glow.addColorStop(0.2, coreColor);
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const { x, y } = mousePos.current;
 
+      // Draw Intense Core Glow (Simplified for performance - no shadowBlur)
+      const outerRadius = isLight ? 35 : 45;
+      const innerRadius = 2;
+
+      const glow = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
+
+      if (isLight) {
+        glow.addColorStop(0, '#ffffff');
+        glow.addColorStop(0.2, '#3b82f6');
+        glow.addColorStop(0.5, 'rgba(59, 130, 246, 0.3)');
+        glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
+      } else {
+        glow.addColorStop(0, '#ffffff');
+        glow.addColorStop(0.1, '#00d2ff');
+        glow.addColorStop(0.4, 'rgba(0, 210, 255, 0.3)');
+        glow.addColorStop(1, 'rgba(0, 210, 255, 0)');
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = isLight ? 'source-over' : 'screen';
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(mousePos.current.x, mousePos.current.y, 20, 0, Math.PI * 2);
+      ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Bright center dot
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
       // Update and Draw Particles
-      particles.current.forEach((p, index) => {
+      for (let i = particles.current.length - 1; i >= 0; i--) {
+        const p = particles.current[i];
         p.x += p.vx;
         p.y += p.vy;
         p.life -= 0.02;
-        p.size *= 0.98;
+        p.size *= 0.97;
 
-        if (p.life <= 0) {
-          particles.current.splice(index, 1);
-          return;
+        if (p.life <= 0 || p.size < 0.5) {
+          particles.current.splice(i, 1);
+          continue;
         }
 
+        ctx.globalAlpha = p.life * 0.8;
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life * 0.7;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
-      });
-
+      }
       ctx.globalAlpha = 1.0;
+
       animationFrameId = requestAnimationFrame(render);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
     render();
 
     return () => {
@@ -136,8 +173,8 @@ function CursorTrail() {
         width: '100vw',
         height: '100vh',
         pointerEvents: 'none',
-        zIndex: 9999,
-        mixBlendMode: isLight ? 'multiply' : 'screen'
+        zIndex: 10001,
+        transition: 'opacity 0.5s ease-in-out'
       }}
     />
   );
