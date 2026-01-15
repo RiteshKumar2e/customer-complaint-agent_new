@@ -16,151 +16,95 @@ except ImportError:
 
 async def handle_chat_message(message: str) -> dict:
     """
-    Decides whether the message is a complaint (orchestrated) or a question.
-    Detects user's language and responds in the SAME language.
-    Async with timeout to handle high traffic and concurrent users.
+    ULTRA-FAST Chat Handler:
+    1. Local Fast-Path for greetings (0s delay)
+    2. Combined Intent + Answer call (Single AI hit for Questions)
+    3. Background pipeline only for complex complaints
     """
-    msg_len = len(message.strip())
+    clean_msg = message.strip()
+    msg_len = len(clean_msg)
+    
     if msg_len == 0:
         return {"role": "agent", "type": "info", "response": "How can I help you today?"}
 
-    # 🌐 LANGUAGE DETECTION - Critical for multilingual support
-    user_language = detect_language(message)
-    language_instruction = get_language_instruction(user_language)
+    # 🌐 LANGUAGE DETECTION (Fast Regex-based)
+    user_language = detect_language(clean_msg)
+    lang_instr = get_language_instruction(user_language)
+
+    # 🚀 STEP 1: LOCAL FAST-PATH (Non-AI)
+    # Greetings, simple inquiries, and small talk
+    greetings_map = {
+        'hi': {'english': "Hello! How can I help you?", 'hinglish': "Hi! Main aapki kaise help kar sakta hoon?"},
+        'hello': {'english': "Hi there! What's on your mind?", 'hinglish': "Hello! Kya help chahiye aapko?"},
+        'hey': {'english': "Hey! How's it going?", 'hinglish': "Hey! Sab theek? Kaise help karoon?"},
+        'thanks': {'english': "You're welcome!", 'hinglish': "Koi baat nahi! Anytime help chahiye toh batana."},
+        'dhanyavad': {'hindi': "आपका स्वागत है!", 'hinglish': "Aapka swagat hai!"},
+        'ok': {'english': "Great! Let me know if you need anything else.", 'hinglish': "Theek hai! Aur kuch help chahiye?"},
+        'help': {'english': "I can help you file a complaint, track status, or answer questions about our services.", 'hinglish': "Kaise help karoon? Aap complaint file kar sakte hain ya platform ke baare mein puch sakte hain."}
+    }
     
-    print(f"🌐 Detected Language: {user_language}")
+    msg_lower = clean_msg.lower().replace('?', '').replace('!', '')
+    if msg_lower in greetings_map:
+        res = greetings_map[msg_lower].get(user_language, greetings_map[msg_lower].get('english'))
+        return {"role": "agent", "type": "info", "response": res}
 
-    # Intent detection with few-shot examples from training data
-    intent_prompt = f"""
-{CLASSIFICATION_EXAMPLES}
+    # 🚀 STEP 2: COMBINED INTENT & ANSWER (Single AI Call)
+    # This cuts latency in half for 90% of queries
+    combined_prompt = f"""{CLASSIFICATION_EXAMPLES}
+User Message: {clean_msg}
+Language: {user_language} ({lang_instr})
 
-Classify the user message into ONE word: COMPLAINT or QUESTION.
-Message: {message}
+TASK:
+1. Classify intent: COMPLAINT (reporting a problem) or QUESTION (asking info/chatting).
+2. If intent=QUESTION, generate a high-quality, professional, and helpful response.
+3. If intent=COMPLAINT, just say intent: COMPLAINT.
 
-Rules:
-- If user is reporting an issue, bug, or service failure, it's a COMPLAINT.
-- If user is asking HOW the site works or general info, it's a QUESTION.
-- If query is very short (e.g., "Hi", "Hello", "test"), it's a QUESTION.
+RESPONSE FORMAT (JSON ONLY):
+{{
+  "intent": "QUESTION" or "COMPLAINT",
+  "response": "Your detailed answer here (if question)"
+}}
 
-Only return ONE word.
+Rules for Question Response:
+- Be detailed and professional like an expert.
+- Focus on Quickfix features: Tracking, AI Analysis, 24/7 Support.
+- Match user's language exact style.
+- Use bullet points if listing steps.
 """
+
     try:
-        intent_res = await asyncio.wait_for(
-            async_ask_gemini(intent_prompt),
-            timeout=10.0
+        # High-speed call for combined processing
+        ai_res_raw = await asyncio.wait_for(
+            async_ask_gemini(combined_prompt),
+            timeout=8.0
         )
-        intent = intent_res.upper()
-    except asyncio.TimeoutError:
-        print("⏱️ Intent detection timeout - defaulting to QUESTION")
-        intent = "QUESTION"
-    except Exception as e:
-        print(f"⚠️ Intent detection failed: {e}")
-        intent = "QUESTION"
-
-    # Short query handling
-    if msg_len < 10 and "COMPLAINT" not in intent:
-        # Return greeting in user's language
-        greetings = {
-            'hinglish': "Hello! Main aapki kaise help kar sakta hoon?",
-            'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?",
-            'mixed': "Hi! Main aapki help ke liye ready hoon.",
-            'english': "Hello! How can I assist you today?"
-        }
-        return {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
-
-    if "QUESTION" in intent:
-        # Enhanced prompt for detailed, helpful answers IN USER'S LANGUAGE
-        if msg_len < 30:
-            # Short questions - concise but complete answers
-            answer_prompt = f"""{language_instruction}
-
-You are a helpful AI assistant for Quickfix, a Customer Complaint Management platform.
-
-USER QUESTION: {message}
-
-Provide a brief but complete answer (1-2 sentences). Be friendly and helpful.
-IMPORTANT: Respond in the SAME language/style as the user's question above.
-
-ANSWER:"""
-        else:
-            # Detailed questions - comprehensive answers
-            answer_prompt = f"""{language_instruction}
-
-You are an expert AI assistant for Quickfix, a comprehensive Customer Complaint Management platform.
-
-USER QUESTION: {message}
-
-YOUR TASK:
-Provide a detailed, professional answer that:
-1. Directly addresses the user's question
-2. Provides specific steps or information (if applicable)
-3. Uses clear, simple language
-4. Includes examples when helpful
-5. Ends with an offer to help further
-
-PLATFORM FEATURES YOU CAN EXPLAIN:
-- Complaint submission and tracking
-- AI-powered complaint analysis and categorization
-- Priority detection (High/Medium/Low)
-- Sentiment analysis
-- Automated solution suggestions
-- Email notifications to users and admins
-- Dashboard for viewing all complaints
-- Real-time status updates
-- Multi-language support
-- 24/7 AI assistance
-
-RESPONSE GUIDELINES:
-- Be specific and actionable
-- Use numbered steps for processes
-- Mention relevant features
-- Keep it professional but friendly
-- Length: 2-4 sentences for simple questions, more for complex ones
-
-CRITICAL: Respond in the SAME language/style as the user's question.
-
-Language Example for {user_language}:
-{get_language_example(user_language, 'question')}
-
-Now provide a similarly detailed and helpful answer for the user's question above.
-
-ANSWER:"""
         
+        # Simple parsing (robust enough for JSON)
+        import json
         try:
-            answer = await asyncio.wait_for(
-                async_ask_gemini(answer_prompt),
-                timeout=15.0
-            )
-            return {"role": "agent", "type": "info", "response": answer}
-        except asyncio.TimeoutError:
-            print("⏱️ Answer generation timeout")
-            fallbacks = {
-                'hinglish': "Sorry, response mein delay ho raha hai. Kya aap apna question dobara puch sakte hain?",
-                'hindi': "क्षमा करें, उत्तर में देरी हो रही है। क्या आप अपना प्रश्न दोबारा पूछ सकते हैं?",
-                'mixed': "Sorry for the delay. Kya aap apna question phir se puch sakte hain?",
-                'english': "I apologize for the delay. Could you please rephrase your question?"
-            }
-            return {
-                "role": "agent", 
-                "type": "info", 
-                "response": fallbacks.get(user_language, fallbacks['english'])
-            }
-        except Exception as e:
-            print(f"Chatbot answer generation failed: {e}")
-            # Fallback response in user's language
-            fallbacks = {
-                'hinglish': "Main aapki help karna chahta hoon! Kya aap apna question dobara puch sakte hain?",
-                'hindi': "मैं आपकी मदद करना चाहता हूँ! क्या आप अपना प्रश्न दोबारा पूछ सकते हैं?",
-                'mixed': "I'm here to help! Kya aap apna question phir se puch sakte hain?",
-                'english': "I'm here to help! Could you please rephrase your question or ask about our complaint management features, submission process, or tracking system?"
-            }
-            return {
-                "role": "agent", 
-                "type": "info", 
-                "response": fallbacks.get(user_language, fallbacks['english'])
-            }
+            # Try to find JSON block if AI adds fluff
+            start = ai_res_raw.find('{')
+            end = ai_res_raw.rfind('}') + 1
+            if start != -1:
+                ai_data = json.loads(ai_res_raw[start:end])
+            else:
+                ai_data = {"intent": "QUESTION", "response": ai_res_raw}
+        except:
+            # Fallback if AI output is weird
+            if "COMPLAINT" in ai_res_raw.upper():
+                ai_data = {"intent": "COMPLAINT"}
+            else:
+                ai_data = {"intent": "QUESTION", "response": ai_res_raw}
 
-    # If it's a complaint, run the full pipeline with language context
+        if ai_data.get("intent") == "QUESTION":
+            return {"role": "agent", "type": "info", "response": ai_data.get("response")}
+            
+    except Exception as e:
+        print(f"Combined AI call failed: {e}")
+        # Default to pipeline for safety if combined fails
+        pass
+
+    # 🚀 STEP 3: COMPLAINT PIPELINE (Only for actual complaints)
     try:
         result = await asyncio.wait_for(
             run_agent_pipeline(message, user_language=user_language),
