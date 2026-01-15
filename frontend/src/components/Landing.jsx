@@ -87,13 +87,12 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction - Enhanced for Mobile & Desktop
+  // AI Voice Introduction - Ultra-Aggressive Autoplay (Background, No Overlay)
   useEffect(() => {
     const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
-    
+
     let hasPlayed = false;
-    let attemptCount = 0;
-    const MAX_ATTEMPTS = 3;
+    let voicesReady = false;
 
     const synth = window.speechSynthesis;
     if (!synth) {
@@ -102,121 +101,178 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
     }
 
     const playVoice = () => {
-      if (hasPlayed || attemptCount >= MAX_ATTEMPTS) return;
-      attemptCount++;
+      if (hasPlayed) return;
 
-      console.log(`🎤 Voice attempt ${attemptCount}/${MAX_ATTEMPTS}`);
+      console.log('🎤 Attempting to play voice...');
 
       // Cancel any ongoing speech
       synth.cancel();
 
-      // Small delay to ensure synth is ready
-      setTimeout(() => {
-        const utter = new SpeechSynthesisUtterance(introText);
-        utter.lang = 'hi-IN';
-        utter.volume = 1.0;
-        utter.rate = 1.0;
-        utter.pitch = 1.0;
+      const utter = new SpeechSynthesisUtterance(introText);
+      utter.lang = 'hi-IN';
+      utter.volume = 1.0;
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
 
-        // Get and set voice
-        const voices = synth.getVoices();
-        const indianVoice = 
-          voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) ||
-          voices.find(v => v.lang === 'hi-IN' && v.name.includes('Microsoft')) ||
-          voices.find(v => v.lang === 'hi-IN') ||
-          voices.find(v => v.lang.startsWith('hi')) ||
-          voices[0];
-
-        if (indianVoice) {
-          utter.voice = indianVoice;
-          console.log('🔊 Voice:', indianVoice.name);
-        }
-
-        utter.onstart = () => {
-          console.log('✅ Voice playing!');
-          hasPlayed = true;
-          removeAllListeners();
-        };
-
-        utter.onend = () => {
-          console.log('✅ Voice completed');
-        };
-
-        utter.onerror = (e) => {
-          console.error('❌ Voice error:', e.error);
-          if (e.error === 'not-allowed' && attemptCount < MAX_ATTEMPTS) {
-            console.log('⚠️ Autoplay blocked, will retry on interaction');
-          }
-        };
-
-        try {
-          synth.speak(utter);
-          console.log('🎯 Voice triggered');
-        } catch (error) {
-          console.error('❌ Speak failed:', error);
-        }
-      }, 100);
-    };
-
-    const handleInteraction = (e) => {
-      if (hasPlayed) return;
-      console.log('👆 Interaction:', e.type);
-      playVoice();
-    };
-
-    const removeAllListeners = () => {
-      ['click', 'touchstart', 'touchend', 'mousedown', 'mousemove', 'keydown', 'scroll', 'pointerdown'].forEach(evt => {
-        document.removeEventListener(evt, handleInteraction, true);
-        window.removeEventListener(evt, handleInteraction, true);
-      });
-    };
-
-    // Strategy 1: Try immediate autoplay after voices load
-    const tryAutoPlay = () => {
+      // Get best voice
       const voices = synth.getVoices();
-      if (voices.length > 0) {
-        console.log('🎙️ Voices loaded, attempting autoplay...');
-        playVoice();
+      const indianVoice =
+        voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) ||
+        voices.find(v => v.lang === 'hi-IN' && v.name.includes('Microsoft')) ||
+        voices.find(v => v.lang === 'hi-IN') ||
+        voices.find(v => v.lang.startsWith('hi')) ||
+        voices[0];
+
+      if (indianVoice) {
+        utter.voice = indianVoice;
+        console.log('🔊 Voice selected:', indianVoice.name);
+      }
+
+      utter.onstart = () => {
+        console.log('✅ Voice PLAYING!');
+        hasPlayed = true;
+        // Remove all listeners once playing
+        cleanup();
+      };
+
+      utter.onend = () => {
+        console.log('✅ Voice completed successfully!');
+      };
+
+      utter.onerror = (e) => {
+        console.error('❌ Voice error:', e.error);
+        if (e.error === 'not-allowed') {
+          console.log('⚠️ Autoplay blocked by browser - will play on first interaction');
+        }
+      };
+
+      try {
+        synth.speak(utter);
+        console.log('🎯 Voice triggered!');
+      } catch (error) {
+        console.error('❌ Failed to speak:', error);
+      }
+    };
+
+    // Strategy 1: Load voices and try immediate autoplay
+    const loadAndPlay = () => {
+      const voices = synth.getVoices();
+      if (voices.length > 0 && !voicesReady) {
+        voicesReady = true;
+        console.log('✅ Voices loaded:', voices.length);
+
+        // Try immediate autoplay
+        setTimeout(() => {
+          if (!hasPlayed) {
+            console.log('🚀 Attempting immediate autoplay...');
+            playVoice();
+          }
+        }, 100);
       }
     };
 
     // Load voices
-    if (synth.getVoices().length > 0) {
-      tryAutoPlay();
-    } else {
-      synth.addEventListener('voiceschanged', tryAutoPlay, { once: true });
+    loadAndPlay();
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = loadAndPlay;
     }
 
-    // Strategy 2: Try on page visibility (for mobile)
-    const handleVisibilityChange = () => {
+    // Strategy 2: Try on page fully loaded
+    const onPageLoad = () => {
+      if (!hasPlayed) {
+        console.log('📄 Page loaded, trying voice...');
+        setTimeout(() => playVoice(), 300);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      onPageLoad();
+    } else {
+      window.addEventListener('load', onPageLoad);
+    }
+
+    // Strategy 3: Try on page visibility (mobile)
+    const onVisibilityChange = () => {
       if (!document.hidden && !hasPlayed) {
         console.log('👁️ Page visible, trying voice...');
+        setTimeout(() => playVoice(), 200);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // Strategy 4: Try on DOMContentLoaded
+    const onDOMReady = () => {
+      if (!hasPlayed) {
+        console.log('📋 DOM ready, trying voice...');
+        setTimeout(() => playVoice(), 400);
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', onDOMReady);
+    } else {
+      onDOMReady();
+    }
+
+    // Strategy 5: Aggressive event listeners for ANY user interaction
+    const onInteraction = (e) => {
+      if (hasPlayed) return;
+      console.log('👆 User interaction detected:', e.type);
+      playVoice();
+    };
+
+    const events = [
+      'click', 'touchstart', 'touchend', 'touchmove',
+      'mousedown', 'mousemove', 'mouseup',
+      'keydown', 'keyup', 'keypress',
+      'scroll', 'wheel',
+      'pointerdown', 'pointermove',
+      'focus', 'blur'
+    ];
+
+    events.forEach(evt => {
+      document.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
+      window.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
+    });
+
+    // Strategy 6: Delayed retries (multiple attempts)
+    const retryTimers = [
+      setTimeout(() => !hasPlayed && playVoice(), 500),
+      setTimeout(() => !hasPlayed && playVoice(), 1000),
+      setTimeout(() => !hasPlayed && playVoice(), 2000),
+      setTimeout(() => !hasPlayed && playVoice(), 3000)
+    ];
+
+    // Strategy 7: Try on user scroll (very common on mobile)
+    let scrollAttempted = false;
+    const onScroll = () => {
+      if (!scrollAttempted && !hasPlayed) {
+        scrollAttempted = true;
+        console.log('📜 Scroll detected, trying voice...');
         playVoice();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('scroll', onScroll, { once: true, passive: true });
 
-    // Strategy 3: Aggressive event listeners for first interaction
-    const events = ['click', 'touchstart', 'touchend', 'mousedown', 'mousemove', 'keydown', 'scroll', 'pointerdown'];
-    events.forEach(evt => {
-      document.addEventListener(evt, handleInteraction, { once: true, capture: true, passive: true });
-      window.addEventListener(evt, handleInteraction, { once: true, capture: true, passive: true });
-    });
-
-    // Strategy 4: Delayed retry (for some mobile browsers)
-    const delayedRetry = setTimeout(() => {
-      if (!hasPlayed) {
-        console.log('⏰ Delayed retry...');
-        playVoice();
+    // Cleanup function
+    const cleanup = () => {
+      retryTimers.forEach(timer => clearTimeout(timer));
+      events.forEach(evt => {
+        document.removeEventListener(evt, onInteraction, true);
+        window.removeEventListener(evt, onInteraction, true);
+      });
+      window.removeEventListener('load', onPageLoad);
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('DOMContentLoaded', onDOMReady);
+      if (synth) {
+        synth.onvoiceschanged = null;
       }
-    }, 1000);
+    };
 
-    console.log('🎙️ Voice system initialized');
+    console.log('🎙️ Voice system initialized with ultra-aggressive autoplay');
 
     return () => {
-      clearTimeout(delayedRetry);
-      removeAllListeners();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      cleanup();
       if (synth) {
         synth.cancel();
       }
