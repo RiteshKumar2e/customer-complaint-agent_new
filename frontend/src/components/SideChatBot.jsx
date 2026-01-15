@@ -7,7 +7,7 @@ export default function SideChatBot({ open, onClose }) {
     {
       role: "agent",
       text:
-        "Hi 👋 I’m the AI Support Agent. I can help you understand this website or take your complaint.",
+        "Hi 👋 I'm the AI Support Agent. I can help you understand this website or take your complaint.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -15,6 +15,14 @@ export default function SideChatBot({ open, onClose }) {
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const recognitionRef = useRef(null);
+  const chatBodyRef = useRef(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -77,7 +85,8 @@ export default function SideChatBot({ open, onClose }) {
           meta: res.data,
         },
       ]);
-    } catch {
+    } catch (error) {
+      console.error("Chat error:", error);
       setMessages((prev) => [
         ...prev,
         { role: "agent", text: "Sorry, I faced an issue. Please try again." },
@@ -89,7 +98,8 @@ export default function SideChatBot({ open, onClose }) {
 
   // Function to handle Enter key press
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       sendMessage();
     }
   };
@@ -101,7 +111,7 @@ export default function SideChatBot({ open, onClose }) {
         <button onClick={onClose}>✕</button>
       </div>
 
-      <div className="chat-body">
+      <div className="chat-body" ref={chatBodyRef}>
         {messages.map((m, i) => (
           <div key={i} className={`chat-msg ${m.role}`}>
             <p>{m.text}</p>

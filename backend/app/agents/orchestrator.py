@@ -17,22 +17,22 @@ async def run_agent_pipeline(text: str, user_language: str = 'english'):
 
 async def run_agentic_loop(text: str, user_language: str = 'english', iterations: int = 0):
     """
-    Agentic AI Orchestration Engine with Iterative Self-Correction.
-    Features: Anomaly Detection, RAG Support, and Red-Teaming Validation.
+    Optimized AI Orchestration Engine - Faster processing with essential agents only.
+    Features: Anomaly Detection and RAG Support.
     """
     if not text or not text.strip():
         raise ValueError("Empty complaint text")
 
     steps = []
     
-    # Phase 0: Security & Integrity (Anomaly Detection)
+    # Phase 0: Security & Integrity (Anomaly Detection) - Quick check
     is_anomaly = await check_anomaly(text)
     if is_anomaly:
         steps.append({"step": "Security Check", "status": "Anomaly Detected", "risk": "High"})
     else:
         steps.append({"step": "Security Check", "status": "Verified", "risk": "Low"})
 
-    # Phase 1: Context Identification
+    # Phase 1: Context Identification - Parallel execution for speed
     task1 = classify_complaint(text)
     task2 = detect_priority(text)
     task3 = analyze_sentiment(text)
@@ -40,11 +40,11 @@ async def run_agentic_loop(text: str, user_language: str = 'english', iterations
     category, priority, sentiment = await asyncio.gather(task1, task2, task3)
     steps.append({"step": "Context Identified", "category": category, "priority": priority, "sentiment": sentiment})
 
-    # Phase 2: Knowledge Augmentation (RAG)
+    # Phase 2: Knowledge Augmentation (RAG) - Quick lookup
     kb_context = await get_kb_context(category, text)
     steps.append({"step": "Knowledge Base Polled", "source": "Internal Policy DB"})
 
-    # Phase 3: Resolution Generation
+    # Phase 3: Resolution Generation - Parallel execution
     task4 = generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
     task5 = suggest_solution(category, text, user_language)
     task6 = find_similar_complaints(text, category)
@@ -52,34 +52,13 @@ async def run_agentic_loop(text: str, user_language: str = 'english', iterations
     response, solution, similar = await asyncio.gather(task4, task5, task6)
     steps.append({"step": "Resolutions Generated", "status": "Done"})
 
-    # Phase 4: Final Validation (Red-Teaming Critic)
-    validation = await reevaluate_response("Complaint Audit", text, response)
-    
-    # AGENTIC SELF-CORRECTION LOOP
-    # If the quality score is low or a red-flag is caught, the agent RE-ATTEMPTS generation once
-    if (validation.get("quality_score", 1.0) < 0.7 or validation.get("red_flag")) and iterations < 1:
-        steps.append({
-            "step": "Self-Correction Triggered", 
-            "reason": validation.get("critique_notes"),
-            "status": "Refining..."
-        })
-        
-        # Re-generate with critique context
-        refined_prompt = f"CRITIQUE OF PREVIOUS ATTEMPT: {validation.get('critique_notes')}\n\nORIGINAL COMPLAINT: {text}\n\nFix the issues mentioned and provide a better resolution."
-        response = await generate_response(category, refined_prompt, user_language)
-        
-        # Second Validation pass
-        validation = await reevaluate_response("Complaint Audit - Final Pass", text, response)
-        steps.append({"step": "Refinement Complete", "new_score": validation.get("quality_score")})
-        # Note: We don't recurse here to prevent infinite loops, but we track the refinement
-
+    # Phase 4: Action recommendation (fast, rule-based)
     action = recommend_action(priority)
     satisfaction = await predict_satisfaction(response, priority, category)
     
     steps.append({
-        "step": "Quality Audit Finalized", 
-        "score": validation.get("quality_score"),
-        "notes": validation.get("critique_notes")
+        "step": "Processing Complete", 
+        "status": "Success"
     })
 
     return {
@@ -91,8 +70,7 @@ async def run_agentic_loop(text: str, user_language: str = 'english', iterations
         "solution": solution,
         "satisfaction": satisfaction,
         "similar_issues": similar,
-        "validation_audit": validation,
         "steps": steps,
         "is_anomaly": is_anomaly,
-        "agentic_refinement": True if iterations > 0 or "Refinement" in steps[-2].get("step", "") else False
+        "agentic_refinement": False
     }

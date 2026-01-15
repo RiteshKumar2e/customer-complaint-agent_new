@@ -76,6 +76,7 @@ body.light-theme .side-chat {
   overflow-y: auto;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(10px);
+  scroll-behavior: smooth;
 }
 
 body.light-theme .chat-body {
