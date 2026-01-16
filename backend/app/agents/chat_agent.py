@@ -14,94 +14,129 @@ except ImportError:
     SENTIMENT_EXAMPLES = ""
     RESPONSE_TEMPLATES = {}
 
+# 🚀 HIGH-PERFORMANCE IN-MEMORY CACHE (Nanosecond retrieval)
+_chat_cache = {}
+CACHE_MAX_SIZE = 1000
+
+# 📚 LOCAL FAQ KNOWLEDGE BASE (Zero-Latency Answers)
+FAQ_KB = {
+    "features": {
+        "english": "Quickfix offers AI categorization, priority detection, sentiment analysis, real-time response generation, and 24/7 automated support tracking.",
+        "hinglish": "Quickfix features mein AI classification, urgent priority detection, emotions analysis, aur instant complaint resolution shaamil hain.",
+    },
+    "how_it_works": {
+        "english": "Just type your complaint! Our 30+ AI agents analyze it, assign priority, and suggest a resolution in seconds.",
+        "hinglish": "Bas apni complaint likhiye! Humare AI agents use analyze karke turant resolution recommend karenge.",
+    },
+    "agents": {
+        "english": "We use 30+ specialized agents including Orchestrator, Classifier, Sentiment Analyzer, Priority Agent, and Responder.",
+        "hinglish": "Humare paas 30+ agents hain jaise Classifier, Sentiment Analyzer, aur Responder jo milkar kaam karte hain.",
+    },
+    "safe": {
+        "english": "Yes, we use enterprise-grade encryption and Google OAuth 2.0 for secure access.",
+        "hinglish": "Haan, Quickfix bilkul secure hai. Hum Google OAuth aur advanced encryption use karte hain.",
+    }
+}
+
+def get_fast_faq_response(msg: str, lang: str) -> str:
+    """Matches keywords to internal FAQ for instant response."""
+    m = msg.lower()
+    if any(k in m for k in ["feature", "function", "kya kya", "highlights", "kaam", "ability"]):
+        return FAQ_KB["features"].get(lang, FAQ_KB["features"]["english"])
+    if any(k in m for k in ["how", "kaise", "work", "process", "chalega", "use"]):
+        return FAQ_KB["how_it_works"].get(lang, FAQ_KB["how_it_works"]["english"])
+    if any(k in m for k in ["agent", "technology", "tech", "model", "gemini", "ai"]):
+        return FAQ_KB["agents"].get(lang, FAQ_KB["agents"]["english"])
+    if any(k in m for k in ["safe", "secure", "privacy", "data", "surakshit", "protection"]):
+        return FAQ_KB["safe"].get(lang, FAQ_KB["safe"]["english"])
+    return None
+
 async def handle_chat_message(message: str) -> dict:
     """
     Decides whether the message is a complaint (orchestrated) or a question.
-    Detects user's language and responds in the SAME language.
-    Guarantees High-Quality, Professional, and Detailed Responses.
+    Optimized for 'Nano-Second' response speed using:
+    1. In-memory caching
+    2. Local Keyword FAQ matching
+    3. Heuristic intent bypass
     """
     clean_msg = message.strip()
-    msg_len = len(clean_msg)
-    if msg_len == 0:
+    msg_key = f"{clean_msg.lower()}"
+    
+    # 🏎️ TIER 0: CACHE HIT (Instant)
+    if msg_key in _chat_cache:
+        print("⚡ Cache Hit: Instant Response")
+        return _chat_cache[msg_key]
+
+    if not clean_msg:
         return {"role": "agent", "type": "info", "response": "How can I help you today?"}
 
     # 🌐 LANGUAGE DETECTION (Local & Fast)
     user_language = detect_language(clean_msg)
     language_instruction = get_language_instruction(user_language)
-    
-    print(f"🌐 Detected Language: {user_language}")
 
-    # 🚀 FAST PATH: Handle Greetings & Short Talk (Local - Zero Latency)
-    greetings_keywords = ["hi", "hello", "hey", "halo", "namaste", "salaam", "test", "hn", "ji", "ok", "acha", "hmm"]
-    if msg_len < 10 or clean_msg.lower() in greetings_keywords:
+    # 🚀 TIER 1: FAST PATH (Greetings)
+    greetings_keywords = ["hi", "hello", "hey", "halo", "namaste", "salaam", "test", "hn", "ji", "ok", "acha", "hmm", "yo", "morning", "night"]
+    if len(clean_msg) < 15 or clean_msg.lower() in greetings_keywords:
         greetings = {
             'hinglish': "Hello! Main aapki kaise help kar sakta hoon? Aap yahan apni complaint register kar sakte hain.",
             'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ? आप अपनी शिकायत यहाँ दर्ज कर सकते हैं।",
             'mixed': "Hi! I'm here to help. Aap apni complaints ya queries batayein.",
             'english': "Hello! How can I assist you today? Feel free to file a complaint or ask about our services."
         }
-        return {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
+        res = {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
+        _chat_cache[msg_key] = res
+        return res
 
-    # 🚀 STEP 1: Fast Intent Detection (Regex)
-    # Check if it looks like a question to avoid one LLM call
-    question_words = ["how", "what", "where", "who", "when", "why", "kya", "kaise", "kab", "kahan", "kyun", "kyu", "can", "is", "does", "provide"]
-    contains_question = any(word in clean_msg.lower() for word in question_words) or "?" in clean_msg
+    # 🚀 TIER 2: LOCAL FAQ (No API latency)
+    faq_res = get_fast_faq_response(clean_msg, user_language)
+    if faq_res:
+        res = {"role": "agent", "type": "info", "response": faq_res}
+        _chat_cache[msg_key] = res
+        return res
 
-    intent = "QUESTION"
-    if not contains_question or msg_len > 50:
-        # Only call LLM if it's longer/complex or not clearly a question
-        intent_prompt = f"""
-{CLASSIFICATION_EXAMPLES}
-
-Classify the user message into ONE word: COMPLAINT or QUESTION.
-Message: {clean_msg}
-
-Rules:
-- If user is reporting an issue, bug, or service failure, it's a COMPLAINT.
-- If user is asking HOW the site works or general info, it's a QUESTION.
-Only return ONE word.
-"""
-        try:
-            intent_res = await asyncio.wait_for(async_ask_gemini(intent_prompt), timeout=5.0)
-            intent = intent_res.upper()
-        except:
-            intent = "QUESTION"
-
-    # 🚀 STEP 2: Detailed Question Handling (High Quality)
-    if "QUESTION" in intent:
-        answer_prompt = f"""{language_instruction}
-
-You are an expert AI assistant for Quickfix, a Customer Complaint Management platform.
-
-USER QUESTION: {clean_msg}
-
-TASK: Provide a professional, detailed answer about Quickfix features (AI categorization, support tracking, 24/7 resolution).
-CRITICAL: Respond COMPLETELY in the SAME language/style as user's question.
-
-ANSWER:"""
+    # 🚀 TIER 3: HEURISTIC INTENT (Skip LLM for obvious complaints)
+    complaint_markers = ["wrong", "issue", "bug", "broken", "failed", "error", "delay", "not working", "kharab", "galat", "problem", "paisay", "refund", "not received", "bekar"]
+    if any(marker in clean_msg.lower() for marker in complaint_markers):
+        intent = "COMPLAINT"
+    else:
+        # Fast intent detection with low timeout
+        question_words = ["how", "what", "where", "who", "when", "why", "kya", "kaise", "kab", "kahan", "kyun", "kyu", "can", "is", "does", "provide"]
+        contains_question = any(word in clean_msg.lower() for word in question_words) or "?" in clean_msg
         
-        try:
-            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=10.0)
-            return {"role": "agent", "type": "info", "response": answer}
-        except Exception:
-            return {"role": "agent", "type": "info", "response": "Sorry, main abhi answer nahi kar paa raha hoon. Please try again!"}
+        intent = "QUESTION"
+        if not contains_question or len(clean_msg) > 60:
+            try:
+                # Using short timeout for intent
+                intent_prompt = f"Categorize as ONE word: COMPLAINT or QUESTION. Message: {clean_msg}"
+                intent_res = await asyncio.wait_for(async_ask_gemini(intent_prompt), timeout=3.0)
+                intent = intent_res.upper()
+            except:
+                intent = "QUESTION"
 
-    # 🚀 STEP 4: Complaint Pipeline (Complex Processing)
+    # 🚀 TIER 4: AI PROCESSING
+    if "QUESTION" in intent:
+        answer_prompt = f"{language_instruction}\n\nUSER: {clean_msg}\n\nTASK: Answer about Quickfix briefly.\nANSWER:"
+        try:
+            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=5.0)
+            res = {"role": "agent", "type": "info", "response": answer}
+            _chat_cache[msg_key] = res
+            return res
+        except Exception:
+            return {"role": "agent", "type": "info", "response": "Main thoda busy hoon, please thodi der baad complaint likhein!"}
+
+    # 🚀 TIER 5: COMPLAINT PIPELINE
     try:
         result = await asyncio.wait_for(
-            run_agent_pipeline(message, user_language=user_language),
-            timeout=20.0
+            run_agent_pipeline(clean_msg, user_language=user_language),
+            timeout=15.0
         )
         
-        # Check if we have a template for this category/priority
         category = result["category"]
         priority = result["priority"]
         templated_response = RESPONSE_TEMPLATES.get(category, {}).get(priority)
-        
-        # If templated response exists and message is short, use it
-        final_response = templated_response if (templated_response and msg_len < 50) else result["response"]
+        final_response = templated_response if (templated_response and len(clean_msg) < 50) else result["response"]
 
-        return {
+        final_res = {
             "role": "agent",
             "type": "complaint",
             "category": result["category"],
@@ -115,29 +150,14 @@ ANSWER:"""
             "steps": result.get("steps", []),
             "language": user_language
         }
-    except asyncio.TimeoutError:
-        print("⏱️ Complaint pipeline timeout")
-        timeout_responses = {
-            'hinglish': "Aapki complaint process ho rahi hai. Thoda time lag raha hai. Kya aap thodi der baad try kar sakte hain?",
-            'hindi': "आपकी शिकायत प्रोसेस हो रही है। थोड़ा समय लग रहा है। क्या आप थोड़ी देर बाद प्रयास कर सकते हैं?",
-            'mixed': "Your complaint is being processed. Thoda delay ho raha hai. Please try again shortly.",
-            'english': "Your complaint is being processed but taking longer than expected. Please try again in a moment."
-        }
-        return {
-            "role": "agent",
-            "type": "info",
-            "response": timeout_responses.get(user_language, timeout_responses['english'])
-        }
+        
+        # Cache and rotate if full
+        if len(_chat_cache) > CACHE_MAX_SIZE:
+            _chat_cache.pop(next(iter(_chat_cache)))
+        _chat_cache[msg_key] = final_res
+        
+        return final_res
     except Exception as e:
-        print(f"❌ Complaint pipeline failed: {e}")
-        error_responses = {
-            'hinglish': "Sorry, aapki complaint process karne mein issue aa raha hai. Please thodi der baad try karein.",
-            'hindi': "क्षमा करें, आपकी शिकायत प्रोसेस करने में समस्या आ रही है। कृपया थोड़ी देर बाद प्रयास करें।",
-            'mixed': "Sorry, complaint process mein problem hai. Please try again later.",
-            'english': "I apologize, but I'm having trouble processing your complaint. Please try again shortly."
-        }
-        return {
-            "role": "agent",
-            "type": "info",
-            "response": error_responses.get(user_language, error_responses['english'])
-        }
+        print(f"❌ Chat Pipeline Error: {e}")
+        return {"role": "agent", "type": "info", "response": "Something went wrong. Please try again."}
+
