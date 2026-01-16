@@ -17,39 +17,48 @@ class GroqClient:
         # Comprehensive list of 20+ Groq models (in order of preference)
         # Organized by capability: Best Quality → Balanced → Fast → Ultra-Fast
         self.models: List[str] = [
-            # === TIER 1: BEST QUALITY (70B+ parameters) ===
-            "llama-3.3-70b-versatile",          # 1. Best overall, latest Llama
-            "llama-3.1-70b-versatile",          # 2. Excellent quality, reliable
-            "llama-3.2-90b-text-preview",       # 3. Highest quality, preview
-            "llama3-70b-8192",                  # 4. Stable 70B variant
+            # === TIER 1: ULTRA-FAST & BALANCED (Optimized for Chat) ===
+            "llama-3.1-8b-instant",             # 1. Primary fast model
+            "llama-3.2-3b-preview",             # 2. Extremely lightning fast
+            "llama-3.2-1b-preview",             # 3. Smallest, fastest text model
+            "gemma2-9b-it",                     # 4. Google's balanced model
+            "llama3-8b-8192",                   # 5. Stable Llama 3
             
-            # === TIER 2: BALANCED QUALITY & SPEED ===
-            "mixtral-8x7b-32768",               # 5. Mixture of experts, versatile
-            "llama-3.1-8b-instant",             # 6. Fast with good quality
-            "gemma2-9b-it",                     # 7. Google's efficient model
-            "llama3-8b-8192",                   # 8. Fast, reliable
+            # === TIER 2: HIGH-PERFORMANCE REASONING (DeepSeek & Qwen) ===
+            "deepseek-r1-distill-llama-70b",    # 6. DeepSeek reasoning (Llama 70B)
+            "deepseek-r1-distill-qwen-32b",     # 7. DeepSeek reasoning (Qwen 32B)
+            "deepseek-r1-distill-llama-8b",     # 8. DeepSeek reasoning (Llama 8B)
+            "qwen-2.5-72b",                     # 9. Qwen large generalist
+            "qwen-2.5-32b",                     # 10. Qwen balanced model
+            "qwen-2.5-coder-32b",               # 11. Qwen coding/logic expert
             
-            # === TIER 3: SPECIALIZED MODELS ===
-            "llama-3.2-11b-vision-preview",     # 9. Vision capabilities
-            "llama-3.2-11b-text-preview",       # 10. Text-focused 11B
-            "llama-3.2-3b-preview",             # 11. Lightweight, fast
-            "llama-3.2-1b-preview",             # 12. Ultra-lightweight
+            # === TIER 3: LARGE SCALE (70B+ Parameters) ===
+            "llama-3.3-70b-versatile",          # 12. Latest Llama 3.3
+            "llama-3.1-70b-versatile",          # 13. Reliable 3.1 70B
+            "llama3-70b-8192",                  # 14. Original Llama 3 70B
+            "mixtral-8x7b-32768",               # 15. MoE architecture champion
+            "llama-3.3-70b-specdec",            # 16. Speculative decoding variant
+            "llama-3.1-70b-specdec",            # 17. Speculative decoding fallback
             
-            # === TIER 4: ALTERNATIVE MODELS ===
-            "gemma-7b-it",                      # 13. Google Gemma 7B
-            "llama3-groq-70b-8192-tool-use-preview",  # 14. Tool-use optimized
-            "llama3-groq-8b-8192-tool-use-preview",   # 15. Fast tool-use
+            # === TIER 4: SPECIALIZED & VISION ===
+            "llama-3.2-90b-vision-preview",     # 18. Largest vision model
+            "llama-3.2-11b-vision-preview",     # 19. Faster vision model
+            "llama-3.2-11b-text-preview",       # 20. Mid-range text model
+            "llama3-groq-70b-8192-tool-use-preview", # 21. Tool-use optimized
+            "llama3-groq-8b-8192-tool-use-preview",  # 22. Fast tool-use
             
-            # === TIER 5: LEGACY/BACKUP MODELS ===
-            "llama-guard-3-8b",                 # 16. Safety-focused
-            "llama2-70b-4096",                  # 17. Llama 2 large
-            "mixtral-8x7b-instruct-v0.1",       # 18. Mixtral instruct
-            "gemma2-7b-it",                     # 19. Gemma 2 variant
-            "llama2-7b-2048",                   # 20. Llama 2 small
+            # === TIER 5: ALTERNATIVE & LEGACY ===
+            "gemma-7b-it",                      # 23. Original Gemma
+            "gemma2-7b-it",                     # 24. Gemma 2 7B
+            "llama2-70b-4096",                  # 25. Llama 2 70B
+            "llama2-7b-2048",                   # 26. Llama 2 7B
+            "mixtral-8x7b-instruct-v0.1",       # 27. Instruct variant
+            "llama-guard-3-8b",                 # 28. Safety filter model
+            "deepseek-v3",                      # 29. DeepSeek V3 (Experimental)
             
             # === TIER 6: ULTRA-FAST FALLBACKS ===
-            "distil-whisper-large-v3-en",       # 21. Whisper variant (if available)
-            "whisper-large-v3",                 # 22. Audio model (fallback)
+            "distil-whisper-large-v3-en",       # 30. Whisper variant
+            "whisper-large-v3",                 # 31. Audio model fallback
         ]
         
         # Track which models have failed

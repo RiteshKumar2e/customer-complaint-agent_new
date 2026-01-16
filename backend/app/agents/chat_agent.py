@@ -25,14 +25,32 @@ async def handle_chat_message(message: str) -> dict:
     if msg_len == 0:
         return {"role": "agent", "type": "info", "response": "How can I help you today?"}
 
-    # 🌐 LANGUAGE DETECTION
+    # 🌐 LANGUAGE DETECTION (Local & Fast)
     user_language = detect_language(clean_msg)
     language_instruction = get_language_instruction(user_language)
     
     print(f"🌐 Detected Language: {user_language}")
 
-    # 🚀 STEP 1: Intent detection with few-shot examples
-    intent_prompt = f"""
+    # 🚀 FAST PATH: Handle Greetings & Short Talk (Local - Zero Latency)
+    greetings_keywords = ["hi", "hello", "hey", "halo", "namaste", "salaam", "test", "hn", "ji", "ok", "acha", "hmm"]
+    if msg_len < 10 or clean_msg.lower() in greetings_keywords:
+        greetings = {
+            'hinglish': "Hello! Main aapki kaise help kar sakta hoon? Aap yahan apni complaint register kar sakte hain.",
+            'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ? आप अपनी शिकायत यहाँ दर्ज कर सकते हैं।",
+            'mixed': "Hi! I'm here to help. Aap apni complaints ya queries batayein.",
+            'english': "Hello! How can I assist you today? Feel free to file a complaint or ask about our services."
+        }
+        return {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
+
+    # 🚀 STEP 1: Fast Intent Detection (Regex)
+    # Check if it looks like a question to avoid one LLM call
+    question_words = ["how", "what", "where", "who", "when", "why", "kya", "kaise", "kab", "kahan", "kyun", "kyu", "can", "is", "does", "provide"]
+    contains_question = any(word in clean_msg.lower() for word in question_words) or "?" in clean_msg
+
+    intent = "QUESTION"
+    if not contains_question or msg_len > 50:
+        # Only call LLM if it's longer/complex or not clearly a question
+        intent_prompt = f"""
 {CLASSIFICATION_EXAMPLES}
 
 Classify the user message into ONE word: COMPLAINT or QUESTION.
@@ -41,60 +59,32 @@ Message: {clean_msg}
 Rules:
 - If user is reporting an issue, bug, or service failure, it's a COMPLAINT.
 - If user is asking HOW the site works or general info, it's a QUESTION.
-- If query is very short (e.g., "Hi", "Hello", "test"), it's a QUESTION.
-
 Only return ONE word.
 """
-    try:
-        intent_res = await asyncio.wait_for(async_ask_gemini(intent_prompt), timeout=10.0)
-        intent = intent_res.upper()
-    except:
-        intent = "QUESTION"
+        try:
+            intent_res = await asyncio.wait_for(async_ask_gemini(intent_prompt), timeout=5.0)
+            intent = intent_res.upper()
+        except:
+            intent = "QUESTION"
 
-    # 🚀 STEP 2: Handle Greetings & Short Talk (Fast)
-    if msg_len < 10 and "COMPLAINT" not in intent:
-        greetings = {
-            'hinglish': "Hello! Main aapki kaise help kar sakta hoon?",
-            'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?",
-            'mixed': "Hi! Main aapki help ke liye ready hoon.",
-            'english': "Hello! How can I assist you today?"
-        }
-        return {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
-
-    # 🚀 STEP 3: Detailed Question Handling (High Quality)
+    # 🚀 STEP 2: Detailed Question Handling (High Quality)
     if "QUESTION" in intent:
         answer_prompt = f"""{language_instruction}
 
-You are an expert AI assistant for Quickfix, a comprehensive Customer Complaint Management platform.
+You are an expert AI assistant for Quickfix, a Customer Complaint Management platform.
 
 USER QUESTION: {clean_msg}
 
-YOUR TASK:
-Provide a detailed, professional, and helpful answer that:
-1. Directly and thoroughly addresses the user's question.
-2. Explains relevant Quickfix features to show our value.
-3. Uses a professional yet friendly tone.
-4. Uses bullet points or numbered lists for steps.
-5. Ends with an offer to help further.
-
-KEY FEATURES YOU CAN EXPLAIN:
-- AI Analysis: Automatic categorization and priority detection.
-- Real-time Tracking: See exactly where your complaint is.
-- Sentiment Analysis: We detect the emotion to prioritize urgent issues.
-- Solution Suggestions: AI recommends instant fixes for common problems.
-- 24/7 Availability: We're always here via this chatbot.
-- Multi-language support: English, Hindi, Hinglish, etc.
-
-CRITICAL: Respond COMPLETELY in the SAME language/style as the user's question.
+TASK: Provide a professional, detailed answer about Quickfix features (AI categorization, support tracking, 24/7 resolution).
+CRITICAL: Respond COMPLETELY in the SAME language/style as user's question.
 
 ANSWER:"""
         
         try:
-            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=15.0)
+            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=10.0)
             return {"role": "agent", "type": "info", "response": answer}
-        except Exception as e:
-            print(f"Chatbot answer failed: {e}")
-            return {"role": "agent", "type": "info", "response": "Sorry, I am having trouble answering right now. Please try again!"}
+        except Exception:
+            return {"role": "agent", "type": "info", "response": "Sorry, main abhi answer nahi kar paa raha hoon. Please try again!"}
 
     # 🚀 STEP 4: Complaint Pipeline (Complex Processing)
     try:
