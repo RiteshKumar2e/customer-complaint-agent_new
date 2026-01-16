@@ -10,6 +10,10 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
         if (isOpen) {
             setOtp(["", "", "", "", "", ""]);
             setError("");
+            // Focus first input for speed
+            setTimeout(() => {
+                document.getElementById('otp-0')?.focus();
+            }, 50);
         }
     }, [isOpen]);
 

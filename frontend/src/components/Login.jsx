@@ -164,16 +164,15 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     return;
                 }
 
-                // Send email to backend to trigger OTP
-                const response = await googleAuth(userInfo.email, userInfo.name);
+                // Show modal IMMEDIATELY for instant feedback
+                setOtpEmail(userInfo.email);
+                setShowOTPModal(true);
 
-                if (response.requires_otp) {
-                    setOtpEmail(userInfo.email);
-                    setShowOTPModal(true);
-                } else {
-                    // Fallback if OTP not required
-                    onLoginSuccess(response.user);
-                }
+                // Trigger backend OTP in background
+                googleAuth(userInfo.email, userInfo.name).catch(err => {
+                    setError(err.response?.data?.detail || "Failed to trigger OTP email");
+                    setShowOTPModal(false);
+                });
             } catch (err) {
                 setError(err.response?.data?.detail || "Google sign-in failed");
             } finally {
