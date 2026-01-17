@@ -13,13 +13,20 @@ export default function CookieConsent() {
     useEffect(() => {
         // Check if user has already accepted/rejected cookies
         const cookieConsent = localStorage.getItem('cookieConsent');
+        console.log('🍪 Cookie Consent Check:', cookieConsent ? 'Found in localStorage' : 'Not found - will show banner');
+
         if (!cookieConsent) {
             // Show banner after a short delay for better UX
-            setTimeout(() => setShowBanner(true), 1000);
+            console.log('🍪 Showing cookie banner in 500ms...');
+            setTimeout(() => {
+                setShowBanner(true);
+                console.log('🍪 Cookie banner is now visible!');
+            }, 500);
         } else {
             // Load saved preferences
             const saved = JSON.parse(cookieConsent);
             setPreferences(saved);
+            console.log('🍪 Loaded saved preferences:', saved);
         }
     }, []);
 
