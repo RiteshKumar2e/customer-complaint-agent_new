@@ -19,6 +19,7 @@ _chat_cache = {}
 CACHE_MAX_SIZE = 1000
 
 # 📚 LOCAL FAQ KNOWLEDGE BASE (Zero-Latency Answers)
+FAQ_KB = {
     "features": {
         "english": "Quickfix offers AI categorization, priority detection, sentiment analysis, real-time response generation, and 24/7 automated support tracking.",
         "hinglish": "Quickfix features mein AI classification, urgent priority detection, emotions analysis, aur instant complaint resolution shaamil hain.",
