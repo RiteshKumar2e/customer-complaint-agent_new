@@ -98,18 +98,31 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
     const hindiText = "क्विकफ़िक्स एआई में आपका स्वागत है! मैं आपका एआई सहायक हूँ। यह प्लेटफ़ॉर्म आपकी बिलिंग और तकनीकी समस्याओं को स्मार्ट तरीके से हल करने के लिए आधुनिक एआई एजेंटों का उपयोग करता है। आइए, सुपर-फास्ट सपोर्ट का अनुभव करें।";
 
     let hasPlayed = false;
-    let voicesReady = false;
-
     const synth = window.speechSynthesis;
     if (!synth) return;
 
+    const retryTimers = [];
+    const events = [
+      'click', 'touchstart', 'touchend', 'touchmove',
+      'mousedown', 'mousemove', 'mouseup',
+      'keydown', 'keyup', 'keypress',
+      'scroll', 'wheel',
+      'pointerdown', 'pointermove',
+      'focus', 'blur'
+    ];
+
     const playVoice = () => {
       if (hasPlayed) return;
-      hasPlayed = true;
-
-      synth.cancel();
 
       const voices = synth.getVoices();
+      // If voices are not loaded yet, wait for them
+      if (voices.length === 0) {
+        console.log('⏳ Waiting for voices to load...');
+        return;
+      }
+
+      hasPlayed = true;
+      synth.cancel();
 
       // 1. Setup English Utterance
       const utterEng = new SpeechSynthesisUtterance(englishText);
@@ -139,7 +152,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
       if (hindiVoice) utterHindi.voice = hindiVoice;
 
-      // Sequence: English then Hindi
       utterEng.onend = () => {
         setTimeout(() => {
           synth.speak(utterHindi);
@@ -148,7 +160,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
 
       utterEng.onstart = () => {
         console.log('🎤 AI Introduction Started');
-        cleanup(); // Cleanup listeners as soon as it starts
+        cleanup();
       };
 
       try {
@@ -158,106 +170,12 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       }
     };
 
-    // Strategy 1: Load voices and try immediate autoplay
-    const loadAndPlay = () => {
-      const voices = synth.getVoices();
-      if (voices.length > 0 && !voicesReady) {
-        voicesReady = true;
-        console.log('✅ Voices loaded:', voices.length);
-
-        // Try immediate autoplay
-        setTimeout(() => {
-          if (!hasPlayed) {
-            console.log('🚀 Attempting immediate autoplay...');
-            playVoice();
-          }
-        }, 100);
-      }
-    };
-
-    // Load voices
-    loadAndPlay();
-    if (synth.onvoiceschanged !== undefined) {
-      synth.onvoiceschanged = loadAndPlay;
-    }
-
-    // Strategy 2: Try on page fully loaded
-    const onPageLoad = () => {
-      if (!hasPlayed) {
-        console.log('📄 Page loaded, trying voice...');
-        setTimeout(() => playVoice(), 300);
-      }
-    };
-
-    if (document.readyState === 'complete') {
-      onPageLoad();
-    } else {
-      window.addEventListener('load', onPageLoad);
-    }
-
-    // Strategy 3: Try on page visibility (mobile)
-    const onVisibilityChange = () => {
-      if (!document.hidden && !hasPlayed) {
-        console.log('👁️ Page visible, trying voice...');
-        setTimeout(() => playVoice(), 200);
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    // Strategy 4: Try on DOMContentLoaded
-    const onDOMReady = () => {
-      if (!hasPlayed) {
-        console.log('📋 DOM ready, trying voice...');
-        setTimeout(() => playVoice(), 400);
-      }
-    };
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', onDOMReady);
-    } else {
-      onDOMReady();
-    }
-
-    // Strategy 5: Aggressive event listeners for ANY user interaction
     const onInteraction = (e) => {
       if (hasPlayed) return;
-      console.log('👆 User interaction detected:', e.type);
+      console.log('👆 Interaction:', e.type);
       playVoice();
     };
 
-    const events = [
-      'click', 'touchstart', 'touchend', 'touchmove',
-      'mousedown', 'mousemove', 'mouseup',
-      'keydown', 'keyup', 'keypress',
-      'scroll', 'wheel',
-      'pointerdown', 'pointermove',
-      'focus', 'blur'
-    ];
-
-    events.forEach(evt => {
-      document.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
-      window.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
-    });
-
-    // Strategy 6: Delayed retries (multiple attempts)
-    const retryTimers = [
-      setTimeout(() => !hasPlayed && playVoice(), 500),
-      setTimeout(() => !hasPlayed && playVoice(), 1000),
-      setTimeout(() => !hasPlayed && playVoice(), 2000),
-      setTimeout(() => !hasPlayed && playVoice(), 3000)
-    ];
-
-    // Strategy 7: Try on user scroll (very common on mobile)
-    let scrollAttempted = false;
-    const onScroll = () => {
-      if (!scrollAttempted && !hasPlayed) {
-        scrollAttempted = true;
-        console.log('📜 Scroll detected, trying voice...');
-        playVoice();
-      }
-    };
-    window.addEventListener('scroll', onScroll, { once: true, passive: true });
-
-    // Cleanup function
     const cleanup = () => {
       retryTimers.forEach(timer => clearTimeout(timer));
       events.forEach(evt => {
@@ -273,15 +191,61 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       }
     };
 
-    console.log('🎙️ Voice system initialized with ultra-aggressive autoplay');
+    const onPageLoad = () => {
+      if (!hasPlayed) setTimeout(() => playVoice(), 300);
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && !hasPlayed) setTimeout(() => playVoice(), 200);
+    };
+
+    const onDOMReady = () => {
+      if (!hasPlayed) setTimeout(() => playVoice(), 400);
+    };
+
+    const onScroll = () => {
+      if (!hasPlayed) playVoice();
+    };
+
+    // Voice loaded listener
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = () => {
+        if (!hasPlayed) playVoice();
+      };
+    }
+
+    // Add Listeners
+    events.forEach(evt => {
+      document.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
+      window.addEventListener(evt, onInteraction, { once: true, capture: true, passive: true });
+    });
+
+    if (document.readyState === 'complete') {
+      onPageLoad();
+    } else {
+      window.addEventListener('load', onPageLoad);
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('scroll', onScroll, { once: true, passive: true });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', onDOMReady);
+    } else {
+      onDOMReady();
+    }
+
+    retryTimers.push(setTimeout(() => !hasPlayed && playVoice(), 500));
+    retryTimers.push(setTimeout(() => !hasPlayed && playVoice(), 1000));
+    retryTimers.push(setTimeout(() => !hasPlayed && playVoice(), 2000));
+    retryTimers.push(setTimeout(() => !hasPlayed && playVoice(), 3000));
 
     return () => {
       cleanup();
-      if (synth) {
-        synth.cancel();
-      }
+      if (synth) synth.cancel();
     };
   }, []);
+
 
   // Scroll to Top Logic
   useEffect(() => {
