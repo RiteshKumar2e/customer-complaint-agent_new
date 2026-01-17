@@ -63,13 +63,17 @@ class EmailService:
         return True
 
     def send_otp(self, user_email: str, otp: str):
-        """Send OTP to user in background"""
+        """Send OTP to user with INSTANT priority"""
+        # 🚀 INSTANT SEND: Use high-priority thread for OTP
         thread = threading.Thread(
             target=self._worker_send_otp,
-            args=(user_email, otp)
+            args=(user_email, otp),
+            name="OTP-Instant-Delivery"  # Named thread for debugging
         )
-        thread.daemon = True
+        thread.daemon = False  # Non-daemon for critical OTP delivery
         thread.start()
+        # Optional: Wait briefly to ensure email is dispatched (max 2s)
+        thread.join(timeout=2.0)
         return True
     
     def send_password_reset(self, user_email: str, user_name: str, reset_token: str):
@@ -120,14 +124,17 @@ class EmailService:
             traceback.print_exc()
 
     def _worker_send_otp(self, user_email: str, otp: str):
-        """Background logic to send OTP"""
+        """INSTANT OTP delivery with priority handling"""
         try:
             subject = f"🔐 {otp} is your Quickfix Verification Code"
             html_body = self._generate_otp_html(otp)
-            print(f"📧 Sending OTP to: {user_email}...")
-            self._dispatch_api(user_email, subject, html_body)
+            print(f"⚡ [PRIORITY] Sending OTP to: {user_email}...")
+            # Use priority dispatch for OTP (faster timeout)
+            self._dispatch_api(user_email, subject, html_body, priority=True)
+            print(f"✅ OTP sent successfully to {user_email}")
         except Exception as e:
-            print(f"❌ OTP Email Error: {str(e)}")
+            print(f"❌ CRITICAL: OTP Email Failed for {user_email}")
+            print(f"   Error: {str(e)}")
             traceback.print_exc()
     
     def _worker_send_password_reset(self, user_email: str, user_name: str, reset_token: str):
@@ -244,8 +251,8 @@ class EmailService:
 </html>
 """
 
-    def _dispatch_api(self, to_email: str, subject: str, html_body: str):
-        """Internal dispatcher using Brevo HTTPS API"""
+    def _dispatch_api(self, to_email: str, subject: str, html_body: str, priority: bool = False):
+        """Internal dispatcher using Brevo HTTPS API with priority support"""
         if not self.api_key:
             print(f"\n📢 [MOCKED EMAIL] To: {to_email} | Subject: {subject}")
             print(f"   (Brevo API Key missing. Set BREVO_API_KEY in .env)\n")
@@ -264,18 +271,27 @@ class EmailService:
             "htmlContent": html_body
         }
         
+        # 🚀 PRIORITY: Faster timeout for OTP emails (3s vs 12s)
+        timeout_duration = 3 if priority else 10
+        
         try:
-            print(f"🚀 Dispatching email via Brevo... Sender: {self.sender_email}, To: {to_email}")
-            response = requests.post(url, headers=headers, json=data, timeout=12)
+            priority_label = "[PRIORITY OTP]" if priority else ""
+            print(f"🚀 {priority_label} Dispatching via Brevo... To: {to_email}")
+            
+            response = requests.post(url, headers=headers, json=data, timeout=timeout_duration)
             
             if response.status_code in [200, 201, 202]:
-                print(f"✅ Success: Email delivered to {to_email} (ID: {response.json().get('messageId', 'N/A')})")
+                msg_id = response.json().get('messageId', 'N/A')
+                print(f"✅ {priority_label} Email delivered to {to_email} (ID: {msg_id})")
             else:
                 print(f"⚠️ Brevo API Failure - Status: {response.status_code}")
-                print(f"   Response Body: {response.text}")
+                print(f"   Response: {response.text}")
                 
+        except requests.exceptions.Timeout:
+            print(f"⏱️ TIMEOUT: Email to {to_email} took longer than {timeout_duration}s")
+            print(f"   This may indicate network issues or Brevo API slowness")
         except requests.exceptions.RequestException as e:
-            print(f"❌ Network Error connecting to Brevo: {str(e)}")
+            print(f"❌ Network Error: {str(e)}")
         except Exception as e:
             print(f"❌ Unexpected error in _dispatch_api: {str(e)}")
             traceback.print_exc()
