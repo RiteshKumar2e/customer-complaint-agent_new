@@ -92,70 +92,69 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // AI Voice Introduction - Ultra-Aggressive Autoplay (Background, No Overlay)
+  // AI Voice Introduction - Sequentially English then Hindi
   useEffect(() => {
-    const introText = "Welcome to Quickfix AI! Main aapka neural guide hoon. Yeh ek advanced platform hai jahan AI agents aapki billing, technical aur security complaints ko smartly handle karte hain. Sentiment analysis se hum urgent issues ko turant recognize karte hain. Users ke liye tracking aur admins ke liye deep analytics yahan available hai. Aaiye, Quickfix AI experience kijiye!";
+    const englishText = "Welcome to Quickfix AI! I am your AI assistant. This platform uses high-performance agents to resolve your billing, technical, and security issues with surgical precision. Experience the future of support today.";
+    const hindiText = "क्विकफ़िक्स एआई में आपका स्वागत है! मैं आपका एआई सहायक हूँ। यह प्लेटफ़ॉर्म आपकी बिलिंग और तकनीकी समस्याओं को स्मार्ट तरीके से हल करने के लिए आधुनिक एआई एजेंटों का उपयोग करता है। आइए, सुपर-फास्ट सपोर्ट का अनुभव करें।";
 
     let hasPlayed = false;
     let voicesReady = false;
 
     const synth = window.speechSynthesis;
-    if (!synth) {
-      console.warn('❌ Speech synthesis not supported');
-      return;
-    }
+    if (!synth) return;
 
     const playVoice = () => {
       if (hasPlayed) return;
+      hasPlayed = true;
 
-      console.log('🎤 Attempting to play voice...');
-
-      // Cancel any ongoing speech
       synth.cancel();
 
-      const utter = new SpeechSynthesisUtterance(introText);
-      utter.lang = 'hi-IN';
-      utter.volume = 1.0;
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
-
-      // Get best voice
       const voices = synth.getVoices();
-      const indianVoice =
+
+      // 1. Setup English Utterance
+      const utterEng = new SpeechSynthesisUtterance(englishText);
+      utterEng.lang = 'en-US';
+      utterEng.rate = 1.0;
+      utterEng.pitch = 1.0;
+
+      const engVoice =
+        voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+        voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0];
+
+      if (engVoice) utterEng.voice = engVoice;
+
+      // 2. Setup Hindi Utterance
+      const utterHindi = new SpeechSynthesisUtterance(hindiText);
+      utterHindi.lang = 'hi-IN';
+      utterHindi.rate = 1.0;
+      utterHindi.pitch = 1.0;
+
+      const hindiVoice =
         voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) ||
         voices.find(v => v.lang === 'hi-IN' && v.name.includes('Microsoft')) ||
-        voices.find(v => v.lang === 'hi-IN') ||
         voices.find(v => v.lang.startsWith('hi')) ||
         voices[0];
 
-      if (indianVoice) {
-        utter.voice = indianVoice;
-        console.log('🔊 Voice selected:', indianVoice.name);
-      }
+      if (hindiVoice) utterHindi.voice = hindiVoice;
 
-      utter.onstart = () => {
-        console.log('✅ Voice PLAYING!');
-        hasPlayed = true;
-        // Remove all listeners once playing
-        cleanup();
+      // Sequence: English then Hindi
+      utterEng.onend = () => {
+        setTimeout(() => {
+          synth.speak(utterHindi);
+        }, 500);
       };
 
-      utter.onend = () => {
-        console.log('✅ Voice completed successfully!');
-      };
-
-      utter.onerror = (e) => {
-        console.error('❌ Voice error:', e.error);
-        if (e.error === 'not-allowed') {
-          console.log('⚠️ Autoplay blocked by browser - will play on first interaction');
-        }
+      utterEng.onstart = () => {
+        console.log('🎤 AI Introduction Started');
+        cleanup(); // Cleanup listeners as soon as it starts
       };
 
       try {
-        synth.speak(utter);
-        console.log('🎯 Voice triggered!');
-      } catch (error) {
-        console.error('❌ Failed to speak:', error);
+        synth.speak(utterEng);
+      } catch (err) {
+        console.error('Speech error:', err);
       }
     };
 
