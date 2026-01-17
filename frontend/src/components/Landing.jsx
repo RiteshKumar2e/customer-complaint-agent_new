@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Stars } from "@react-three/drei";
 import * as random from "maath/random/dist/maath-random.esm";
@@ -295,8 +296,67 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const headerOffset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
+  };
+
+  const FeatureModal = ({ feature, onClose }) => {
+    if (!feature) return null;
+
+    return (
+      <div className="feature-modal-overlay" onClick={onClose}>
+        <motion.div
+          className="feature-modal-content"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-header">
+            <div className="modal-icon-wrapper" style={{ background: feature.color }}>
+              <span className="modal-icon">{feature.icon}</span>
+            </div>
+            <button className="modal-close-btn" onClick={onClose}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <h2 className="modal-title">{feature.title}</h2>
+            <p className="modal-description">{feature.description}</p>
+
+            <div className="modal-details-grid">
+              {feature.details.map((detail, idx) => (
+                <div key={idx} className="modal-detail-item">
+                  <div className="detail-check">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span>{detail}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-modal-action" onClick={onClose}>
+                Got it, Awesome!
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
   };
 
   const scrollToTop = () => {
@@ -308,37 +368,73 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       icon: "📊",
       title: "Smart Classification",
       description: "Automatically categorizes complaints into Billing, Technical, Delivery, Service, and Security with high accuracy.",
-      color: "#667eea"
+      color: "#667eea",
+      details: [
+        "AI-driven categorization engine with surgical precision.",
+        "Automated tagging for instant department routing.",
+        "98% accuracy matching historical records and patterns.",
+        "Dynamic category expansion based on emerging trends."
+      ]
     },
     {
       icon: "⚡",
       title: "Priority Detection",
       description: "Instantly identifies urgent issues and escalates critical complaints to human support immediately.",
-      color: "#22c55e"
+      color: "#22c55e",
+      details: [
+        "Real-time urgency scoring for every incoming ticket.",
+        "Contextual escalation for high-value enterprise cases.",
+        "Automated SLA monitoring and priority weighting.",
+        "Smart alerts for multi-agent intervention triggers."
+      ]
     },
     {
       icon: "😊",
       title: "Sentiment Analysis",
       description: "Analyzes customer emotions to gauge satisfaction levels and emotional context accurately.",
-      color: "#ec4899"
+      color: "#ec4899",
+      details: [
+        "Deep emotional context extraction from text and tone.",
+        "Real-time CSAT (Customer Satisfaction) trend monitoring.",
+        "Escalation of frustrated users to specialized empathy agents.",
+        "Comprehensive tone consistency reports for brand voice."
+      ]
     },
     {
       icon: "💡",
       title: "Solution Suggestions",
       description: "Generates intelligent, actionable solutions tailored to each unique complaint type and context.",
-      color: "#3b82f6"
+      color: "#3b82f6",
+      details: [
+        "LLM-powered draft responses tailored to specific issues.",
+        "Knowledge Base (KB) cross-referencing for verified facts.",
+        "Actionable multi-step resolutions for recurring problems.",
+        "Tone-optimized templates for professional communication."
+      ]
     },
     {
       icon: "🎯",
       title: "Satisfaction Prediction",
       description: "Predicts customer satisfaction with proposed resolutions using advanced ML algorithms.",
-      color: "#764ba2"
+      color: "#764ba2",
+      details: [
+        "Proprietary ML algorithms for predicting outcome success.",
+        "Resolution effectiveness forecasting before sending.",
+        "Proactive adjustment suggestions to maximize CSAT.",
+        "Continuous feedback loop integration for self-healing."
+      ]
     },
     {
       icon: "🔍",
       title: "Pattern Recognition",
       description: "Finds similar past complaints to ensure consistent and reliable handling of issues.",
-      color: "#14b8a6"
+      color: "#14b8a6",
+      details: [
+        "Global historical trend identification across data silos.",
+        "Instant duplicate detection and resolution linking.",
+        "Root cause analysis for systematic organizational issues.",
+        "Automatic knowledge base optimization and updates."
+      ]
     }
   ];
 
@@ -533,7 +629,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="solution-card"
+              className="solution-card clickable"
+              onClick={() => setActiveModal(feature)}
               onMouseEnter={() => setHoveredFeature(index)}
               onMouseLeave={() => setHoveredFeature(null)}
               onMouseMove={(e) => {
@@ -553,9 +650,25 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
               </div>
               <h3 className="solution-title">{feature.title}</h3>
               <p className="solution-description">{feature.description}</p>
+              <div className="card-action-indicator">
+                <span>See Details</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </div>
             </div>
           ))}
         </div>
+
+        <AnimatePresence>
+          {activeModal && activeModal.title && (
+            <FeatureModal
+              feature={activeModal}
+              onClose={() => setActiveModal(null)}
+            />
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Strategic Goals Section */}
@@ -589,6 +702,18 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
               desc: "Architecture designed to handle millions of concurrent resolutions without degradation.",
               icon: "📈",
               metric: "Infinite Scale"
+            },
+            {
+              title: "Recursive Intelligence",
+              desc: "Internal feedback loops allow our agents to learn and adapt from every single interaction.",
+              icon: "🔄",
+              metric: "Self-Learning"
+            },
+            {
+              title: "Enterprise Security",
+              desc: "Kernel-level protection ensuring all data remains encrypted and isolated within your ecosystem.",
+              icon: "🛡️",
+              metric: "Zero-Risk Policy"
             }
           ].map((goal, idx) => (
             <div key={idx} className="goal-card">
@@ -804,7 +929,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       </footer>
 
       {/* Modals */}
-      {activeModal && (
+      {/* Legal/Placeholder Modals (Only for strings) */}
+      {activeModal && typeof activeModal === "string" && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setActiveModal(null)}>&times;</button>
