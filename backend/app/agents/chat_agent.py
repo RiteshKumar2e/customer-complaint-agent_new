@@ -43,15 +43,21 @@ FAQ_KB = {
 }
 
 def get_fast_faq_response(msg: str, lang: str) -> str:
-    """Matches keywords to internal FAQ for instant response."""
+    """Matches highly specific keywords to internal FAQ for instant response.
+    Generic 'how', 'kya', 'kaise' are filtered out to let AI handle them for better precision.
+    """
     m = msg.lower()
-    if any(k in m for k in ["feature", "function", "kya kya", "highlights", "kaam", "ability"]):
+    # Features specific match
+    if any(k in m for k in ["website features", "service highlights", "app features"]):
         return FAQ_KB["features"].get(lang, FAQ_KB["features"]["english"])
-    if any(k in m for k in ["how", "kaise", "work", "process", "chalega", "use", "step", "prakriya"]):
+    # Process specific match (only if it mentions 'Quickfix' or 'complain' explicitly)
+    if any(k in m for k in ["how to complain", "complain kaise", "quickfix work", "process of quickfix"]):
         return FAQ_KB["how_it_works"].get(lang, FAQ_KB["how_it_works"]["english"])
-    if any(k in m for k in ["agent", "technology", "tech", "model", "gemini", "ai"]):
+    # Agent technical match
+    if any(k in m for k in ["which agents", "which models", "ai technology", "backend ai"]):
         return FAQ_KB["agents"].get(lang, FAQ_KB["agents"]["english"])
-    if any(k in m for k in ["safe", "secure", "privacy", "data", "surakshit", "protection"]):
+    # Security specific match
+    if any(k in m for k in ["data secure", "is it safe", "privacy policy"]):
         return FAQ_KB["safe"].get(lang, FAQ_KB["safe"]["english"])
     return None
 
@@ -121,36 +127,38 @@ async def handle_chat_message(message: str) -> dict:
     # 🚀 TIER 4: AI PROCESSING (Language-Aware & Versatile)
     if "QUESTION" in intent:
         # High-performance system persona
-        system_persona = """
-        You are the 'Quickfix AI Support Agent', a highly intelligent and empathetic assistant.
-        Quickfix is an advanced AI system that uses a cluster of 30+ specialized agents (like Sentiment Analyzers, Priority Detectors, and Solution Suggesters) to resolve customer complaints in real-time.
-        
-        YOUR RULES:
-        1. LANGUAGE MATCHING: You MUST respond in the EXACT same language/style as the user.
-           - User writes in English -> Reply in helpful, professional English.
-           - User writes in Hinglish (e.g., 'mera billing issue solve karo') -> Reply in natural Hinglish.
-           - User writes in Hindi (Devanagari) -> Reply in pure Devanagari Hindi.
-        2. BE HELPFUL: Provide direct, detailed, and accurate answers based on the user's query.
-        3. NO GENERIC GREETINGS: If the user asks a specific question, answer it directly instead of just saying 'Hello'.
+        system_persona = f"""
+        You are the 'Quickfix AI Support Agent', a highly intelligent, empathetic, and professional assistant.
+        Quickfix is an enterprise-grade AI system using 30+ specialized agents (Classifier, Sentiment, Priority, Solution) to resolve complaints.
+
+        YOUR SUPREME RULES:
+        1. LANGUAGE MASTERY: You MUST respond in the EXACT same language/style as user input.
+           - User in English -> Professional English.
+           - User in Hinglish (Roman script) -> Natural, helpful Hinglish.
+           - User in Hindi (Devanagari) -> Pure, polite Devanagari Hindi.
+        2. BE PROPER & DETAILED: Do not give one-liners. For questions like 'how to get treat', be polite and helpful. For 'steps', explain the full complaint lifecycle.
+        3. NO GENERIC REPETITION: Do not use the same boilerplate for different questions. Answer specific queries directly.
+        4. PERSONA: You are smart, professional, and friendly.
         """
         
         answer_prompt = f"""{system_persona}
         
-        USER QUERY: {clean_msg}
+        USER LANGUAGE: {user_language}
+        USER INPUT: {clean_msg}
         
-        AI RESPONSE (in {user_language}):"""
+        AI DETAILED RESPONSE (Ensure context-aware and language-perfect):"""
         try:
-            print(f"🌐 Smart Chat Language: {user_language}")
-            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=6.0)
+            print(f"🌐 Master AI Processing - Language: {user_language}")
+            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=8.0)
             res = {"role": "agent", "type": "info", "response": answer, "language": user_language}
             _chat_cache[msg_key] = res
             return res
         except Exception as e:
-            print(f"❌ Question Error: {e}")
+            print(f"❌ AI Chat Error: {e}")
             fallback = {
-                'hinglish': "Main thoda busy hoon, please thodi der baad try karein!",
-                'hindi': "मैं थोड़ा व्यस्त हूँ, कृपया थोड़ी देर बाद प्रयास करें!",
-                'english': "I'm a bit busy right now, please try again in a moment!"
+                'hinglish': "Maaf kijiye, main abhi busy hoon. Aap login karke try kar sakte hain!",
+                'hindi': "क्षमा करें, मैं अभी व्यस्त हूँ। कृपया लॉगिन करके पुनः प्रयास करें!",
+                'english': "Apologies, I'm currently busy. Please log in and try again!"
             }
             return {"role": "agent", "type": "info", "response": fallback.get(user_language, fallback['english']), "language": user_language}
 
