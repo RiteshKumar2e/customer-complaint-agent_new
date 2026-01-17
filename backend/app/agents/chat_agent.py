@@ -83,7 +83,8 @@ async def handle_chat_message(message: str) -> dict:
             'mixed': "Hi! I'm here to help. Aap apni complaints ya queries batayein.",
             'english': "Hello! How can I assist you today? Feel free to file a complaint or ask about our services."
         }
-        res = {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english'])}
+        print(f"🌐 Detected Language: {user_language}")
+        res = {"role": "agent", "type": "info", "response": greetings.get(user_language, greetings['english']), "language": user_language}
         _chat_cache[msg_key] = res
         return res
 
@@ -113,16 +114,34 @@ async def handle_chat_message(message: str) -> dict:
             except:
                 intent = "QUESTION"
 
-    # 🚀 TIER 4: AI PROCESSING
+    # 🚀 TIER 4: AI PROCESSING (Language-Aware)
     if "QUESTION" in intent:
-        answer_prompt = f"{language_instruction}\n\nUSER: {clean_msg}\n\nTASK: Answer about Quickfix briefly.\nANSWER:"
+        # Enhanced prompt with strict language matching
+        answer_prompt = f"""{language_instruction}
+
+IMPORTANT: You MUST respond in the SAME language as the user's input.
+- If user writes in English → Reply in English only
+- If user writes in Hinglish → Reply in Hinglish only
+- If user writes in Hindi → Reply in Hindi only
+
+USER INPUT: {clean_msg}
+
+TASK: Answer about Quickfix complaint management system briefly in the SAME language as user's input.
+YOUR ANSWER:"""
         try:
+            print(f"🌐 Question Language: {user_language}")
             answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=5.0)
-            res = {"role": "agent", "type": "info", "response": answer}
+            res = {"role": "agent", "type": "info", "response": answer, "language": user_language}
             _chat_cache[msg_key] = res
             return res
-        except Exception:
-            return {"role": "agent", "type": "info", "response": "Main thoda busy hoon, please thodi der baad complaint likhein!"}
+        except Exception as e:
+            print(f"❌ Question Error: {e}")
+            fallback = {
+                'hinglish': "Main thoda busy hoon, please thodi der baad try karein!",
+                'hindi': "मैं थोड़ा व्यस्त हूँ, कृपया थोड़ी देर बाद प्रयास करें!",
+                'english': "I'm a bit busy right now, please try again in a moment!"
+            }
+            return {"role": "agent", "type": "info", "response": fallback.get(user_language, fallback['english']), "language": user_language}
 
     # 🚀 TIER 5: COMPLAINT PIPELINE
     try:

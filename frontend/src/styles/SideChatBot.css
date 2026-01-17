@@ -61,11 +61,19 @@ body.light-theme .side-chat {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  z-index: 10;
+  position: relative;
+  pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .chat-header button:hover {
   background: rgba(2, 44, 34, 0.4);
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.chat-header button:active {
+  transform: rotate(90deg) scale(0.95);
 }
 
 /* ===== CHAT BODY ===== */
