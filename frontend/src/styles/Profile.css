@@ -42,10 +42,13 @@ body.light-theme .three-bg-overlay {
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);
     padding: 1rem 2rem;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 100;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
     box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
 }
 
 body.light-theme .profile-header {
@@ -296,9 +299,13 @@ body.light-theme .dropdown-divider {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
+    padding-top: 100px;
+    /* Space for the fixed header */
     min-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
 }
 
 .page-title {
