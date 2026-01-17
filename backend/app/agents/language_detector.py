@@ -82,33 +82,40 @@ def detect_language(text: str) -> LanguageType:
         'achha', 'accha', 'achhi', 'achhe', 'bura', 'buri', 'bure',
         'galat', 'sahi', 'theek', 'thik',
         
-        # Common nouns
-        'problem', 'issue', 'complaint', 'help', 'support',
-        'order', 'delivery', 'payment', 'bill', 'account',
-        'time', 'din', 'baar', 'cheez', 'baat',
+        # Common nouns (These are often used in Hinglish but are primarily English)
+        'account', 'delivery', 'payment', 'support',
         
         # Others
-        'please', 'plz', 'pls', 'thanks', 'thank', 'sorry',
-        'dhanyavaad', 'shukriya', 'maaf', 'maafi',
+        'shukriya', 'shukriyaa', 'dhanyavaad', 'maaf', 'maafi',
+    }
+    
+    # Very specific Hinglish markers (Verbs/Pronouns that almost never appear in pure English)
+    specific_hinglish = {
+        'hai', 'hain', 'tha', 'thi', 'the', 'hoga', 'hogi', 'karna', 'karo', 'karein', 
+        'mera', 'meri', 'mere', 'mujhe', 'humara', 'aapka', 'uska', 'iska',
+        'kya', 'kaise', 'kab', 'kahan', 'kyun', 'kyu', 'toh', 'aur', 'nahi', 'nahin'
     }
     
     # Count Hinglish words
     words = text_lower.split()
+    total_words = len(words)
+    if total_words == 0: return 'english'
+    
     hinglish_count = sum(1 for word in words if word in hinglish_words)
-    hinglish_ratio = hinglish_count / len(words) if words else 0
+    specific_count = sum(1 for word in words if word in specific_hinglish)
+    
+    hinglish_ratio = hinglish_count / total_words
     
     # Decision logic
-    if hindi_ratio > 0.5:
-        # More than 50% Devanagari characters
+    if hindi_ratio > 0.4:
+        # High Devanagari ratio
         return 'hindi'
-    elif hinglish_ratio > 0.25:
-        # Significant Hinglish words (>25%)
+    elif specific_count >= 1 or (hinglish_ratio > 0.4 and total_words > 2):
+        # Has specific Hindi markers OR high general Hinglish word ratio in longer text
         return 'hinglish'
-    elif hindi_ratio > 0.1 or hinglish_ratio > 0.1:
-        # Some Hindi/Hinglish mixed with English
+    elif hindi_ratio > 0.1 or hinglish_ratio > 0.2:
         return 'mixed'
     else:
-        # Mostly English
         return 'english'
 
 

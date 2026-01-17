@@ -19,22 +19,25 @@ _chat_cache = {}
 CACHE_MAX_SIZE = 1000
 
 # 📚 LOCAL FAQ KNOWLEDGE BASE (Zero-Latency Answers)
-FAQ_KB = {
     "features": {
         "english": "Quickfix offers AI categorization, priority detection, sentiment analysis, real-time response generation, and 24/7 automated support tracking.",
         "hinglish": "Quickfix features mein AI classification, urgent priority detection, emotions analysis, aur instant complaint resolution shaamil hain.",
+        "hindi": "क्विकफिक्स में एआई वर्गीकरण, प्राथमिकता पहचान, भावना विश्लेषण, रीयल-टाइम प्रतिक्रिया और स्वचालित सहायता ट्रैकिंग शामिल है।"
     },
     "how_it_works": {
-        "english": "Just type your complaint! Our 30+ AI agents analyze it, assign priority, and suggest a resolution in seconds.",
+        "english": "Just type your complaint! Our AI agents analyze it, assign priority, and suggest a resolution in seconds.",
         "hinglish": "Bas apni complaint likhiye! Humare AI agents use analyze karke turant resolution recommend karenge.",
+        "hindi": "बस अपनी शिकायत लिखें! हमारे एआई एजेंट इसका विश्लेषण करते हैं और कुछ ही सेकंड में समाधान सुझाते हैं।"
     },
     "agents": {
-        "english": "We use 30+ specialized agents including Orchestrator, Classifier, Sentiment Analyzer, Priority Agent, and Responder.",
-        "hinglish": "Humare paas 30+ agents hain jaise Classifier, Sentiment Analyzer, aur Responder jo milkar kaam karte hain.",
+        "english": "We use specialized agents including Orchestrator, Classifier, Sentiment Analyzer, Priority Agent, and Responder.",
+        "hinglish": "Humare paas specialized agents hain jaise Classifier, Sentiment Analyzer, aur Responder jo milkar kaam karte hain.",
+        "hindi": "हम क्लासिफायर, सेंटीमेंट एनालाइजर और रिस्पॉन्डर जैसे विशेष एजेंटों का उपयोग करते हैं।"
     },
     "safe": {
         "english": "Yes, we use enterprise-grade encryption and Google OAuth 2.0 for secure access.",
         "hinglish": "Haan, Quickfix bilkul secure hai. Hum Google OAuth aur advanced encryption use karte hain.",
+        "hindi": "हाँ, क्विकफिक्स सुरक्षित है। हम सुरक्षित पहुंच के लिए उन्नत एन्क्रिप्शन और Google OAuth का उपयोग करते हैं।"
     }
 }
 
@@ -43,7 +46,7 @@ def get_fast_faq_response(msg: str, lang: str) -> str:
     m = msg.lower()
     if any(k in m for k in ["feature", "function", "kya kya", "highlights", "kaam", "ability"]):
         return FAQ_KB["features"].get(lang, FAQ_KB["features"]["english"])
-    if any(k in m for k in ["how", "kaise", "work", "process", "chalega", "use"]):
+    if any(k in m for k in ["how", "kaise", "work", "process", "chalega", "use", "step", "prakriya"]):
         return FAQ_KB["how_it_works"].get(lang, FAQ_KB["how_it_works"]["english"])
     if any(k in m for k in ["agent", "technology", "tech", "model", "gemini", "ai"]):
         return FAQ_KB["agents"].get(lang, FAQ_KB["agents"]["english"])
@@ -75,8 +78,8 @@ async def handle_chat_message(message: str) -> dict:
     language_instruction = get_language_instruction(user_language)
 
     # 🚀 TIER 1: FAST PATH (Greetings)
-    greetings_keywords = ["hi", "hello", "hey", "halo", "namaste", "salaam", "test", "hn", "ji", "ok", "acha", "hmm", "yo", "morning", "night"]
-    if len(clean_msg) < 15 or clean_msg.lower() in greetings_keywords:
+    greetings_keywords = ["hi", "hello", "hey", "halo", "namaste", "salaam", "test", "hn", "ji", "ok", "acha", "hmm", "yo", "morning", "night", "sup", "greeting", "namas", "namaskar"]
+    if (len(clean_msg) < 4 and clean_msg.lower() in greetings_keywords) or clean_msg.lower() in greetings_keywords:
         greetings = {
             'hinglish': "Hello! Main aapki kaise help kar sakta hoon? Aap yahan apni complaint register kar sakte hain.",
             'hindi': "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ? आप अपनी शिकायत यहाँ दर्ज कर सकते हैं।",
@@ -114,23 +117,30 @@ async def handle_chat_message(message: str) -> dict:
             except:
                 intent = "QUESTION"
 
-    # 🚀 TIER 4: AI PROCESSING (Language-Aware)
+    # 🚀 TIER 4: AI PROCESSING (Language-Aware & Versatile)
     if "QUESTION" in intent:
-        # Enhanced prompt with strict language matching
-        answer_prompt = f"""{language_instruction}
-
-IMPORTANT: You MUST respond in the SAME language as the user's input.
-- If user writes in English → Reply in English only
-- If user writes in Hinglish → Reply in Hinglish only
-- If user writes in Hindi → Reply in Hindi only
-
-USER INPUT: {clean_msg}
-
-TASK: Answer about Quickfix complaint management system briefly in the SAME language as user's input.
-YOUR ANSWER:"""
+        # High-performance system persona
+        system_persona = """
+        You are the 'Quickfix AI Support Agent', a highly intelligent and empathetic assistant.
+        Quickfix is an advanced AI system that uses a cluster of 30+ specialized agents (like Sentiment Analyzers, Priority Detectors, and Solution Suggesters) to resolve customer complaints in real-time.
+        
+        YOUR RULES:
+        1. LANGUAGE MATCHING: You MUST respond in the EXACT same language/style as the user.
+           - User writes in English -> Reply in helpful, professional English.
+           - User writes in Hinglish (e.g., 'mera billing issue solve karo') -> Reply in natural Hinglish.
+           - User writes in Hindi (Devanagari) -> Reply in pure Devanagari Hindi.
+        2. BE HELPFUL: Provide direct, detailed, and accurate answers based on the user's query.
+        3. NO GENERIC GREETINGS: If the user asks a specific question, answer it directly instead of just saying 'Hello'.
+        """
+        
+        answer_prompt = f"""{system_persona}
+        
+        USER QUERY: {clean_msg}
+        
+        AI RESPONSE (in {user_language}):"""
         try:
-            print(f"🌐 Question Language: {user_language}")
-            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=5.0)
+            print(f"🌐 Smart Chat Language: {user_language}")
+            answer = await asyncio.wait_for(async_ask_gemini(answer_prompt), timeout=6.0)
             res = {"role": "agent", "type": "info", "response": answer, "language": user_language}
             _chat_cache[msg_key] = res
             return res

@@ -11,7 +11,7 @@ import "../styles/Profile.css";
 function ParticleGlobe({ isLight }) {
     const ref = useRef();
     const [isMobile] = useState(() => window.innerWidth < 768);
-    const particleCount = isMobile ? 800 : 2000;
+    const particleCount = isMobile ? 300 : 800;
     const [sphere] = useState(() => random.inSphere(new Float32Array(particleCount * 3), { radius: 1.5 }));
 
     useFrame((state, delta) => {
@@ -74,7 +74,7 @@ function HeroBackground() {
             <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 1.5] }}>
                 <ambientLight intensity={isLight ? 1.5 : 0.5} />
                 <pointLight position={[10, 10, 10]} intensity={isLight ? 2 : 1} />
-                <Stars radius={100} depth={50} count={isLight ? 500 : 2000} factor={4} saturation={0} fade speed={1} />
+                <Stars radius={80} depth={40} count={isLight ? 300 : 1000} factor={4} saturation={0} fade speed={1} />
                 <ParticleGlobe isLight={isLight} />
                 <FloatingShape position={[-1, 0.5, -0.5]} color={isLight ? "#4f46e5" : "#6366f1"} />
                 <FloatingShape position={[1, -0.5, -0.5]} color={isLight ? "#6366f1" : "#818cf8"} />

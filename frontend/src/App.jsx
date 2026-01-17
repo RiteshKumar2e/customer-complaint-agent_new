@@ -61,7 +61,7 @@ function CursorTrail() {
       const speed = Math.sqrt(dx * dx + dy * dy);
       // Spawn more particles when moving fast
       const baseCount = isTouch ? 2 : 3;
-      const count = Math.min(baseCount + Math.floor(speed / 8), 8);
+      const count = Math.min(baseCount + Math.floor(speed / 9), 9);
 
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;

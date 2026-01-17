@@ -18,7 +18,7 @@ class GroqClient:
         # Organized by capability: Best Quality → Balanced → Fast → Ultra-Fast
         self.models: List[str] = [
             # === TIER 1: ULTRA-FAST & BALANCED (Optimized for Chat) ===
-            "llama-3.1-8b-instant",             # 1. Primary fast model
+            "llama-3.3-70b-versatile",          # 1. Primary fast model
             "llama-3.2-3b-preview",             # 2. Extremely lightning fast
             "llama-3.2-1b-preview",             # 3. Smallest, fastest text model
             "gemma2-9b-it",                     # 4. Google's balanced model
@@ -33,7 +33,7 @@ class GroqClient:
             "qwen-2.5-coder-32b",               # 11. Qwen coding/logic expert
             
             # === TIER 3: LARGE SCALE (70B+ Parameters) ===
-            "llama-3.3-70b-versatile",          # 12. Latest Llama 3.3
+            "llama-3.1-8b-instant",             # 12. Latest Llama 3.3
             "llama-3.1-70b-versatile",          # 13. Reliable 3.1 70B
             "llama3-70b-8192",                  # 14. Original Llama 3 70B
             "mixtral-8x7b-32768",               # 15. MoE architecture champion
