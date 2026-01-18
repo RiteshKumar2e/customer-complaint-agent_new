@@ -841,38 +841,52 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                             </div>
                                             <h4 className="complaint-subject">{complaint.subject || "No Subject"}</h4>
                                             <p className="complaint-text">{complaint.description || complaint.complaint_text}</p>
+
+                                            {complaint.solution && (
+                                                <div className="official-solution" style={{
+                                                    marginTop: '12px',
+                                                    padding: '12px',
+                                                    background: 'rgba(16, 185, 129, 0.1)',
+                                                    borderLeft: '4px solid #10b981',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.9rem'
+                                                }}>
+                                                    <strong style={{ color: '#10b981', display: 'block', marginBottom: '4px' }}>
+                                                        Solution:
+                                                    </strong>
+                                                    <p style={{ margin: 0, opacity: 0.9 }}>{complaint.solution}</p>
+                                                </div>
+                                            )}
                                             <div className="complaint-footer">
                                                 <span className="complaint-date">
                                                     {new Date(complaint.created_at).toLocaleDateString()}
                                                 </span>
-                                                {complaint.is_resolved && (
-                                                    <div className="resolution-feedback-buttons">
-                                                        <motion.button
-                                                            className={`feedback-btn ${complaint.user_resolution_feedback === true ? 'resolved-yes' : complaint.user_resolution_feedback === false ? 'resolved-no' : 'resolved-yes'}`}
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {
-                                                                setSelectedComplaint(complaint);
-                                                                setShowResolutionFeedback(true);
-                                                            }}
-                                                            style={{
-                                                                background: complaint.user_resolution_feedback === true
-                                                                    ? "linear-gradient(135deg, #10b981, #059669)"
-                                                                    : complaint.user_resolution_feedback === false
-                                                                        ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                                                                        : ""
-                                                            }}
-                                                            title="Provide feedback on resolution"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                                            </svg>
-                                                            {complaint.user_resolution_feedback === true ? "Resolved ✅" :
-                                                                complaint.user_resolution_feedback === false ? "Not Resolved ❌" :
-                                                                    "Resolution Feedback"}
-                                                        </motion.button>
-                                                    </div>
-                                                )}
+                                                <div className="resolution-feedback-buttons">
+                                                    <motion.button
+                                                        className={`feedback-btn ${complaint.user_resolution_feedback === true ? 'resolved-yes' : complaint.user_resolution_feedback === false ? 'resolved-no' : 'resolved-yes'}`}
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => {
+                                                            setSelectedComplaint(complaint);
+                                                            setShowResolutionFeedback(true);
+                                                        }}
+                                                        style={{
+                                                            background: complaint.user_resolution_feedback === true
+                                                                ? "linear-gradient(135deg, #10b981, #059669)"
+                                                                : complaint.user_resolution_feedback === false
+                                                                    ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                                                                    : ""
+                                                        }}
+                                                        title="Provide feedback on resolution"
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                                        </svg>
+                                                        {complaint.user_resolution_feedback === true ? "Resolved ✅" :
+                                                            complaint.user_resolution_feedback === false ? "Not Resolved ❌" :
+                                                                "Resolution Feedback"}
+                                                    </motion.button>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     ))}

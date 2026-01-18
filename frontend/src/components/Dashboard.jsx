@@ -286,45 +286,55 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
                     </span>
                   </div>
                   <p className="complaint-text">{(complaint.complaint_text || complaint.text || "").substring(0, 100)}...</p>
+
+                  {complaint.solution && (
+                    <div className="solution-preview" style={{
+                      marginTop: '8px',
+                      padding: '8px',
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      borderLeft: '3px solid #10b981',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      <strong style={{ color: '#10b981' }}>Solution:</strong> {complaint.solution}
+                    </div>
+                  )}
+
                   <div className="complaint-footer">
                     <span className="complaint-sentiment">😊 {complaint.sentiment}</span>
                     <span className="complaint-satisfaction">🎯 {complaint.satisfaction_prediction || complaint.satisfaction}</span>
-                    <span className="complaint-resolution" style={{ marginLeft: "auto", color: "#0066cc", fontWeight: "bold" }}>
-                      ⏱️ {getResolutionTime(complaint.priority)}
-                    </span>
-                    {complaint.is_resolved && (
-                      <button
-                        className="resolve-btn-dashboard"
-                        onClick={() => {
-                          setSelectedComplaint(complaint);
-                          setShowResolutionFeedback(true);
-                        }}
-                        style={{
-                          marginLeft: "auto",
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          border: "none",
-                          color: "white",
-                          background: complaint.user_resolution_feedback === true
-                            ? "linear-gradient(135deg, #10b981, #059669)"
-                            : complaint.user_resolution_feedback === false
-                              ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                              : "linear-gradient(135deg, #6366f1, #4f46e5)",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                          transition: "all 0.3s ease"
-                        }}
-                      >
-                        {complaint.user_resolution_feedback === true ? "✅ Resolved" :
-                          complaint.user_resolution_feedback === false ? "❌ Not Resolved" :
-                            "❓ Confirm Resolution"}
-                      </button>
-                    )}
+
+                    <button
+                      className="resolve-btn-dashboard"
+                      onClick={() => {
+                        setSelectedComplaint(complaint);
+                        setShowResolutionFeedback(true);
+                      }}
+                      style={{
+                        marginLeft: "auto",
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        border: "none",
+                        color: "white",
+                        background: complaint.user_resolution_feedback === true
+                          ? "linear-gradient(135deg, #10b981, #059669)"
+                          : complaint.user_resolution_feedback === false
+                            ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                            : "linear-gradient(135deg, #6366f1, #4f46e5)",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                        transition: "all 0.3s ease"
+                      }}
+                    >
+                      {complaint.user_resolution_feedback === true ? "✅ Resolved" :
+                        complaint.user_resolution_feedback === false ? "❌ Not Resolved" :
+                          "❓ Confirm Resolution"}
+                    </button>
                   </div>
                 </div>
               ))}
