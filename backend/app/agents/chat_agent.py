@@ -1,4 +1,5 @@
 from app.agents.gemini_client import async_ask_gemini
+from app.services.rag_engine import rag_engine
 from app.agents.orchestrator import run_agent_pipeline
 from app.agents.language_detector import detect_language, get_language_instruction, get_language_example
 import sys
@@ -126,10 +127,15 @@ async def handle_chat_message(message: str) -> dict:
 
     # 🚀 TIER 4: AI PROCESSING (Language-Aware & Versatile)
     if "QUESTION" in intent:
-        # High-performance system persona
+        # 🔍 TIER 3.5: RAG RETRIEVAL (Company Policies)
+        policy_context = rag_engine.retrieve(clean_msg)
+        
         system_persona = f"""
         You are the 'Quickfix AI Support Agent', a highly intelligent, empathetic, and professional assistant.
         Quickfix is an enterprise-grade AI system using 30+ specialized agents (Classifier, Sentiment, Priority, Solution) to resolve complaints.
+
+        COMPANY POLICY CONTEXT (Use this if relevant):
+        {policy_context}
 
         YOUR SUPREME RULES:
         1. LANGUAGE MASTERY: You MUST respond in the EXACT same language/style as user input.

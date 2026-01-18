@@ -720,6 +720,15 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             <label>Prediction</label>
                                             <p>{selectedComplaint.satisfaction_prediction || "N/A"}</p>
                                         </div>
+                                        <div className="admin-modal-field">
+                                            <label>Churn Risk</label>
+                                            <span style={{ 
+                                                color: selectedComplaint.churn_risk === 'Critical' ? '#ef4444' : selectedComplaint.churn_risk === 'Elevated' ? '#f59e0b' : '#10b981',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                🔥 {selectedComplaint.churn_risk || "Low"}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -802,6 +811,28 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             >
                                                 Cancel
                                             </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedComplaint.urgency_data && selectedComplaint.urgency_data.intensity && (
+                                    <div className="admin-modal-section" style={{ background: '#fff7ed', border: '1px solid #ffedd5' }}>
+                                        <h3 style={{ color: '#9a3412' }}>⚡ Urgency Intelligence</h3>
+                                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                            <div className="urgency-score-circle" style={{ 
+                                                width: '60px', height: '60px', borderRadius: '50%', background: '#ff7e5f', 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' 
+                                            }}>
+                                                {selectedComplaint.urgency_data.urgency_score}%
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontWeight: 'bold' }}>Intensity: {selectedComplaint.urgency_data.intensity}</p>
+                                                <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                                                    {selectedComplaint.urgency_data.flags.map(f => (
+                                                        <span key={f} style={{ fontSize: '0.7rem', padding: '2px 8px', background: '#fdba74', borderRadius: '10px' }}>{f}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}

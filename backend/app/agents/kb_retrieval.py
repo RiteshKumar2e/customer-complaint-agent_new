@@ -1,23 +1,19 @@
-from app.agents.gemini_client import async_ask_gemini
+from app.services.rag_engine import rag_engine
 
 class KnowledgeRetrievalAgent:
     """
-    Advanced Simulated RAG (Retrieval Augmented Generation) Agent.
-    In a production system, this would query a Vector DB (Pinecone/Milvus).
-    Here, it uses specialized LLM context to 'retrieve' internal policy wisdom.
+    Advanced RAG (Retrieval Augmented Generation) Agent.
+    Now uses a real document retrieval system with vector similarity.
     """
     async def retrieve_context(self, category: str, query: str) -> str:
-        prompt = f"""
-        Act as a Knowledge Base Retrieval system. 
-        Search internal company docs for: '{query}' in the {category} department.
-        
-        Provide 2-3 specific policy snippets or technical guidelines that are RELEVANT.
-        Keep it brief and factual.
-        """
+        # We search with combined category and query for better precision
+        search_query = f"{category} {query}"
         try:
-            context = await async_ask_gemini(prompt)
+            # The rag_engine is synchronous but we keep the method async for pipeline compatibility
+            context = rag_engine.retrieve(search_query)
             return context
-        except:
+        except Exception as e:
+            print(f"RAG Error: {e}")
             return "General company support guidelines apply."
 
 kb_agent = KnowledgeRetrievalAgent()

@@ -25,6 +25,9 @@ class ComplaintResponse(BaseModel):
     solution: Optional[str] = ""
     satisfaction: Optional[str] = "Medium"
     similar_issues: Optional[str] = ""
+    churn_risk: Optional[str] = "Low"
+    is_anomaly: Optional[bool] = False
+    urgency_data: Optional[dict] = {}
     steps: Optional[list] = []
 
 

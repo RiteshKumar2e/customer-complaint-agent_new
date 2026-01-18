@@ -11,6 +11,8 @@ from .complaint_matcher import find_similar_complaints
 from .anomaly_detector import check_anomaly
 from .kb_retrieval import get_kb_context
 from .reevaluator import reevaluate_response
+from .churn_predictor import predict_churn_risk
+from .urgency_model import analyze_complaint_urgency
 from app.agents.gemini_client import async_ask_ai
 import json
 import re
@@ -88,6 +90,12 @@ JSON format:
         response = await generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
         action = recommend_action(priority)
         
+        # Calculate Churn Risk using ML Model
+        churn_risk = await predict_churn_risk(sentiment, text)
+        
+        # Analyze Urgency Intensity
+        urgency_analysis = await analyze_complaint_urgency(text)
+        
         steps.append({"step": "Processing Complete", "status": "Success"})
 
         return {
@@ -101,6 +109,8 @@ JSON format:
             "similar_issues": similar,
             "steps": steps,
             "is_anomaly": is_anomaly,
+            "churn_risk": churn_risk,
+            "urgency_data": urgency_analysis,
             "agentic_refinement": False
         }
 

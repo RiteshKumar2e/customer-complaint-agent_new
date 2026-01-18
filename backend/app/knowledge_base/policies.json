@@ -1,0 +1,42 @@
+[
+    {
+        "category": "Billing",
+        "topic": "Refund Policy",
+        "content": "Refunds are processed within 5-7 business days of the request. For subscription cancellations, a partial refund may be issued if requested within the first 48 hours. Beyond 48 hours, cancellations will stop future billing but no refund will be provided for the current cycle."
+    },
+    {
+        "category": "Billing",
+        "topic": "Payment Issues",
+        "content": "If a transaction fails but money is debited, it will be automatically reversed by the bank within 24-48 hours. Users should double-check their bank statements before resubmitting. For recurring billing failures, ensure that the credit card has not expired and that international transactions are enabled."
+    },
+    {
+        "category": "Technical",
+        "topic": "Connection Problems",
+        "content": "If you are unable to connect to our servers, please check your local network first. Clear your browser cache and cookies, or try an incognito window. Our technical status page (status.quickfix.com) lists any ongoing outages. Ensure that your firewall is not blocking port 443."
+    },
+    {
+        "category": "Technical",
+        "topic": "Account Recovery",
+        "content": "Account recovery requires access to the registered email address. Password reset links expire after 1 hour. If 2FA is enabled but the device is lost, recovery codes must be used. Otherwise, a manual verification process involving ID submission is required."
+    },
+    {
+        "category": "Delivery",
+        "topic": "Shipping Times",
+        "content": "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days. Tracking information is sent via email once the order leaves our warehouse. Deliveries are made between 9 AM and 6 PM on weekdays."
+    },
+    {
+        "category": "Delivery",
+        "topic": "Missing Items",
+        "content": "If items are missing from your package, contact support within 24 hours of delivery. We will verify the weight of the package at dispatch and cross-reference it with the carrier's logs. Replacement items are shipped via priority express at no extra cost."
+    },
+    {
+        "category": "Service",
+        "topic": "Membership Benefits",
+        "content": "Elite members receive 24/7 priority support, early access to new features, and free shipping on all orders. Basic members have access to our community forums and standard email support with a 24-hour response time guarantee."
+    },
+    {
+        "category": "Security",
+        "topic": "Data Privacy",
+        "content": "We use industry-standard AES-256 encryption for all data at rest. Personal data is never sold to third parties. Users can request a complete export of their data or account deletion through the 'Privacy' section in their profile settings."
+    }
+]
