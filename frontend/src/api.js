@@ -113,5 +113,12 @@ export const updateProfile = async (email, profileData) => {
   return response.data;
 };
 
-export default api;
+export const submitResolutionFeedback = async (ticketId, isActuallyResolved, userComment = "") => {
+  const response = await api.post(`/complaint/${ticketId}/resolution-feedback`, {
+    is_actually_resolved: isActuallyResolved,
+    user_comment: userComment
+  });
+  return response.data;
+};
 
+export default api;

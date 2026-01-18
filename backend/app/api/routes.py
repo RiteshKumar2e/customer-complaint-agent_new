@@ -218,3 +218,46 @@ async def bulk_delete_complaints(ticket_ids: list[str] = Body(..., embed=True), 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/complaint/{ticket_id}/resolution-feedback")
+async def submit_resolution_feedback(
+    ticket_id: str,
+    is_actually_resolved: bool = Body(..., embed=True),
+    user_comment: str = Body("", embed=True),
+    db: Session = Depends(get_db)
+):
+    """
+    Allow users to provide feedback on whether their complaint was actually resolved.
+    Sends notification to admin if user reports it's not resolved.
+    """
+    try:
+        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        
+        # Store the feedback
+        complaint.user_resolution_feedback = is_actually_resolved
+        complaint.user_resolution_comment = user_comment
+        complaint.updated_at = get_ist_time()
+        db.commit()
+        
+        # Send email to admin with user's feedback
+        email_service.send_resolution_feedback_to_admin(
+            user_name=complaint.name,
+            user_email=complaint.email,
+            ticket_id=ticket_id,
+            subject=complaint.subject,
+            is_actually_resolved=is_actually_resolved,
+            user_comment=user_comment,
+            original_solution=complaint.solution or "No solution provided"
+        )
+        
+        return {
+            "message": "Feedback submitted successfully",
+            "ticket_id": ticket_id,
+            "is_actually_resolved": is_actually_resolved
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+

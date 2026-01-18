@@ -63,7 +63,9 @@ def run_migrations():
         ("user_rating", "INTEGER"),
         ("user_feedback", "TEXT"),
         ("subject", "VARCHAR(255)"),
-        ("description", "TEXT")
+        ("description", "TEXT"),
+        ("user_resolution_feedback", "BOOLEAN"),
+        ("user_resolution_comment", "TEXT")
     ]
     
     with engine.connect() as conn:

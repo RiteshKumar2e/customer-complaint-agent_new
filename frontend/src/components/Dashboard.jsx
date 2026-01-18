@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import {
   getAllComplaints,
-  deleteAllComplaints
+  deleteAllComplaints,
+  submitResolutionFeedback
 } from "../api";
 
 import "../styles/Dashboard.css";
@@ -26,6 +27,12 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Resolution feedback states
+  const [showResolutionFeedback, setShowResolutionFeedback] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [resolutionFeedbackLoading, setResolutionFeedbackLoading] = useState(false);
+  const [resolutionComment, setResolutionComment] = useState("");
+
   // Function to get estimated resolution time based on priority
   const getResolutionTime = (priority) => {
     switch (priority) {
@@ -43,6 +50,7 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
   useEffect(() => {
     if (complaints.length > 0) {
       const highCount = complaints.filter(c => c.priority === "High").length;
+      const resolvedCount = complaints.filter(c => c.is_resolved).length;
       const categories = { Billing: 0, Technical: 0, Delivery: 0, Service: 0, Security: 0, Other: 0 };
 
       complaints.forEach(c => {
@@ -56,13 +64,49 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
       setStats({
         total: complaints.length,
         highPriority: highCount,
-        resolved: Math.floor(complaints.length * 0.6),
+        resolved: resolvedCount,
         avgSentiment: "Neutral"
       });
 
       setCategoryBreakdown(categories);
     }
   }, [complaints]);
+
+  const handleResolutionFeedback = async (isResolved) => {
+    if (!selectedComplaint) return;
+
+    setResolutionFeedbackLoading(true);
+    try {
+      await submitResolutionFeedback(
+        selectedComplaint.ticket_id,
+        isResolved,
+        resolutionComment
+      );
+
+      // Update local state if needed (though usually we refresh from parent)
+      // If setComplaints is available, we could update it
+      if (setComplaints) {
+        setComplaints(prev => prev.map(c =>
+          c.ticket_id === selectedComplaint.ticket_id ? { ...c, user_resolution_feedback: isResolved, user_resolution_comment: resolutionComment } : c
+        ));
+      }
+
+      // Close modal and reset
+      setShowResolutionFeedback(false);
+      setSelectedComplaint(null);
+      setResolutionComment("");
+
+      alert(isResolved
+        ? "Thank you! We're glad your issue was resolved."
+        : "Thank you for your feedback. Our admin team has been notified."
+      );
+    } catch (error) {
+      console.error("Resolution feedback error:", error);
+      alert("Failed to submit feedback. Please try again.");
+    } finally {
+      setResolutionFeedbackLoading(false);
+    }
+  };
 
   const handleDeleteAll = async () => {
     if (!showDeleteConfirm) {
@@ -248,6 +292,39 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
                     <span className="complaint-resolution" style={{ marginLeft: "auto", color: "#0066cc", fontWeight: "bold" }}>
                       ⏱️ {getResolutionTime(complaint.priority)}
                     </span>
+                    {complaint.is_resolved && (
+                      <button
+                        className="resolve-btn-dashboard"
+                        onClick={() => {
+                          setSelectedComplaint(complaint);
+                          setShowResolutionFeedback(true);
+                        }}
+                        style={{
+                          marginLeft: "auto",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          border: "none",
+                          color: "white",
+                          background: complaint.user_resolution_feedback === true
+                            ? "linear-gradient(135deg, #10b981, #059669)"
+                            : complaint.user_resolution_feedback === false
+                              ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                              : "linear-gradient(135deg, #6366f1, #4f46e5)",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                          transition: "all 0.3s ease"
+                        }}
+                      >
+                        {complaint.user_resolution_feedback === true ? "✅ Resolved" :
+                          complaint.user_resolution_feedback === false ? "❌ Not Resolved" :
+                            "❓ Confirm Resolution"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -255,6 +332,54 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
           )}
         </div>
       </div>
+
+      {/* Resolution Feedback Modal */}
+      {showResolutionFeedback && selectedComplaint && (
+        <div className="dashboard-modal-overlay">
+          <div className="dashboard-modal">
+            <h3>Was Your Issue Resolved?</h3>
+            <p className="modal-subtitle">Ticket #{selectedComplaint.ticket_id}</p>
+
+            <div className="feedback-form">
+              <textarea
+                value={resolutionComment}
+                onChange={(e) => setResolutionComment(e.target.value)}
+                placeholder="Any additional comments? (Optional)"
+                rows="3"
+                className="modal-textarea"
+              />
+
+              <div className="modal-actions">
+                <button
+                  className="modal-btn success"
+                  onClick={() => handleResolutionFeedback(true)}
+                  disabled={resolutionFeedbackLoading}
+                >
+                  {resolutionFeedbackLoading ? "..." : "Yes, Resolved"}
+                </button>
+                <button
+                  className="modal-btn warning"
+                  onClick={() => handleResolutionFeedback(false)}
+                  disabled={resolutionFeedbackLoading}
+                >
+                  {resolutionFeedbackLoading ? "..." : "No, Not Resolved"}
+                </button>
+                <button
+                  className="modal-btn secondary"
+                  onClick={() => {
+                    setShowResolutionFeedback(false);
+                    setSelectedComplaint(null);
+                    setResolutionComment("");
+                  }}
+                  disabled={resolutionFeedbackLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

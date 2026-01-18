@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Stars } from "@react-three/drei";
 import * as random from "maath/random/dist/maath-random.esm";
-import { updateProfile, deleteAllComplaints, getAllComplaints, submitFeedback } from "../api";
+import { updateProfile, deleteAllComplaints, getAllComplaints, submitFeedback, submitResolutionFeedback } from "../api";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/Profile.css";
 
@@ -112,6 +112,13 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const [feedbackLoading, setFeedbackLoading] = useState(false);
     const [feedbackSuccess, setFeedbackSuccess] = useState(false);
     const [feedbackError, setFeedbackError] = useState("");
+
+    // Resolution feedback states
+    const [showResolutionFeedback, setShowResolutionFeedback] = useState(false);
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
+    const [resolutionFeedbackLoading, setResolutionFeedbackLoading] = useState(false);
+    const [resolutionComment, setResolutionComment] = useState("");
+
 
     // Ensure complaints is always an array
     const complaintsList = Array.isArray(complaints) ? complaints : [];
@@ -238,6 +245,42 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
             setFeedbackLoading(false);
         }
     };
+
+    const handleResolutionFeedback = async (isResolved) => {
+        if (!selectedComplaint) return;
+
+        setResolutionFeedbackLoading(true);
+        try {
+            await submitResolutionFeedback(
+                selectedComplaint.ticket_id,
+                isResolved,
+                resolutionComment
+            );
+
+            // Close modal and reset
+            setShowResolutionFeedback(false);
+            setSelectedComplaint(null);
+            setResolutionComment("");
+
+            // Update local state if needed
+            if (setComplaints) {
+                setComplaints(prev => prev.map(c =>
+                    c.ticket_id === selectedComplaint.ticket_id ? { ...c, user_resolution_feedback: isResolved, user_resolution_comment: resolutionComment } : c
+                ));
+            }
+
+            alert(isResolved
+                ? "Thank you! We're glad your issue was resolved."
+                : "Thank you for your feedback. Our admin team has been notified and will review your complaint again."
+            );
+        } catch (error) {
+            console.error("Resolution feedback error:", error);
+            alert("Failed to submit feedback. Please try again.");
+        } finally {
+            setResolutionFeedbackLoading(false);
+        }
+    };
+
 
     return (
         <div className="profile-container">
@@ -802,6 +845,34 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                                 <span className="complaint-date">
                                                     {new Date(complaint.created_at).toLocaleDateString()}
                                                 </span>
+                                                {complaint.is_resolved && (
+                                                    <div className="resolution-feedback-buttons">
+                                                        <motion.button
+                                                            className={`feedback-btn ${complaint.user_resolution_feedback === true ? 'resolved-yes' : complaint.user_resolution_feedback === false ? 'resolved-no' : 'resolved-yes'}`}
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {
+                                                                setSelectedComplaint(complaint);
+                                                                setShowResolutionFeedback(true);
+                                                            }}
+                                                            style={{
+                                                                background: complaint.user_resolution_feedback === true
+                                                                    ? "linear-gradient(135deg, #10b981, #059669)"
+                                                                    : complaint.user_resolution_feedback === false
+                                                                        ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                                                                        : ""
+                                                            }}
+                                                            title="Provide feedback on resolution"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                                            </svg>
+                                                            {complaint.user_resolution_feedback === true ? "Resolved ✅" :
+                                                                complaint.user_resolution_feedback === false ? "Not Resolved ❌" :
+                                                                    "Resolution Feedback"}
+                                                        </motion.button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </motion.div>
                                     ))}
@@ -933,6 +1004,87 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                     className="action-btn secondary"
                                     onClick={() => setShowDeleteConfirm(false)}
                                     disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Resolution Feedback Modal */}
+            <AnimatePresence>
+                {showResolutionFeedback && selectedComplaint && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => {
+                            setShowResolutionFeedback(false);
+                            setSelectedComplaint(null);
+                            setResolutionComment("");
+                        }}
+                    >
+                        <motion.div
+                            className="confirm-modal resolution-feedback-modal"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="modal-icon feedback">💬</div>
+                            <h2>Was Your Issue Resolved?</h2>
+                            <p className="modal-subtitle">Ticket #{selectedComplaint.ticket_id}</p>
+                            <p className="modal-description">
+                                Please let us know if the solution provided actually resolved your complaint.
+                                Your feedback helps us improve our service.
+                            </p>
+
+                            <div className="feedback-textarea-container">
+                                <label>Additional Comments (Optional)</label>
+                                <textarea
+                                    value={resolutionComment}
+                                    onChange={(e) => setResolutionComment(e.target.value)}
+                                    placeholder="Share any additional details about your experience..."
+                                    rows="4"
+                                    className="resolution-comment-input"
+                                />
+                            </div>
+
+                            <div className="modal-actions resolution-actions">
+                                <button
+                                    className="action-btn success"
+                                    onClick={() => handleResolutionFeedback(true)}
+                                    disabled={resolutionFeedbackLoading}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    {resolutionFeedbackLoading ? "Sending..." : "Yes, Resolved"}
+                                </button>
+                                <button
+                                    className="action-btn warning"
+                                    onClick={() => handleResolutionFeedback(false)}
+                                    disabled={resolutionFeedbackLoading}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="15" y1="9" x2="9" y2="15" />
+                                        <line x1="9" y1="9" x2="15" y2="15" />
+                                    </svg>
+                                    {resolutionFeedbackLoading ? "Sending..." : "No, Not Resolved"}
+                                </button>
+                                <button
+                                    className="action-btn secondary"
+                                    onClick={() => {
+                                        setShowResolutionFeedback(false);
+                                        setSelectedComplaint(null);
+                                        setResolutionComment("");
+                                    }}
+                                    disabled={resolutionFeedbackLoading}
                                 >
                                     Cancel
                                 </button>

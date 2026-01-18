@@ -44,9 +44,12 @@ class Complaint(Base):
     ai_analysis_steps = Column(Text, nullable=True) # Stores JSON of orchestrated steps
     user_rating = Column(Integer, nullable=True) # User's review rating (1-5)
     user_feedback = Column(Text, nullable=True) # User's qualitative feedback
+    user_resolution_feedback = Column(Boolean, nullable=True) # User's feedback on whether complaint was actually resolved
+    user_resolution_comment = Column(Text, nullable=True) # User's comment about resolution status
     created_at = Column(DateTime, default=get_ist_time, index=True)
     updated_at = Column(DateTime, default=get_ist_time, onupdate=get_ist_time)
     is_resolved = Column(Boolean, default=False)
     
     def __repr__(self):
         return f"<Complaint(id={self.id}, category='{self.category}', priority='{self.priority}')>"
+

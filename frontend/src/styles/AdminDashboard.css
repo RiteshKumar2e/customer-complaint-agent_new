@@ -910,3 +910,29 @@ body.light-theme .admin-modal-section h3 {
         opacity: 1;
     }
 }
+
+/* User Resolution Feedback Styles */
+.user-resolution-feedback {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--admin-border);
+}
+
+.resolution-status-box {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.resolution-status-box.confirmed {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.resolution-status-box.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}

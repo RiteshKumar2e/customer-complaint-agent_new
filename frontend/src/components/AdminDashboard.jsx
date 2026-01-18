@@ -524,9 +524,23 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className={`admin-status ${complaint.is_resolved ? 'resolved' : 'pending'}`}>
-                                                            {complaint.is_resolved ? "Resolved" : "Pending"}
-                                                        </span>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                            <span className={`admin-status ${complaint.is_resolved ? 'resolved' : 'pending'}`}>
+                                                                {complaint.is_resolved ? "Resolved" : "Pending"}
+                                                            </span>
+                                                            {(complaint.user_resolution_feedback !== undefined && complaint.user_resolution_feedback !== null) && (
+                                                                <span style={{
+                                                                    fontSize: '0.65rem',
+                                                                    color: complaint.user_resolution_feedback ? '#10b981' : '#ef4444',
+                                                                    fontWeight: '600',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '2px'
+                                                                }}>
+                                                                    {complaint.user_resolution_feedback ? '✓ User Confirmed' : '✗ User Rejected'}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td>
                                                         <span className="admin-date">
@@ -873,6 +887,24 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                                 </svg>
                                                 "{selectedComplaint.user_feedback}"
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {(selectedComplaint.user_resolution_feedback !== undefined && selectedComplaint.user_resolution_feedback !== null) && (
+                                    <div className="admin-modal-section user-resolution-feedback">
+                                        <h3>User Resolution Confirmation</h3>
+                                        <div className={`resolution-status-box ${selectedComplaint.user_resolution_feedback ? 'confirmed' : 'rejected'}`}>
+                                            {selectedComplaint.user_resolution_feedback ? (
+                                                <span style={{ color: '#10b981', fontWeight: 'bold' }}>✅ User confirmed this is resolved.</span>
+                                            ) : (
+                                                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>❌ User says this is NOT resolved.</span>
+                                            )}
+                                        </div>
+                                        {selectedComplaint.user_resolution_comment && (
+                                            <div className="admin-modal-text" style={{ marginTop: '10px', fontStyle: 'italic' }}>
+                                                User Comment: "{selectedComplaint.user_resolution_comment}"
                                             </div>
                                         )}
                                     </div>

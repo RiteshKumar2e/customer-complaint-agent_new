@@ -86,6 +86,19 @@ class EmailService:
         thread.start()
         return True
     
+    def send_resolution_feedback_to_admin(self, user_name: str, user_email: str, ticket_id: str, 
+                                         subject: str, is_actually_resolved: bool, 
+                                         user_comment: str, original_solution: str):
+        """Send user's resolution feedback to admin"""
+        thread = threading.Thread(
+            target=self._worker_send_resolution_feedback,
+            args=(user_name, user_email, ticket_id, subject, is_actually_resolved, user_comment, original_solution)
+        )
+        thread.daemon = True
+        thread.start()
+        return True
+
+    
     # ------------------------------------------------------------------
     # BACKGROUND WORKER
     # ------------------------------------------------------------------
@@ -147,6 +160,24 @@ class EmailService:
         except Exception as e:
             print(f"❌ Password Reset Email Error: {str(e)}")
             traceback.print_exc()
+    
+    def _worker_send_resolution_feedback(self, user_name: str, user_email: str, ticket_id: str,
+                                        subject: str, is_actually_resolved: bool, 
+                                        user_comment: str, original_solution: str):
+        """Background logic to send resolution feedback to admin"""
+        try:
+            status_text = "RESOLVED ✅" if is_actually_resolved else "NOT RESOLVED ❌"
+            email_subject = f"📊 User Feedback: Ticket #{ticket_id} - {status_text}"
+            html_body = self._generate_resolution_feedback_html(
+                user_name, user_email, ticket_id, subject, 
+                is_actually_resolved, user_comment, original_solution
+            )
+            print(f"📧 Sending resolution feedback to ADMIN for ticket {ticket_id}...")
+            self._dispatch_api(self.admin_email, email_subject, html_body)
+        except Exception as e:
+            print(f"❌ Resolution Feedback Email Error: {str(e)}")
+            traceback.print_exc()
+
     
     def _generate_otp_html(self, otp: str) -> str:
         return f"""
@@ -1017,6 +1048,185 @@ class EmailService:
                             </p>
                             <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 11px;">
                                 © {datetime.now().year} Quickfix Admin Portal
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+
+    def _generate_resolution_feedback_html(self, user_name: str, user_email: str, ticket_id: str,
+                                           subject: str, is_actually_resolved: bool,
+                                           user_comment: str, original_solution: str) -> str:
+        """Generate HTML email for admin notification about user's resolution feedback"""
+        timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
+        status_color = "#10b981" if is_actually_resolved else "#ef4444"
+        status_bg = "#d1fae5" if is_actually_resolved else "#fee2e2"
+        status_text = "Issue Resolved" if is_actually_resolved else "Issue NOT Resolved"
+        status_icon = "✅" if is_actually_resolved else "❌"
+        
+        return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Resolution Feedback</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; text-align: center;">
+                            <div style="font-size: 42px; margin-bottom: 10px;">📊</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 600;">
+                                User Resolution Feedback
+                            </h1>
+                            <p style="margin: 10px 0 0 0; color: #dbeafe; font-size: 14px;">
+                                Customer Satisfaction Report
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Status Badge -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center;">
+                            <div style="display: inline-block; background-color: {status_bg}; border: 2px solid {status_color}; border-radius: 50px; padding: 12px 30px;">
+                                <span style="font-size: 24px; margin-right: 10px;">{status_icon}</span>
+                                <span style="color: {status_color}; font-size: 18px; font-weight: 700;">{status_text}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Ticket Info -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            🎫 Ticket Information
+                                        </h3>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Ticket ID:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px; font-weight: 700;">{ticket_id}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Subject:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{subject}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Customer:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{user_name} ({user_email})</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 600;">Feedback Submitted:</p>
+                                                    <p style="margin: 5px 0 0 0; color: #1f2937; font-size: 15px;">{timestamp}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Original Solution -->
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px;">
+                                <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 16px; font-weight: 600;">
+                                    💡 Original Solution Provided
+                                </h3>
+                                <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
+                                    {original_solution}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- User Comment -->
+                    {f'''
+                    <tr>
+                        <td style="padding: 0 30px 25px 30px;">
+                            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px;">
+                                <h3 style="margin: 0 0 15px 0; color: #92400e; font-size: 16px; font-weight: 600;">
+                                    💬 User's Additional Comments
+                                </h3>
+                                <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.6; font-style: italic;">
+                                    "{user_comment}"
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    ''' if user_comment else ''}
+                    
+                    <!-- Action Required (if not resolved) -->
+                    {f'''
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #fee2e2; border: 2px solid #ef4444; border-radius: 12px; padding: 25px; text-align: center;">
+                                <h3 style="margin: 0 0 12px 0; color: #991b1b; font-size: 18px; font-weight: 700;">
+                                    ⚠️ Action Required
+                                </h3>
+                                <p style="margin: 0; color: #7f1d1d; font-size: 15px; line-height: 1.6;">
+                                    The customer has reported that their issue is <strong>NOT RESOLVED</strong>. 
+                                    Please review this ticket and take appropriate action to address their concerns.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    ''' if not is_actually_resolved else f'''
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #d1fae5; border: 2px solid #10b981; border-radius: 12px; padding: 25px; text-align: center;">
+                                <h3 style="margin: 0 0 12px 0; color: #065f46; font-size: 18px; font-weight: 700;">
+                                    🎉 Great News!
+                                </h3>
+                                <p style="margin: 0; color: #064e3b; font-size: 15px; line-height: 1.6;">
+                                    The customer has confirmed that their issue has been successfully resolved. 
+                                    Excellent work by the team!
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    '''}
+                    
+                    <!-- CTA Button -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px; text-align: center;">
+                            <a href="{self.app_url}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                                View in Admin Panel
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+                                Automated notification from Quickfix Admin System
+                            </p>
+                            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                                © {get_ist_time().year} Quickfix Admin Portal
                             </p>
                         </td>
                     </tr>

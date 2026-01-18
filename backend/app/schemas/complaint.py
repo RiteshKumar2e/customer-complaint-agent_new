@@ -45,6 +45,8 @@ class ComplaintDB(BaseModel):
     ai_analysis_steps: Optional[str]
     user_rating: Optional[int]
     user_feedback: Optional[str]
+    user_resolution_feedback: Optional[bool]
+    user_resolution_comment: Optional[str]
     created_at: datetime
     updated_at: datetime
     is_resolved: bool
