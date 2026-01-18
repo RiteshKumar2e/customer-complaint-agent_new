@@ -160,9 +160,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       }
 
       utterEng.onend = () => {
-        setTimeout(() => {
-          synth.speak(utterHindi);
-        }, 500);
+        synth.speak(utterHindi);
       };
 
       utterEng.onstart = () => {
