@@ -131,26 +131,33 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
       utterEng.pitch = 1.0;
 
       const engVoice =
-        voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+        voices.find(v => v.lang === 'en-US' && (v.name.includes('Google') || v.name.includes('Natural'))) ||
+        voices.find(v => v.lang === 'en-US' && (v.name.includes('Samantha') || v.name.includes('Siri'))) ||
         voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) ||
         voices.find(v => v.lang.startsWith('en')) ||
         voices[0];
 
-      if (engVoice) utterEng.voice = engVoice;
+      if (engVoice) {
+        utterEng.voice = engVoice;
+        console.log('🗣️ Selected English Voice:', engVoice.name);
+      }
 
       // 2. Setup Hindi Utterance
       const utterHindi = new SpeechSynthesisUtterance(hindiText);
       utterHindi.lang = 'hi-IN';
-      utterHindi.rate = 1.0;
+      utterHindi.rate = 1.1; // Slightly faster for natural rhythm
       utterHindi.pitch = 1.0;
 
       const hindiVoice =
-        voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google')) ||
-        voices.find(v => v.lang === 'hi-IN' && v.name.includes('Microsoft')) ||
+        voices.find(v => v.lang === 'hi-IN' && (v.name.includes('Google') || v.name.includes('Natural'))) ||
+        voices.find(v => v.lang === 'hi-IN' && (v.name.includes('Lekha') || v.name.includes('Microsoft'))) ||
         voices.find(v => v.lang.startsWith('hi')) ||
         voices[0];
 
-      if (hindiVoice) utterHindi.voice = hindiVoice;
+      if (hindiVoice) {
+        utterHindi.voice = hindiVoice;
+        console.log('🗣️ Selected Hindi Voice:', hindiVoice.name);
+      }
 
       utterEng.onend = () => {
         setTimeout(() => {
