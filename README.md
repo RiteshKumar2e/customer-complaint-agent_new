@@ -305,28 +305,40 @@ graph LR
     end
     
     subgraph "AI Layer"
-        C[7+ AI Agents<br/>Gemini 1.5 Pro/Flash]
+        C1[Groq<br/>30+ Models]
+        C2[Gemini 2.0<br/>Multi-Key Rotation]
+        C3[Local Models<br/>Offline Fallback]
+    end
+    
+    subgraph "Agent Orchestration"
+        D[24+ AI Agents<br/>Async Pipeline]
     end
     
     subgraph "Data Layer"
-        D[(PostgreSQL 15+<br/>SQLAlchemy ORM)]
+        E[(PostgreSQL 15+<br/>SQLAlchemy ORM)]
+        F[RAG Engine<br/>Policy KB]
     end
     
     subgraph "Services"
-        E[Brevo Email<br/>SMTP Service]
-        F[Redis Cache<br/>Optional]
+        G[Brevo Email<br/>SMTP Service]
+        H[In-Memory Cache<br/>Performance]
     end
     
     A -->|HTTPS/REST| B
-    B -->|Orchestration| C
-    B -->|ORM| D
-    B -->|SMTP| E
-    B -.->|Caching| F
+    B -->|Orchestration| D
+    D -->|Tier 1| C1
+    D -->|Tier 2| C2
+    D -->|Tier 3| C3
+    B -->|ORM| E
+    D -->|Retrieval| F
+    B -->|SMTP| G
+    B -->|Caching| H
     
     style A fill:#61dafb,stroke:#000,stroke-width:2px,color:#000
     style B fill:#009688,stroke:#fff,stroke-width:2px,color:#fff
-    style C fill:#4285f4,stroke:#fff,stroke-width:2px,color:#fff
-    style D fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    style D fill:#6366f1,stroke:#fff,stroke-width:3px,color:#fff
+    style C1 fill:#ef4444,stroke:#fff,stroke-width:2px,color:#fff
+    style E fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
 ### 📁 **Project Structure**
@@ -336,36 +348,66 @@ customer-complaint-agent_new/
 │
 ├── 📂 frontend/                    # React 19.2 + Vite
 │   ├── 📂 src/
-│   │   ├── 📂 components/          # 15+ React Components
-│   │   │   ├── Landing.jsx         # Hero landing page
+│   │   ├── 📂 components/          # 19 React Components
+│   │   │   ├── Landing.jsx         # Hero landing page with voice intro
 │   │   │   ├── Login.jsx           # OAuth + OTP login
+│   │   │   ├── Signup.jsx          # User registration
 │   │   │   ├── Dashboard.jsx       # User dashboard
+│   │   │   ├── Profile.jsx         # User profile & complaints
 │   │   │   ├── AdminDashboard.jsx  # Admin control panel
 │   │   │   ├── ComplaintForm.jsx   # AI-powered form
 │   │   │   ├── SideChatBot.jsx     # 24/7 AI assistant
+│   │   │   ├── Feedback.jsx        # User feedback system
+│   │   │   ├── ThemeToggle.jsx     # Dark/Light mode
 │   │   │   └── ...
-│   │   ├── 📂 styles/              # Modular CSS
+│   │   ├── 📂 styles/              # 15+ Modular CSS files
 │   │   ├── api.js                  # Axios API client
-│   │   └── App.jsx                 # Main application
-│   └── package.json
+│   │   ├── App.jsx                 # Main application
+│   │   └── main.jsx                # Entry point
+│   ├── package.json                # Dependencies
+│   └── vite.config.js              # Vite configuration
 │
 ├── 📂 backend/                     # FastAPI + Python
 │   ├── 📂 app/
-│   │   ├── 📂 agents/              # 7+ AI Agents
-│   │   │   ├── orchestrator.py    # Master coordinator
-│   │   │   ├── classifier.py      # Category detection
-│   │   │   ├── sentiment_analyzer.py
+│   │   ├── 📂 agents/              # 24+ AI Agents
+│   │   │   ├── orchestrator.py    # Master async coordinator
+│   │   │   ├── gemini_client.py   # Gemini multi-key rotation
+│   │   │   ├── groq_client.py     # Groq 30+ models
+│   │   │   ├── classifier.py      # TF-IDF + AI classification
+│   │   │   ├── sentiment_analyzer.py  # TextBlob + NLP
 │   │   │   ├── priority.py        # Urgency scoring
-│   │   │   ├── responder.py       # Response generation
-│   │   │   ├── chat_agent.py      # Conversational AI
+│   │   │   ├── responder.py       # Context-aware responses
+│   │   │   ├── solution_suggester.py  # Action planning
+│   │   │   ├── chat_agent.py      # 24/7 conversational AI
+│   │   │   ├── language_detector.py   # Multi-language support
+│   │   │   ├── churn_predictor.py     # ML churn risk
+│   │   │   ├── urgency_model.py       # Emotional analysis
+│   │   │   ├── anomaly_detector.py    # Isolation Forest
+│   │   │   ├── kb_retrieval.py        # RAG engine
+│   │   │   ├── cache_layer.py         # In-memory caching
+│   │   │   ├── semantic_search.py     # Similar complaints
+│   │   │   ├── response_validation.py # Quality assurance
 │   │   │   └── ...
 │   │   ├── 📂 routes/              # API Endpoints
-│   │   ├── 📂 db/                  # Database models
+│   │   │   ├── auth.py            # Authentication routes
+│   │   │   └── feedback.py        # Feedback routes
+│   │   ├── 📂 api/                 # Core API
+│   │   │   ├── routes.py          # Complaint endpoints
+│   │   │   └── chat.py            # Chat endpoints
+│   │   ├── 📂 db/                  # Database layer
+│   │   │   ├── database.py        # SQLAlchemy setup
+│   │   │   └── models.py          # User & Complaint models
 │   │   ├── 📂 services/            # Business logic
+│   │   │   ├── email_service.py   # Brevo email integration
+│   │   │   └── rag_engine.py      # RAG implementation
+│   │   ├── 📂 knowledge_base/      # Policy documents
+│   │   │   └── policies.json      # Company policies
+│   │   ├── 📂 schemas/             # Pydantic schemas
 │   │   └── main.py                 # FastAPI app
-│   └── requirements.txt
+│   ├── requirements.txt            # Python dependencies
+│   ├── init_db.py                  # Database initialization
+│   └── start_backend.py            # Backend launcher
 │
-├── 📂 .github/workflows/           # CI/CD pipelines
 ├── docker-compose.yml              # Container orchestration
 ├── LICENSE                         # MIT License
 └── README.md                       # This file
