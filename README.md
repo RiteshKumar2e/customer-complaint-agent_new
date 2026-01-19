@@ -1025,27 +1025,32 @@ If this project helped you, please consider:
 
 <table>
 <tr>
-<td align="center" width="20%">
+<td align="center" width="16.66%">
 <img src="https://img.icons8.com/color/96/google-logo.png" width="64"/>
 <br/><b>Google Gemini</b>
-<br/>Powerful AI API
+<br/>AI Powerhouse
 </td>
-<td align="center" width="20%">
+<td align="center" width="16.66%">
+<img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="64"/>
+<br/><b>Groq</b>
+<br/>Ultra-Fast LLM
+</td>
+<td align="center" width="16.66%">
 <img src="https://img.icons8.com/color/96/python.png" width="64"/>
 <br/><b>FastAPI</b>
 <br/>Modern Framework
 </td>
-<td align="center" width="20%">
+<td align="center" width="16.66%">
 <img src="https://img.icons8.com/color/96/react-native.png" width="64"/>
-<br/><b>React</b>
+<br/><b>React 19</b>
 <br/>UI Library
 </td>
-<td align="center" width="20%">
+<td align="center" width="16.66%">
 <img src="https://img.icons8.com/color/96/vercel.png" width="64"/>
 <br/><b>Vercel</b>
 <br/>Hosting Platform
 </td>
-<td align="center" width="20%">
+<td align="center" width="16.66%">
 <img src="https://img.icons8.com/color/96/postgreesql.png" width="64"/>
 <br/><b>PostgreSQL</b>
 <br/>Database
