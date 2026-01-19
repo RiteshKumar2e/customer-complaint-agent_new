@@ -1,10 +1,9 @@
 <div align="center">
 
 <!-- 3D Animated Header -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=300&section=header&text=Quickfix%20AI&fontSize=90&fontAlignY=35&animation=twinkling&fontColor=fff&desc=Surgical%20AI%20Resolution%20Engine&descSize=25&descAlignY=55" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=300&section=header&text=Quickfix%20AI&fontSize=90&fontAlignY=35&animation=twinkling&fontColor=fff&desc=Enterprise%20AI%20Complaint%20Resolution%20Platform&descSize=25&descAlignY=55" width="100%"/>
 
 <br/>
-
 
 <br/>
 
@@ -12,7 +11,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a1a" alt="FastAPI"/>
   <img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=1a1a1a" alt="React"/>
-  <img src="https://img.shields.io/badge/Gemini-1.5_Pro-4285F4?style=for-the-badge&logo=google&logoColor=white&labelColor=1a1a1a" alt="Gemini"/>
+  <img src="https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white&labelColor=1a1a1a" alt="Gemini"/>
+  <img src="https://img.shields.io/badge/Groq-LLaMA_3.3-FF6B6B?style=for-the-badge&logo=ai&logoColor=white&labelColor=1a1a1a" alt="Groq"/>
   <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=1a1a1a" alt="PostgreSQL"/>
 </p>
 
@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/github/stars/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a1a" alt="Stars"/>
   <img src="https://img.shields.io/github/forks/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=00D9FF&labelColor=1a1a1a" alt="Forks"/>
   <img src="https://img.shields.io/github/license/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&color=FF6B6B&labelColor=1a1a1a" alt="License"/>
-  <img src="https://img.shields.io/badge/Status-Production-00C853?style=for-the-badge&labelColor=1a1a1a" alt="Status"/>
+  <img src="https://img.shields.io/badge/Status-Production_Ready-00C853?style=for-the-badge&labelColor=1a1a1a" alt="Status"/>
 </p>
 
 <!-- Action Buttons -->
@@ -31,7 +31,7 @@
   <a href="#-quick-start">
     <img src="https://img.shields.io/badge/⚡_QUICK_START-5_Minutes-10B981?style=for-the-badge&labelColor=1a1a1a" alt="Quick Start"/>
   </a>
-  <a href="https://riteshkr.online/docs">
+  <a href="http://localhost:8000/docs">
     <img src="https://img.shields.io/badge/📚_API_DOCS-Interactive-F59E0B?style=for-the-badge&labelColor=1a1a1a" alt="API Docs"/>
   </a>
 </p>
@@ -40,9 +40,9 @@
 
 ---
 
-### 🎯 **The Future of Customer Support**
+### 🎯 **Next-Generation Customer Support Platform**
 
-**Quickfix** is an enterprise-grade AI platform powered by **7+ specialized agents** that transform customer complaints into surgical resolutions in **milliseconds**. Built with Google Gemini AI, FastAPI, and React.
+**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **24+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and PostgreSQL.
 
 </div>
 
@@ -85,9 +85,10 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    QUICKFIX AI PLATFORM                          ║
 ║                                                                  ║
-║  🎯 7+ Specialized Agents  │  ⚡ Sub-500ms Response             ║
-║  🧠 98% Accuracy          │  🔒 Enterprise Security            ║
-║  📊 Real-time Analytics   │  🌐 24/7 Availability              ║
+║  🎯 24+ AI Agents         │  ⚡ Multi-Tier LLM Fallback         ║
+║  🧠 RAG Knowledge Base    │  🔒 OAuth 2.0 + OTP Security        ║
+║  📊 Real-time Dashboard   │  🌐 Multi-Language Support          ║
+║  🔄 Groq → Gemini → Local │  📧 Automated Email Notifications   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -99,18 +100,18 @@
 <tr>
 <td width="33%" align="center">
 <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="64"/>
-<h4>🧠 Intelligent Analysis</h4>
-<p>Auto-categorizes complaints into departments with 98% accuracy using advanced NLP</p>
+<h4>🧠 Multi-Agent Intelligence</h4>
+<p>24+ specialized AI agents working in parallel: Orchestrator, Classifier, Sentiment Analyzer, Priority Detector, RAG Engine, Churn Predictor, Urgency Analyzer, and more</p>
 </td>
 <td width="33%" align="center">
 <img src="https://img.icons8.com/fluency/96/speed.png" width="64"/>
-<h4>⚡ Lightning Fast</h4>
-<p>Sub-500ms response time with immediate resolution and no arbitrary word-count limits</p>
+<h4>⚡ Intelligent Fallback</h4>
+<p>3-tier LLM system: Groq (ultra-fast) → Gemini 2.0 (multi-key rotation) → Local models for 99.9% uptime</p>
 </td>
 <td width="33%" align="center">
 <img src="https://img.icons8.com/fluency/96/mission.png" width="64"/>
-<h4>🎯 Vision Driven</h4>
-<p>Strategic Vision and Mission integrated to ensure enterprise-wide alignment</p>
+<h4>� Language Adaptive</h4>
+<p>Automatic language detection supporting English, Hindi, Hinglish with context-aware responses</p>
 </td>
 </tr>
 </table>
@@ -146,73 +147,90 @@ mindmap
 
 ## ✨ **Key Features**
 
-### 🤖 **The Multi-Model Consensus Engine**
+### 🤖 **The Multi-Tier AI Architecture**
 
-Quickfix doesn't just rely on one AI. Every decision undergoes a **3-Layer Consensus Validation** to ensure the perfect balance between speed, stability, and intelligence.
+Quickfix implements a sophisticated **3-tier LLM fallback system** with intelligent agent orchestration for maximum reliability and performance.
 
-| Layer | Type | Model Used | Scientific Rationale |
-|---|---|---|---|
-| **Layer 1: Deterministic** | Heuristics | Keyword Arrays | Provides **0ms latency** for obvious cases (e.g., "Refund" -> Billing). Zero cost and 100% deterministic results. |
-| **Layer 2: Statistical** | ML Models | **TextBlob** & **TF-IDF Scan** | Captures semantic overlap and emotional polarity locally. Chosen for **low-memory footprint** and fast execution without external API dependencies. |
-| **Layer 3: Cognitive** | LLM | **Gemini 1.5 Pro** | Handles deep context, sarcasm, and complex technical logic. Chosen as the "Final Arbiter" for its **large context window** and human-like reasoning. |
+| Tier | Provider | Models | Purpose | Fallback Trigger |
+|---|---|---|---|---|
+| **Tier 1: Ultra-Fast** | Groq | LLaMA 3.3 70B, Mixtral 8x7B, Gemma 2 9B | Primary inference with sub-second latency | API failure or timeout |
+| **Tier 2: Reliable** | Google Gemini | 2.0 Flash, Exp-1206, Flash-Lite, Pro-Latest | Multi-key rotation for high availability | All Groq models exhausted |
+| **Tier 3: Local** | Offline Models | TextBlob, TF-IDF, Heuristics | Zero-latency fallback for critical operations | All cloud APIs unavailable |
 
-#### **Model Selection Rationale**
-1. **TextBlob (Sentiment):** Unlike NLTK which requires large static downloads, TextBlob provides a simple Noun Phrase extraction and Sentiment Polarity scoring that is highly accurate for shorter customer feedback.
-2. **TF-IDF + Cosine Similarity (Classification):** Chosen over standard Neural Networks because it doesn't require "training time." It builds a semantic vector space on-the-fly, allowing the system to adapt to new categories instantly without re-training a model.
-3. **Weight-Matrix (Satisfaction):** Predicts user satisfaction using a mathematical linear model. This creates a "Baseline Expectation" that anchors the LLM.
-4. **Isolation Forest (Anomaly):** Uses **Unsupervised Deep Learning** principles to detect structural anomalies in text (bot detection/spam) before AI processing.
-5. **RAG-Powered Context (Knowledge):** Injects enterprise policy wisdom into every resolution to prevent AI hallucinations.
+#### **AI Agent Ecosystem**
+1. **Orchestrator Agent:** Master coordinator managing parallel agent execution with async/await for optimal performance
+2. **Classification Agents:** TF-IDF semantic analysis + Gemini for category detection (Billing, Technical, Delivery, Service, Security)
+3. **Sentiment Analysis:** TextBlob polarity scoring + NLP emotion detection (Positive, Neutral, Negative, Angry)
+4. **Priority Detection:** Context-aware urgency scoring with keyword analysis
+5. **RAG Engine:** Policy-based knowledge retrieval from `policies.json` to ground AI responses in company guidelines
+6. **Churn Predictor:** ML-based customer retention risk assessment
+7. **Urgency Analyzer:** NLP-powered emotional distress quantification
+8. **Anomaly Detector:** Isolation Forest for spam/bot detection
+9. **Language Detector:** Automatic detection of English, Hindi, Hinglish with adaptive response generation
+10. **Response Validator:** Quality assurance and re-evaluation layer
 
 ---
 
-### 🎨 **The 7+ Agent Intelligence Grid**
+### 🎨 **The 24+ Agent Intelligence Grid**
 
 <div align="center">
 
 ```mermaid
 graph TB
     subgraph "🎯 Control Layer"
-        A[Orchestrator<br/>Workflow Coordinator]
-        Z[Anomaly Detector<br/>Isolation Forest ML]
+        A[Orchestrator<br/>Async Coordinator]
+        Z[Anomaly Detector<br/>Isolation Forest]
+        L1[Language Detector<br/>Multi-lingual NLP]
     end
     
     subgraph "🔍 Analysis Layer"
-        B[Classifier<br/>TF-IDF Semantic]
-        C[Sentiment Analyzer<br/>TextBlob Hybrid]
-        D[Priority Agent<br/>Contextual Risk]
-        E[Knowledge Agent<br/>Simulated RAG]
+        B[Classifier<br/>TF-IDF + Gemini]
+        C[Sentiment Analyzer<br/>TextBlob + NLP]
+        D[Priority Agent<br/>Urgency Scoring]
+        E[RAG Engine<br/>Policy Retrieval]
+        U[Urgency Analyzer<br/>Emotional Distress]
+        CH[Churn Predictor<br/>ML Risk Model]
     end
     
     subgraph "💡 Resolution Layer"
-        F[Responder<br/>Response Generation]
-        G[Suggester<br/>Solution Crafting]
-        H[Recommender<br/>Action Planning]
+        F[Responder<br/>Context-Aware Generation]
+        G[Solution Suggester<br/>Action Crafting]
+        H[Action Recommender<br/>Workflow Planning]
+        S[Semantic Search<br/>Similar Complaints]
     end
   
-    subgraph "🛡️ Safety & Audit Layer"
-        I[Reflective Critic<br/>Red-Teaming AI]
-        J[Validator<br/>Quality Audit]
-        K[Predictor<br/>Success Forecasting]
+    subgraph "🛡️ Quality & Validation"
+        I[Response Validator<br/>Quality Assurance]
+        J[Re-evaluator<br/>Critic Agent]
+        K[Satisfaction Predictor<br/>Success Forecasting]
     end
     
-    subgraph "⚡ Performance Layer"
-        L[Cache Layer<br/>Speed Optimization]
-        M[Chat Agent<br/>24/7 Support]
+    subgraph "⚡ Infrastructure Layer"
+        M[Groq Client<br/>30+ Models]
         N[Gemini Client<br/>Multi-Key Rotation]
+        O[Local LLM<br/>Offline Fallback]
+        P[Cache Layer<br/>In-Memory]
+        Q[Chat Agent<br/>24/7 Support]
     end
    
     Z --> A
+    L1 --> A
     A --> B & C & D
     B & C & D --> E
-    E --> F
-    F --> G & H
+    E --> U & CH
+    U & CH --> F
+    F --> G & H & S
     G & H --> I
     I --> J
     J --> K
-    K --> L
+    K --> P
+    
+    A -.-> M & N & O
+    Q -.-> A
     
     style A fill:#6366f1,stroke:#4f46e5,stroke-width:3px,color:#fff
-    style I fill:#ef4444,stroke:#dc2626,stroke-width:3px,color:#fff
+    style I fill:#10b981,stroke:#059669,stroke-width:3px,color:#fff
+    style M fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff
 ```
 
 </div>
@@ -223,7 +241,7 @@ graph TB
 <tr>
 <th width="25%">🔐 Authentication</th>
 <th width="25%">👔 Admin Suite</th>
-<th width="25%">🎨 UI/UX</th>
+<th width="25%">🤖 AI Features</th>
 <th width="25%">📧 Notifications</th>
 </tr>
 <tr>
@@ -232,35 +250,39 @@ graph TB
 - ✅ Google OAuth 2.0
 - ✅ Email OTP (6-digit)
 - ✅ JWT Tokens (7-day)
-- ✅ Password Reset
+- ✅ Password Reset Flow
 - ✅ Session Management
+- ✅ Role-Based Access
 
 </td>
 <td>
 
-- ⚡ Strategic Vision/Mission
-- 🗑️ Bulk Operations
 - 📊 Real-time Analytics
+- 🗑️ Bulk Operations
 - 🔍 Global Search
 - 📈 NPS Tracking
+- 👥 User Management
+- 📋 Complaint Dashboard
 
 </td>
 <td>
 
-- 🌓 Dynamic Light/Dark
-- 📱 Mobile Responsive
-- ✨ Emerald/Indigo Buttons
-- 🎊 Confetti Effects
-- 🎯 No Word-Limits (UX)
+- � Multi-Language (EN/HI/Hinglish)
+- 🧠 RAG Knowledge Base
+- 📊 Churn Risk Prediction
+- ⚡ Urgency Analysis
+- 🔄 3-Tier LLM Fallback
+- 💬 24/7 AI Chatbot
 
 </td>
 <td>
 
-- 📧 User Confirmations
-- 🚨 Admin Alerts
+- 📧 Complaint Confirmation
+- 🚨 Resolution Alerts
 - 🔑 OTP Emails
 - 🔄 Status Updates
 - 📊 HTML Templates
+- 👨‍💼 Admin Notifications
 
 </td>
 </tr>
