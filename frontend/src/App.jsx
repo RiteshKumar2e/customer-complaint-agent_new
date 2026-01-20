@@ -214,19 +214,20 @@ export default function App() {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
     const lastPage = localStorage.getItem("lastPage");
-    const sessionTimestamp = localStorage.getItem("sessionTimestamp");
+    const lastActivity = localStorage.getItem("lastActivity") || localStorage.getItem("sessionTimestamp");
 
-    // Check if session has expired (30 minutes = 1800000 ms)
-    if (savedUser && token && sessionTimestamp) {
+    // Check if session has expired (Use Idle Timeout)
+    if (savedUser && token && lastActivity) {
       const now = Date.now();
-      const sessionAge = now - parseInt(sessionTimestamp);
-      const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+      const idleTime = now - parseInt(lastActivity);
+      const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes of inactivity
 
-      if (sessionAge > SESSION_TIMEOUT) {
+      if (idleTime > SESSION_TIMEOUT) {
         // Session expired - clear everything
         console.log("🔒 Session expired - Auto logout");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("saved_creds"); // Optional: Keep or remove based on preference
         localStorage.removeItem("lastPage");
         localStorage.removeItem("sessionTimestamp");
         localStorage.removeItem("lastActivity");
@@ -251,16 +252,17 @@ export default function App() {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
-    const sessionTimestamp = localStorage.getItem("sessionTimestamp");
+    // Use lastActivity for validation to support sliding session
+    const lastActivity = localStorage.getItem("lastActivity") || localStorage.getItem("sessionTimestamp");
 
     if (savedUser && token) {
       // Validate session on mount
-      if (sessionTimestamp) {
+      if (lastActivity) {
         const now = Date.now();
-        const sessionAge = now - parseInt(sessionTimestamp);
+        const idleTime = now - parseInt(lastActivity);
         const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-        if (sessionAge > SESSION_TIMEOUT) {
+        if (idleTime > SESSION_TIMEOUT) {
           console.log("🔒 Session expired on page load");
           handleLogout();
           return;
@@ -269,24 +271,24 @@ export default function App() {
 
       setUser(JSON.parse(savedUser));
 
-      // Update last activity timestamp
+      // Update last activity timestamp on mount
       localStorage.setItem("lastActivity", Date.now().toString());
     }
 
     // Auto-logout timer - check every minute
     const checkSessionInterval = setInterval(() => {
-      const currentSessionTimestamp = localStorage.getItem("sessionTimestamp");
+      const currentLastActivity = localStorage.getItem("lastActivity") || localStorage.getItem("sessionTimestamp");
       const currentToken = localStorage.getItem("token");
 
-      if (currentToken && currentSessionTimestamp) {
+      if (currentToken && currentLastActivity) {
         const now = Date.now();
-        const sessionAge = now - parseInt(currentSessionTimestamp);
+        const idleTime = now - parseInt(currentLastActivity);
         const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-        if (sessionAge > SESSION_TIMEOUT) {
+        if (idleTime > SESSION_TIMEOUT) {
           console.log("🔒 Session timeout - Auto logout");
           handleLogout();
-          alert("आपका session 30 minutes के बाद expire हो गया है। कृपया फिर से login करें।");
+          alert("आपका session 30 minutes के inactivity के बाद expire हो गया है। कृपया फिर से login करें।");
         }
       }
     }, 60000); // Check every 1 minute
@@ -305,11 +307,12 @@ export default function App() {
     window.addEventListener("click", updateActivity);
     window.addEventListener("scroll", updateActivity);
 
+    // Initial page routing
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
     } else if (window.location.pathname === "/dashboard") {
-      const savedUser = localStorage.getItem("user");
-      if (savedUser) {
+      const savedUserCheck = localStorage.getItem("user");
+      if (savedUserCheck) {
         setPage("profile");
       } else {
         setPage("landing");
