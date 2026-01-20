@@ -307,6 +307,39 @@ export default function App() {
     window.addEventListener("click", updateActivity);
     window.addEventListener("scroll", updateActivity);
 
+    // 🚪 Auto-logout on tab close/navigation
+    const handleBeforeUnload = (e) => {
+      const currentToken = localStorage.getItem("token");
+      
+      if (currentToken) {
+        // Set a flag in sessionStorage to detect if this is a refresh
+        const isRefreshing = sessionStorage.getItem("isRefreshing");
+        
+        if (!isRefreshing) {
+          // This is a tab close or navigation away - clear session
+          console.log("🚪 Tab closing - Clearing session");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("saved_creds");
+          localStorage.removeItem("lastPage");
+          localStorage.removeItem("sessionTimestamp");
+          localStorage.removeItem("lastActivity");
+        }
+        
+        // Clear the refresh flag
+        sessionStorage.removeItem("isRefreshing");
+      }
+    };
+
+    // Set refresh flag before unload
+    const handlePageHide = () => {
+      // Mark as refreshing in sessionStorage (survives page reload)
+      sessionStorage.setItem("isRefreshing", "true");
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+
     // Initial page routing
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
@@ -328,6 +361,8 @@ export default function App() {
       window.removeEventListener("keydown", updateActivity);
       window.removeEventListener("click", updateActivity);
       window.removeEventListener("scroll", updateActivity);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
     };
   }, []);
 

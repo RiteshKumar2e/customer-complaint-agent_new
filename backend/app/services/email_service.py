@@ -63,17 +63,16 @@ class EmailService:
         return True
 
     def send_otp(self, user_email: str, otp: str):
-        """Send OTP to user with INSTANT priority"""
-        # 🚀 INSTANT SEND: Use high-priority thread for OTP
+        """Send OTP to user with INSTANT priority - Non-blocking for speed"""
+        # 🚀 INSTANT SEND: Fire-and-forget for maximum speed
         thread = threading.Thread(
             target=self._worker_send_otp,
             args=(user_email, otp),
             name="OTP-Instant-Delivery"  # Named thread for debugging
         )
-        thread.daemon = False  # Non-daemon for critical OTP delivery
+        thread.daemon = False  # Non-daemon ensures completion even if main thread exits
         thread.start()
-        # Optional: Wait briefly to ensure email is dispatched (max 2s)
-        thread.join(timeout=2.0)
+        # No blocking - return immediately for fastest API response
         return True
     
     def send_password_reset(self, user_email: str, user_name: str, reset_token: str):
