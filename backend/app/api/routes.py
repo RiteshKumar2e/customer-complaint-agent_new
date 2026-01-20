@@ -238,6 +238,14 @@ async def submit_resolution_feedback(
         # Store the feedback
         complaint.user_resolution_feedback = is_actually_resolved
         complaint.user_resolution_comment = user_comment
+        
+        # If user says it is resolved, mark the ticket as resolved
+        if is_actually_resolved:
+            complaint.is_resolved = True
+        else:
+            # If user says it is NOT resolved, ensure it is marked as open
+            complaint.is_resolved = False
+            
         complaint.updated_at = get_ist_time()
         db.commit()
         

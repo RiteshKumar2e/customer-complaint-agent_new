@@ -265,7 +265,12 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
             // Update local state if needed
             if (setComplaints) {
                 setComplaints(prev => prev.map(c =>
-                    c.ticket_id === selectedComplaint.ticket_id ? { ...c, user_resolution_feedback: isResolved, user_resolution_comment: resolutionComment } : c
+                    c.ticket_id === selectedComplaint.ticket_id ? {
+                        ...c,
+                        user_resolution_feedback: isResolved,
+                        user_resolution_comment: resolutionComment,
+                        is_resolved: isResolved
+                    } : c
                 ));
             }
 
