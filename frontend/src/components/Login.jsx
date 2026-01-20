@@ -133,6 +133,8 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
 
             localStorage.setItem("token", data.access_token);
             localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("sessionTimestamp", Date.now().toString());
+            localStorage.setItem("lastActivity", Date.now().toString());
             onLoginSuccess(data.user);
         } catch (err) {
             const detail = err.response?.data?.detail;
@@ -190,6 +192,8 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             const response = await googleVerifyOTP(otpEmail, otp);
             localStorage.setItem("token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
+            localStorage.setItem("sessionTimestamp", Date.now().toString());
+            localStorage.setItem("lastActivity", Date.now().toString());
             onLoginSuccess(response.user);
             setShowOTPModal(false);
         } catch (err) {

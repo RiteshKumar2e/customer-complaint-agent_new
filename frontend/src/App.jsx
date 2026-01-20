@@ -214,9 +214,29 @@ export default function App() {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
     const lastPage = localStorage.getItem("lastPage");
+    const sessionTimestamp = localStorage.getItem("sessionTimestamp");
 
-    if (savedUser && token && lastPage) {
-      return lastPage;
+    // Check if session has expired (30 minutes = 1800000 ms)
+    if (savedUser && token && sessionTimestamp) {
+      const now = Date.now();
+      const sessionAge = now - parseInt(sessionTimestamp);
+      const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+      if (sessionAge > SESSION_TIMEOUT) {
+        // Session expired - clear everything
+        console.log("🔒 Session expired - Auto logout");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("lastPage");
+        localStorage.removeItem("sessionTimestamp");
+        localStorage.removeItem("lastActivity");
+        return "landing";
+      }
+
+      // Session still valid
+      if (lastPage) {
+        return lastPage;
+      }
     }
     return "landing";
   });
@@ -227,12 +247,63 @@ export default function App() {
   const [complaints, setComplaints] = useState([]);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
+  // Session timeout management
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
+    const sessionTimestamp = localStorage.getItem("sessionTimestamp");
+
     if (savedUser && token) {
+      // Validate session on mount
+      if (sessionTimestamp) {
+        const now = Date.now();
+        const sessionAge = now - parseInt(sessionTimestamp);
+        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+        if (sessionAge > SESSION_TIMEOUT) {
+          console.log("🔒 Session expired on page load");
+          handleLogout();
+          return;
+        }
+      }
+
       setUser(JSON.parse(savedUser));
+
+      // Update last activity timestamp
+      localStorage.setItem("lastActivity", Date.now().toString());
     }
+
+    // Auto-logout timer - check every minute
+    const checkSessionInterval = setInterval(() => {
+      const currentSessionTimestamp = localStorage.getItem("sessionTimestamp");
+      const currentToken = localStorage.getItem("token");
+
+      if (currentToken && currentSessionTimestamp) {
+        const now = Date.now();
+        const sessionAge = now - parseInt(currentSessionTimestamp);
+        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+        if (sessionAge > SESSION_TIMEOUT) {
+          console.log("🔒 Session timeout - Auto logout");
+          handleLogout();
+          alert("आपका session 30 minutes के बाद expire हो गया है। कृपया फिर से login करें।");
+        }
+      }
+    }, 60000); // Check every 1 minute
+
+    // Activity tracker - update last activity on user interaction
+    const updateActivity = () => {
+      const currentToken = localStorage.getItem("token");
+      if (currentToken) {
+        localStorage.setItem("lastActivity", Date.now().toString());
+      }
+    };
+
+    // Track user activity
+    window.addEventListener("mousemove", updateActivity);
+    window.addEventListener("keydown", updateActivity);
+    window.addEventListener("click", updateActivity);
+    window.addEventListener("scroll", updateActivity);
 
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
@@ -247,6 +318,14 @@ export default function App() {
       setPage("landing");
       setFeedbackOpen(true);
     }
+
+    return () => {
+      clearInterval(checkSessionInterval);
+      window.removeEventListener("mousemove", updateActivity);
+      window.removeEventListener("keydown", updateActivity);
+      window.removeEventListener("click", updateActivity);
+      window.removeEventListener("scroll", updateActivity);
+    };
   }, []);
 
   useEffect(() => {
@@ -287,9 +366,12 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    console.log("🚪 Logging out user");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("lastPage");
+    localStorage.removeItem("sessionTimestamp");
+    localStorage.removeItem("lastActivity");
     setUser(null);
     setIsAdminMode(false);
     navigateTo("landing");
