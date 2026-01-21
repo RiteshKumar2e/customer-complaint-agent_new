@@ -1,6 +1,6 @@
 .cookie-policy-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     padding: 2rem 1rem;
     position: relative;
     overflow-x: hidden;
@@ -13,9 +13,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3), transparent 50%);
+    background:
+        radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.15), transparent 50%);
     pointer-events: none;
 }
 
@@ -27,11 +27,12 @@
 }
 
 .cookie-policy-content {
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(30, 30, 46, 0.95);
     border-radius: 24px;
     padding: 3rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 /* Light theme support */
@@ -39,9 +40,16 @@ body.light-theme .cookie-policy-page {
     background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
 }
 
+body.light-theme .cookie-policy-page::before {
+    background:
+        radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1), transparent 50%);
+}
+
 body.light-theme .cookie-policy-content {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.15);
 }
 
 /* Header */
@@ -83,7 +91,7 @@ body.light-theme .cookie-policy-content {
 .cookie-policy-header h1 {
     font-size: 2.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -91,10 +99,21 @@ body.light-theme .cookie-policy-content {
     margin-top: 1rem;
 }
 
+body.light-theme .cookie-policy-header h1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 .last-updated {
-    color: #6b7280;
+    color: #9ca3af;
     font-size: 0.95rem;
     font-style: italic;
+}
+
+body.light-theme .last-updated {
+    color: #6b7280;
 }
 
 /* Policy sections */
@@ -105,7 +124,7 @@ body.light-theme .cookie-policy-content {
 .policy-section h2 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #1f2937;
+    color: #e5e7eb;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 3px solid #667eea;
@@ -118,23 +137,35 @@ body.light-theme .policy-section h2 {
 .policy-section h3 {
     font-size: 1.35rem;
     font-weight: 600;
-    color: #374151;
+    color: #d1d5db;
     margin-bottom: 0.75rem;
+}
+
+body.light-theme .policy-section h3 {
+    color: #374151;
 }
 
 .policy-section h4 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #4b5563;
+    color: #9ca3af;
     margin-bottom: 0.5rem;
     margin-top: 1rem;
 }
 
-.policy-section p {
+body.light-theme .policy-section h4 {
     color: #4b5563;
+}
+
+.policy-section p {
+    color: #d1d5db;
     line-height: 1.8;
     margin-bottom: 1rem;
     font-size: 1.05rem;
+}
+
+body.light-theme .policy-section p {
+    color: #4b5563;
 }
 
 .policy-section ul {
@@ -144,7 +175,7 @@ body.light-theme .policy-section h2 {
 }
 
 .policy-section ul li {
-    color: #4b5563;
+    color: #d1d5db;
     line-height: 1.8;
     margin-bottom: 0.75rem;
     padding-left: 1.5rem;
@@ -152,23 +183,35 @@ body.light-theme .policy-section h2 {
     font-size: 1.05rem;
 }
 
+body.light-theme .policy-section ul li {
+    color: #4b5563;
+}
+
 .policy-section ul li::before {
     content: '→';
     position: absolute;
     left: 0;
-    color: #667eea;
+    color: #818cf8;
     font-weight: bold;
 }
 
+body.light-theme .policy-section ul li::before {
+    color: #667eea;
+}
+
 .policy-section ul li strong {
-    color: #1f2937;
+    color: #f3f4f6;
     font-weight: 600;
+}
+
+body.light-theme .policy-section ul li strong {
+    color: #1f2937;
 }
 
 /* Cookie types */
 .cookie-type {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-    border-left: 4px solid #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+    border-left: 4px solid #818cf8;
     padding: 1.5rem;
     border-radius: 12px;
     margin-bottom: 1.5rem;
@@ -177,28 +220,39 @@ body.light-theme .policy-section h2 {
 
 .cookie-type:hover {
     transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 body.light-theme .cookie-type {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-left: 4px solid #667eea;
+}
+
+body.light-theme .cookie-type:hover {
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
 }
 
 .cookie-type h3 {
     margin-top: 0;
+    color: #a78bfa;
+}
+
+body.light-theme .cookie-type h3 {
     color: #667eea;
 }
 
 /* Browser controls */
 .browser-controls {
-    background: #f9fafb;
+    background: rgba(55, 65, 81, 0.5);
     padding: 1.5rem;
     border-radius: 12px;
     margin-top: 1rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 body.light-theme .browser-controls {
     background: #f3f4f6;
+    border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .browser-controls h4 {
@@ -207,10 +261,16 @@ body.light-theme .browser-controls {
 
 /* Contact info */
 .contact-info {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
     padding: 1.5rem;
     border-radius: 12px;
     margin-top: 1rem;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+body.light-theme .contact-info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border: 1px solid rgba(102, 126, 234, 0.15);
 }
 
 .contact-info p {
@@ -226,6 +286,10 @@ body.light-theme .browser-controls {
     text-align: center;
     margin-top: 3rem;
     padding-top: 2rem;
+    border-top: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+body.light-theme .policy-footer {
     border-top: 2px solid #e5e7eb;
 }
 
