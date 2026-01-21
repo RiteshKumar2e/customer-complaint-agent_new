@@ -12,6 +12,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import AdminDashboard from "./components/AdminDashboard";
+import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import { getAllComplaints } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -310,11 +311,11 @@ export default function App() {
     // 🚪 Auto-logout on tab close/navigation
     const handleBeforeUnload = (e) => {
       const currentToken = localStorage.getItem("token");
-      
+
       if (currentToken) {
         // Set a flag in sessionStorage to detect if this is a refresh
         const isRefreshing = sessionStorage.getItem("isRefreshing");
-        
+
         if (!isRefreshing) {
           // This is a tab close or navigation away - clear session
           console.log("🚪 Tab closing - Clearing session");
@@ -325,7 +326,7 @@ export default function App() {
           localStorage.removeItem("sessionTimestamp");
           localStorage.removeItem("lastActivity");
         }
-        
+
         // Clear the refresh flag
         sessionStorage.removeItem("isRefreshing");
       }
@@ -430,6 +431,7 @@ export default function App() {
           }}
           onDashboard={() => user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login")}
           onFeedback={() => setFeedbackOpen(true)}
+          onNavigate={navigateTo}
         />
       );
     }
@@ -461,6 +463,10 @@ export default function App() {
 
     if (page === "reset-password") {
       return <ResetPassword onNavigate={navigateTo} />;
+    }
+
+    if (page === "cookie-policy") {
+      return <CookiePolicy onNavigate={navigateTo} />;
     }
 
     if (page === "profile") {

@@ -85,7 +85,7 @@ function HeroBackground() {
   );
 }
 
-export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
+export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNavigate }) {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
@@ -917,7 +917,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard }) {
         </button>
       )}
 
-      <CookieConsent />
+      <CookieConsent onNavigate={onNavigate} />
     </div >
   );
 }

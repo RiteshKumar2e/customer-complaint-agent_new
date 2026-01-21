@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import '../styles/CookieConsent.css';
 
-export default function CookieConsent() {
+export default function CookieConsent({ onNavigate }) {
     const [showBanner, setShowBanner] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [preferences, setPreferences] = useState({
@@ -94,7 +94,7 @@ export default function CookieConsent() {
                             This website uses cookies that are needed for the site to work properly and to get data on how you interact with it, as well as for marketing purposes. By accepting, you agree to store cookies on your device for ad targeting, personalization, and analytics as described in our{' '}
                             <button
                                 className="cookie-link"
-                                onClick={() => window.open('/cookie-policy', '_blank')}
+                                onClick={() => onNavigate && onNavigate('cookie-policy')}
                             >
                                 Cookie policy
                             </button>.
@@ -126,7 +126,7 @@ export default function CookieConsent() {
                             Change your cookie preferences for each category of cookies. To find out more, read our{' '}
                             <button
                                 className="cookie-link"
-                                onClick={() => window.open('/cookie-policy', '_blank')}
+                                onClick={() => onNavigate && onNavigate('cookie-policy')}
                             >
                                 Cookie policy
                             </button>.

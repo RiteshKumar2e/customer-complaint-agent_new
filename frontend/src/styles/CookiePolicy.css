@@ -1,0 +1,303 @@
+.cookie-policy-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.cookie-policy-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3), transparent 50%);
+    pointer-events: none;
+}
+
+.cookie-policy-container {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.cookie-policy-content {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+/* Light theme support */
+body.light-theme .cookie-policy-page {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+}
+
+body.light-theme .cookie-policy-content {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.cookie-policy-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.back-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.back-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.back-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+.cookie-policy-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.last-updated {
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-style: italic;
+}
+
+/* Policy sections */
+.policy-section {
+    margin-bottom: 2.5rem;
+}
+
+.policy-section h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #667eea;
+}
+
+body.light-theme .policy-section h2 {
+    color: #111827;
+}
+
+.policy-section h3 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.policy-section h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.policy-section p {
+    color: #4b5563;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+}
+
+.policy-section ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 1rem 0;
+}
+
+.policy-section ul li {
+    color: #4b5563;
+    line-height: 1.8;
+    margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
+    position: relative;
+    font-size: 1.05rem;
+}
+
+.policy-section ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.policy-section ul li strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Cookie types */
+.cookie-type {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-left: 4px solid #667eea;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.cookie-type:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+}
+
+body.light-theme .cookie-type {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+}
+
+.cookie-type h3 {
+    margin-top: 0;
+    color: #667eea;
+}
+
+/* Browser controls */
+.browser-controls {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
+
+body.light-theme .browser-controls {
+    background: #f3f4f6;
+}
+
+.browser-controls h4 {
+    margin-top: 0;
+}
+
+/* Contact info */
+.contact-info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
+
+.contact-info p {
+    margin-bottom: 0.5rem;
+}
+
+.contact-info p:last-child {
+    margin-bottom: 0;
+}
+
+/* Footer */
+.policy-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e5e7eb;
+}
+
+.btn-primary {
+    padding: 1rem 2.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .cookie-policy-page {
+        padding: 1rem 0.5rem;
+    }
+
+    .cookie-policy-content {
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+    }
+
+    .cookie-policy-header h1 {
+        font-size: 2rem;
+    }
+
+    .back-button {
+        position: static;
+        margin-bottom: 1.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .policy-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .policy-section h3 {
+        font-size: 1.2rem;
+    }
+
+    .policy-section p,
+    .policy-section ul li {
+        font-size: 1rem;
+    }
+
+    .cookie-type {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .cookie-policy-content {
+        padding: 1.5rem 1rem;
+    }
+
+    .cookie-policy-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 0.875rem 2rem;
+    }
+}
