@@ -87,21 +87,21 @@
 .cookie-header h3 {
     font-size: 20px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
     margin: 0;
 }
 
 .cookie-description {
     font-size: 14px;
     line-height: 1.6;
-    color: #4a4a4a;
+    color: #4a4a4a !important;
     margin-bottom: 20px;
 }
 
 .cookie-link {
     background: none;
     border: none;
-    color: #6366f1;
+    color: #6366f1 !important;
     font-weight: 600;
     cursor: pointer;
     text-decoration: underline;
@@ -111,7 +111,7 @@
 }
 
 .cookie-link:hover {
-    color: #4f46e5;
+    color: #4f46e5 !important;
 }
 
 /* Cookie Actions */
@@ -140,7 +140,7 @@
 
 .btn-cookie-primary {
     background: #6366f1;
-    color: white;
+    color: white !important;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
@@ -152,7 +152,7 @@
 
 .btn-cookie-secondary {
     background: white;
-    color: #4a4a4a;
+    color: #4a4a4a !important;
     border: 2px solid #e5e7eb;
 }
 
@@ -163,7 +163,7 @@
 
 .btn-cookie-settings {
     background: transparent;
-    color: #6366f1;
+    color: #6366f1 !important;
     border: none;
     padding: 10px;
 }
@@ -189,7 +189,7 @@
 .cookie-settings-header h3 {
     font-size: 20px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
     margin: 0;
 }
 
@@ -197,7 +197,7 @@
     background: none;
     border: none;
     font-size: 24px;
-    color: #6b7280;
+    color: #6b7280 !important;
     cursor: pointer;
     padding: 4px;
     line-height: 1;
@@ -205,13 +205,13 @@
 }
 
 .cookie-close:hover {
-    color: #1a1a1a;
+    color: #1a1a1a !important;
 }
 
 .cookie-settings-description {
     font-size: 14px;
     line-height: 1.6;
-    color: #4a4a4a;
+    color: #4a4a4a !important;
     margin-bottom: 20px;
 }
 
@@ -250,30 +250,30 @@
 
 .category-icon {
     font-size: 12px;
-    color: #6b7280;
+    color: #6b7280 !important;
 }
 
 .category-title h4 {
     font-size: 16px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
     margin: 0;
 }
 
 .category-status {
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: #6b7280 !important;
 }
 
 .category-status.always-on {
-    color: #10b981;
+    color: #10b981 !important;
 }
 
 .category-description {
     font-size: 13px;
     line-height: 1.5;
-    color: #6b7280;
+    color: #6b7280 !important;
     margin: 0;
 }
 
@@ -335,7 +335,7 @@
 
 .btn-cookie-confirm {
     background: #6366f1;
-    color: white;
+    color: white !important;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
@@ -347,7 +347,7 @@
 
 .btn-cookie-accept {
     background: white;
-    color: #6366f1;
+    color: #6366f1 !important;
     border: 2px solid #6366f1;
 }
 
@@ -357,14 +357,14 @@
 
 .btn-cookie-reject {
     background: transparent;
-    color: #6b7280;
+    color: #6b7280 !important;
     border: none;
     padding: 10px;
 }
 
 .btn-cookie-reject:hover {
     background: #f9fafb;
-    color: #4a4a4a;
+    color: #4a4a4a !important;
 }
 
 /* Mobile Responsive */
