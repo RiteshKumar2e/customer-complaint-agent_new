@@ -61,25 +61,26 @@ body.light-theme .cookie-policy-content {
 .cookie-policy-header h1 {
     font-size: 2.5rem;
     font-weight: 800;
-    color: #ffffff;
+    color: #ffffff !important;
     margin-bottom: 0.5rem;
 }
 
 body.light-theme .cookie-policy-header h1 {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    color: transparent !important;
 }
 
 .last-updated {
-    color: #9ca3af;
+    color: #9ca3af !important;
     font-size: 0.95rem;
     font-style: italic;
 }
 
 body.light-theme .last-updated {
-    color: #6b7280;
+    color: #6b7280 !important;
 }
 
 /* Policy sections */
@@ -90,36 +91,36 @@ body.light-theme .last-updated {
 .policy-section h2 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #ffffff !important;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid #667eea;
 }
 
 body.light-theme .policy-section h2 {
-    color: #111827;
+    color: #111827 !important;
 }
 
 .policy-section h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #e5e7eb;
+    color: #e5e7eb !important;
     margin-bottom: 0.75rem;
 }
 
 body.light-theme .policy-section h3 {
-    color: #374151;
+    color: #374151 !important;
 }
 
 .policy-section p {
-    color: #d1d5db;
+    color: #d1d5db !important;
     line-height: 1.7;
     margin-bottom: 1rem;
     font-size: 1rem;
 }
 
 body.light-theme .policy-section p {
-    color: #4b5563;
+    color: #4b5563 !important;
 }
 
 /* Cookie types */
@@ -148,17 +149,22 @@ body.light-theme .cookie-type:hover {
 
 .cookie-type h3 {
     margin-top: 0;
-    color: #a78bfa;
+    color: #c4b5fd !important;
     font-size: 1.15rem;
 }
 
 body.light-theme .cookie-type h3 {
-    color: #667eea;
+    color: #667eea !important;
 }
 
 .cookie-type p {
     margin-bottom: 0;
     font-size: 0.95rem;
+    color: #d1d5db !important;
+}
+
+body.light-theme .cookie-type p {
+    color: #4b5563 !important;
 }
 
 /* Footer */
