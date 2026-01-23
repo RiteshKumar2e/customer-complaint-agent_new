@@ -17,6 +17,33 @@ export default function SideChatBot({ open, onClose }) {
   const recognitionRef = useRef(null);
   const chatBodyRef = useRef(null);
 
+  // Helper function to format markdown text to HTML
+  const formatMessageText = (text) => {
+    if (!text) return "";
+
+    let formatted = text;
+
+    // Convert **bold** to <strong>
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Convert *italic* to <em>
+    formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Convert `code` to <code>
+    formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
+
+    // Convert line breaks to <br>
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    // Convert numbered lists (1. item)
+    formatted = formatted.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item">$1. $2</div>');
+
+    // Convert bullet points (- item or * item)
+    formatted = formatted.replace(/^[-*]\s+(.+)$/gm, '<div class="list-item">• $1</div>');
+
+    return formatted;
+  };
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (chatBodyRef.current) {
@@ -114,7 +141,7 @@ export default function SideChatBot({ open, onClose }) {
       <div className="chat-body" ref={chatBodyRef}>
         {messages.map((m, i) => (
           <div key={i} className={`chat-msg ${m.role}`}>
-            <p>{m.text}</p>
+            <div dangerouslySetInnerHTML={{ __html: formatMessageText(m.text) }} />
 
             {m.meta && m.meta.type === "complaint" && (
               <div className="chat-meta">
