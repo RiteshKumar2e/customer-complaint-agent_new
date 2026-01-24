@@ -1116,7 +1116,7 @@ Need help? We're here for you!
 
 <br/>
 
-### ⚡ **Built with ❤️ and AI**
+### ⚡ **Built with ❤️**
 
 **Transforming Customer Service, One Complaint at a Time**
 
