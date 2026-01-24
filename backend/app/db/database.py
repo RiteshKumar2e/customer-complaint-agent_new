@@ -17,9 +17,11 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
 # ✅ Render uses 'postgres://' which SQLAlchemy requires 'postgresql://'
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-# ✅ Fix MySQL driver if needed
+# ✅ Fix MySQL/MariaDB driver
 elif DATABASE_URL.startswith("mysql://"):
-    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+    # Ensure we use pymysql for MySQL/MariaDB connections
+    if "pymysql" not in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
 
 
 
