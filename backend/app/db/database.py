@@ -11,28 +11,38 @@ def get_ist_time():
     return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 
-# ✅ Read DATABASE_URL from environment (Render / Local)
+# ✅ Read DATABASE_URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///complaints.db")
 
-# ✅ Render uses 'postgres://' which SQLAlchemy requires 'postgresql://'
+# ✅ Handle Render/Postgres URL conversion
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-# ✅ Fix MySQL/MariaDB driver
+
+# ✅ Handle MariaDB/MySQL (Aiven) URL conversion
 elif DATABASE_URL.startswith("mysql://"):
-    # Ensure we use pymysql for MySQL/MariaDB connections
+    # Fix driver
     if "pymysql" not in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+    
+    # Strip 'ssl-mode=REQUIRED' if present to avoid TypeError
+    if "ssl-mode=" in DATABASE_URL:
+        import re
+        DATABASE_URL = re.sub(r'[?&]ssl-mode=[^&]+', '', DATABASE_URL)
 
+# ✅ Create engine with SSL support for Aiven if needed
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+elif "aivencloud.com" in DATABASE_URL:
+    # Aiven requires SSL, but we must pass it via connect_args for pymysql
+    connect_args = {"ssl": {"ca": None}} # This triggers standard SSL check for Aiven
 
-
-# ✅ Create engine
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    echo=False,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+    connect_args=connect_args
 )
 
 # ✅ Session
