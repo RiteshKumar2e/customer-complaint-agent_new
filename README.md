@@ -42,7 +42,7 @@
 
 ### 🎯 **Next-Generation Customer Support Platform**
 
-**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **24+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and MariaDB/MySQL.
+**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **30+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and MariaDB/MySQL.
 
 </div>
 
@@ -85,7 +85,7 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    QUICKFIX AI PLATFORM                          ║
 ║                                                                  ║
-║  🎯 24+ AI Agents         │  ⚡ Multi-Tier LLM Fallback         ║
+║  🎯 30+ AI Agents         │  ⚡ Multi-Tier LLM Fallback         ║
 ║  🧠 RAG Knowledge Base    │  🔒 OAuth 2.0 + OTP Security        ║
 ║  📊 Real-time Dashboard   │  🌐 Multi-Language Support          ║
 ║  🔄 Groq → Gemini → Local │  📧 Automated Email Notifications   ║
@@ -101,7 +101,7 @@
 <td width="33%" align="center">
 <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="64"/>
 <h4>🧠 Multi-Agent Intelligence</h4>
-<p>24+ specialized AI agents working in parallel: Orchestrator, Classifier, Sentiment Analyzer, Priority Detector, RAG Engine, Churn Predictor, Urgency Analyzer, and more</p>
+<p>30+ specialized AI agents working in parallel: Orchestrator, Classifier, Sentiment Analyzer, Priority Detector, RAG Engine, Churn Predictor, Urgency Analyzer, and more</p>
 </td>
 <td width="33%" align="center">
 <img src="https://img.icons8.com/fluency/96/speed.png" width="64"/>
@@ -171,7 +171,7 @@ Quickfix implements a sophisticated **3-tier LLM fallback system** with intellig
 
 ---
 
-### 🎨 **The 24+ Agent Intelligence Grid**
+### 🎨 **The 30+ Agent Intelligence Grid**
 
 <div align="center">
 
@@ -311,7 +311,7 @@ graph LR
     end
     
     subgraph "Agent Orchestration"
-        D[24+ AI Agents<br/>Async Pipeline]
+        D[30+ AI Agents<br/>Async Pipeline]
     end
     
     subgraph "Data Layer"
@@ -369,7 +369,7 @@ customer-complaint-agent_new/
 │
 ├── 📂 backend/                     # FastAPI + Python
 │   ├── 📂 app/
-│   │   ├── 📂 agents/              # 24+ AI Agents
+│   │   ├── 📂 agents/              # 30+ AI Agents
 │   │   │   ├── orchestrator.py    # Master async coordinator
 │   │   │   ├── gemini_client.py   # Gemini multi-key rotation
 │   │   │   ├── groq_client.py     # Groq 30+ models
