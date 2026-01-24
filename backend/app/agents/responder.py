@@ -109,32 +109,40 @@ async def generate_response(category: str, text: str, user_language: str = None)
     
     # Layer 1: Try AI (Groq/Gemini - Best quality, contextual)
     if model is not None:
-        prompt = f"""You are an empathetic customer support specialist. Write a SHORT, SPECIFIC response.
+        prompt = f"""You are an empathetic customer support specialist responding to a complaint.
 
 COMPLAINT: "{text}"
 CATEGORY: {category}
-LANGUAGE: {user_language.upper()}
+DETECTED LANGUAGE: {user_language.upper()}
+
+🔴 CRITICAL LANGUAGE RULES (MUST FOLLOW):
 
 {language_instruction}
 
+You MUST respond in {user_language.upper()} language ONLY. Match the user's language pattern EXACTLY.
+
+LANGUAGE EXAMPLES:
+
+✅ ENGLISH (if user wrote in English):
+User: "My order hasn't arrived yet"
+You: "We sincerely apologize for the delivery delay. Our logistics team is tracking your order and will prioritize delivery. You'll receive an update within 12 hours."
+
+✅ HINGLISH (if user wrote in Hinglish/Roman Hindi):
+User: "Mera order abhi tak nahi aaya"
+You: "Delivery delay ke liye hume sachme maafi hai. Humari logistics team aapka order track kar rahi hai aur priority delivery ensure karegi. 12 hours mein update mil jayega."
+
+✅ HINDI (if user wrote in Devanagari):
+User: "मेरा ऑर्डर अभी तक नहीं आया"
+You: "डिलीवरी में देरी के लिए हमें सचमुच खेद है। हमारी टीम आपके ऑर्डर को ट्रैक कर रही है। 12 घंटों में अपडेट मिलेगा।"
+
 INSTRUCTIONS:
-1. Write in {user_language.upper()} language ONLY
+1. Write ONLY in {user_language.upper()} language - NO mixing unless user mixed
 2. Be SPECIFIC to this exact complaint (not generic)
-3. Keep it SHORT (2-3 sentences maximum)
+3. Keep it SHORT and CONCISE (3-6 sentences maximum)
 4. Show EMPATHY and acknowledge their specific concern
 5. Mention next steps briefly
 
-EXAMPLES:
-
-Hinglish:
-Complaint: "Mere red blood cells badh gaye hain"
-Response: "Aapki health concern ke liye thank you. Humari Medical Support team 24 hours mein aapka case review karegi aur root cause identify karegi. Kal tak personalized report aur recommendations mil jayenge."
-
-English:
-Complaint: "My red blood cells are increased"
-Response: "Thank you for sharing your health concern. Our Medical Support team will review your case within 24 hours to identify the cause. You'll receive a personalized report with recommendations by tomorrow."
-
-NOW WRITE A CONCISE RESPONSE (2-3 sentences only):"""
+NOW WRITE YOUR RESPONSE (in {user_language.upper()} ONLY):"""
         try:
             response = await model.generate_content_async(prompt)
             if response and response.text:
