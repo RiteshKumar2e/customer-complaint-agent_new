@@ -105,7 +105,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         organization=user_data.organization,
         profile_image=user_data.profile_image,
         hashed_password=hashed_pwd,
-        is_active=True
+        is_active=True,
+        role="Admin" if user_data.email == "riteshkumar90359@gmail.com" else "Strategic Member"
     )
     db.add(new_user)
     db.commit()
@@ -165,7 +166,12 @@ def google_auth(data: GoogleAuth, db: Session = Depends(get_db)):
     # Check if user exists, if not create a new user
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        user = User(email=email, full_name=data.name or "Google User", is_active=True)
+        user = User(
+            email=email, 
+            full_name=data.name or "Google User", 
+            is_active=True,
+            role="Admin" if email == "riteshkumar90359@gmail.com" else "Strategic Member"
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
