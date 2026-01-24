@@ -221,7 +221,7 @@ export default function App() {
     if (savedUser && token && lastActivity) {
       const now = Date.now();
       const idleTime = now - parseInt(lastActivity);
-      const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes of inactivity
+      const SESSION_TIMEOUT = 20 * 60 * 1000; // 20 minutes of inactivity
 
       if (idleTime > SESSION_TIMEOUT) {
         // Session expired - clear everything
@@ -261,7 +261,7 @@ export default function App() {
       if (lastActivity) {
         const now = Date.now();
         const idleTime = now - parseInt(lastActivity);
-        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+        const SESSION_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
         if (idleTime > SESSION_TIMEOUT) {
           console.log("🔒 Session expired on page load");
@@ -284,12 +284,12 @@ export default function App() {
       if (currentToken && currentLastActivity) {
         const now = Date.now();
         const idleTime = now - parseInt(currentLastActivity);
-        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+        const SESSION_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
         if (idleTime > SESSION_TIMEOUT) {
           console.log("🔒 Session timeout - Auto logout");
           handleLogout();
-          alert("आपका session 30 minutes के inactivity के बाद expire हो गया है। कृपया फिर से login करें।");
+          alert("आपका session 20 minutes के inactivity के बाद expire हो गया है। कृपया फिर से login करें।");
         }
       }
     }, 60000); // Check every 1 minute
