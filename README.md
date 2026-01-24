@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=1a1a1a" alt="React"/>
   <img src="https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white&labelColor=1a1a1a" alt="Gemini"/>
   <img src="https://img.shields.io/badge/Groq-LLaMA_3.3-FF6B6B?style=for-the-badge&logo=ai&logoColor=white&labelColor=1a1a1a" alt="Groq"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=1a1a1a" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/MariaDB-10.11+-003545?style=for-the-badge&logo=mariadb&logoColor=white&labelColor=1a1a1a" alt="MariaDB"/>
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@
 
 ### 🎯 **Next-Generation Customer Support Platform**
 
-**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **24+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and PostgreSQL.
+**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **24+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and MariaDB/MySQL.
 
 </div>
 
@@ -315,7 +315,7 @@ graph LR
     end
     
     subgraph "Data Layer"
-        E[(PostgreSQL 15+<br/>SQLAlchemy ORM)]
+        E[(MariaDB/MySQL<br/>SQLAlchemy ORM)]
         F[RAG Engine<br/>Policy KB]
     end
     
@@ -433,7 +433,7 @@ pip install -r requirements.txt
 # 3️⃣ Configure Environment
 cat > .env << EOL
 GEMINI_API_KEY=your_gemini_api_key
-DATABASE_URL=postgresql://user:pass@host:port/db
+DATABASE_URL=mysql://root@127.0.0.1:3306/quickfix_db
 BREVO_API_KEY=your_brevo_api_key
 SENDER_EMAIL=your-email@domain.com
 ADMIN_EMAIL=admin@domain.com
@@ -475,8 +475,8 @@ npm run dev
 <br/><b>Python 3.10+</b>
 </td>
 <td width="25%" align="center">
-<img src="https://img.icons8.com/color/96/postgreesql.png" width="48"/>
-<br/><b>PostgreSQL 15+</b>
+<img src="https://img.icons8.com/color/96/mysql-logo.png" width="48"/>
+<br/><b>MariaDB / MySQL</b>
 </td>
 <td width="25%" align="center">
 <img src="https://img.icons8.com/color/96/google-logo.png" width="48"/>
@@ -1051,8 +1051,8 @@ If this project helped you, please consider:
 <br/>Hosting Platform
 </td>
 <td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/postgreesql.png" width="64"/>
-<br/><b>PostgreSQL</b>
+<img src="https://img.icons8.com/color/96/mysql-logo.png" width="64"/>
+<br/><b>MariaDB</b>
 <br/>Database
 </td>
 </tr>
