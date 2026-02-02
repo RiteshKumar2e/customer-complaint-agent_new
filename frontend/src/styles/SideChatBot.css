@@ -48,32 +48,35 @@ body.light-theme .side-chat {
   gap: 8px;
 }
 
-.chat-header button {
-  background: rgba(2, 44, 34, 0.2);
-  border: none;
-  font-size: 20px;
+.chat-header .chat-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   color: #022c22;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 10;
   position: relative;
   pointer-events: auto;
   flex-shrink: 0;
 }
 
-.chat-header button:hover {
-  background: rgba(2, 44, 34, 0.4);
-  transform: rotate(90deg) scale(1.1);
+.chat-header .chat-close-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1) rotate(90deg);
+  border-color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
 }
 
-.chat-header button:active {
-  transform: rotate(90deg) scale(0.95);
+.chat-header .chat-close-btn:active {
+  transform: scale(0.9) rotate(90deg);
+  background: #dc2626;
 }
 
 /* ===== CHAT BODY ===== */
