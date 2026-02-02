@@ -85,16 +85,17 @@ JSON format:
         
         steps.append({"step": "Master Intelligence", "status": "Turbo Analysis Done"})
 
-        # Phase 2: Final Response Generation
-        # Context-aware and department specific
-        response = await generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
-        action = recommend_action(priority)
+        # Phase 2: Final Response Generation (Parallelized for Speed)
+        response_task = generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
+        churn_task = predict_churn_risk(sentiment, text)
+        urgency_task = analyze_complaint_urgency(text)
         
-        # Calculate Churn Risk using ML Model
-        churn_risk = await predict_churn_risk(sentiment, text)
+        # Execute phase 2 tasks in parallel
+        response, churn_risk, urgency_analysis = await asyncio.gather(
+            response_task, churn_task, urgency_task
+        )
         
-        # Analyze Urgency Intensity
-        urgency_analysis = await analyze_complaint_urgency(text)
+        action = recommend_action(priority) # This is a non-awaitable local logic usually
         
         steps.append({"step": "Processing Complete", "status": "Success"})
 

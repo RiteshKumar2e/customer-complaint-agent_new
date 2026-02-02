@@ -91,18 +91,19 @@ export default function SideChatBot({ open, onClose }) {
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const sendMessage = async (e) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || loading) return;
 
-    const userMsg = { role: "user", text: input };
+    const userMsg = { role: "user", text: input.trim() };
+    const currentInput = input.trim();
+
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await api.post("/agent/chat", null, {
-        params: { message: input },
-      });
+      const res = await api.post("/agent/chat", { message: currentInput });
 
       setMessages((prev) => [
         ...prev,
@@ -120,14 +121,6 @@ export default function SideChatBot({ open, onClose }) {
       ]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Function to handle Enter key press
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
     }
   };
 
@@ -162,16 +155,17 @@ export default function SideChatBot({ open, onClose }) {
         )}
       </div>
 
-      <div className="chat-input">
+      <form className="chat-input" onSubmit={sendMessage}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={isListening ? "Listening..." : "Type your message..."}
-          onKeyDown={handleKeyDown}
-          disabled={loading || isListening}
+          disabled={isListening}
+          autoComplete="off"
         />
         {voiceSupported && (
           <button
+            type="button"
             className={`voice-btn ${isListening ? 'active' : ''}`}
             onClick={toggleVoiceInput}
             title={isListening ? "Stop Listening" : "Voice Search"}
@@ -179,10 +173,10 @@ export default function SideChatBot({ open, onClose }) {
             {isListening ? "🛑" : "🎤"}
           </button>
         )}
-        <button onClick={sendMessage} disabled={loading || isListening}>
+        <button type="submit" disabled={loading || !input.trim() || isListening}>
           {loading ? "…" : "Send"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
