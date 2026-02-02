@@ -44,6 +44,8 @@ export default function SideChatBot({ open, onClose }) {
     return formatted;
   };
 
+  const inputRef = useRef(null);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (chatBodyRef.current) {
@@ -51,24 +53,56 @@ export default function SideChatBot({ open, onClose }) {
     }
   }, [messages, loading]);
 
+  // Auto-focus input when chat opens
+  useEffect(() => {
+    if (open && inputRef.current) {
+      setTimeout(() => inputRef.current.focus(), 300);
+    }
+  }, [open]);
+
+  // Handle hover focus
+  const handleInputHover = () => {
+    if (inputRef.current && !isListening) {
+      inputRef.current.focus();
+    }
+  };
+
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.continuous = false; // Capture one shot
+      recognitionRef.current.interimResults = true; // Show results as they come
       recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+
         setInput(transcript);
-        setIsListening(false);
+
+        // If it's a final result, wait a bit and send
+        if (event.results[0].isFinal) {
+          setIsListening(false);
+          // Small delay before auto-sending for better UX
+          setTimeout(() => {
+            if (transcript.trim()) {
+              sendMessage(null, transcript.trim());
+            }
+          }, 500);
+        }
       };
 
       recognitionRef.current.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        // Provide user feedback on error
+        if (event.error === 'not-allowed') {
+          alert("Microphone access denied. Please enable it in your browser settings.");
+        }
       };
 
       recognitionRef.current.onend = () => {
@@ -86,17 +120,25 @@ export default function SideChatBot({ open, onClose }) {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
-      recognitionRef.current.start();
-      setIsListening(true);
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+        // Handle case where recognition handles start differently
+        recognitionRef.current.stop();
+        setTimeout(() => recognitionRef.current.start(), 100);
+      }
     }
   };
 
-  const sendMessage = async (e) => {
+  const sendMessage = async (e, directText = null) => {
     if (e) e.preventDefault();
-    if (!input.trim() || loading) return;
+    const messageText = directText || input.trim();
+    if (!messageText || loading) return;
 
-    const userMsg = { role: "user", text: input.trim() };
-    const currentInput = input.trim();
+    const userMsg = { role: "user", text: messageText };
+    const currentInput = messageText;
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
@@ -155,8 +197,9 @@ export default function SideChatBot({ open, onClose }) {
         )}
       </div>
 
-      <form className="chat-input" onSubmit={sendMessage}>
+      <form className="chat-input" onSubmit={sendMessage} onMouseEnter={handleInputHover}>
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={isListening ? "Listening..." : "Type your message..."}

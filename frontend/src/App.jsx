@@ -62,27 +62,27 @@ function CursorTrail() {
       const speed = Math.sqrt(dx * dx + dy * dy);
       // Spawn more particles when moving fast
       const baseCount = isTouch ? 2 : 3;
-      const count = Math.min(baseCount + Math.floor(speed / 9), 9);
+      const count = Math.min(baseCount + Math.floor(speed / 15), 5); // Reduced count for performance
 
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const force = Math.random() * 2;
+        const force = Math.random() * 1.5;
         particles.current.push({
           x, y,
-          vx: (dx * 0.1) + Math.cos(angle) * force,
-          vy: (dy * 0.1) + Math.sin(angle) * force,
-          life: 1.0,
-          orbit: Math.random() * 0.1,
+          vx: (dx * 0.08) + Math.cos(angle) * force,
+          vy: (dy * 0.08) + Math.sin(angle) * force,
+          life: 0.8,
+          orbit: Math.random() * 0.05,
           angle: Math.random() * Math.PI * 2,
-          size: Math.random() * (isTouch ? 3 : 5) + (speed * 0.05) + 1,
+          size: Math.random() * (isTouch ? 2 : 3) + (speed * 0.03) + 0.5,
           color: isLight
-            ? (Math.random() > 0.5 ? '#2563eb' : '#60a5fa')
+            ? (Math.random() > 0.5 ? 'rgba(37, 99, 235, 0.4)' : 'rgba(96, 165, 250, 0.4)') // Added transparency for light theme
             : (Math.random() > 0.4 ? '#00d2ff' : '#ffffff'),
           shimmer: Math.random() * 10
         });
       }
 
-      const maxParticles = isTouch ? 80 : 120;
+      const maxParticles = isTouch ? 40 : 60; // Reduced max particles to fix lag
       if (particles.current.length > maxParticles) {
         particles.current.splice(0, particles.current.length - maxParticles);
       }
@@ -102,7 +102,7 @@ function CursorTrail() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Elastic smoothing
-      const lerpFactor = 0.18;
+      const lerpFactor = 0.22; // More responsive (increased from 0.18)
       mousePos.current.x += (targetPos.current.x - mousePos.current.x) * lerpFactor;
       mousePos.current.y += (targetPos.current.y - mousePos.current.y) * lerpFactor;
 
@@ -113,13 +113,13 @@ function CursorTrail() {
       ctx.globalCompositeOperation = isLight ? 'source-over' : 'screen';
 
       // Outer aura
-      const auraRadius = isLight ? 45 : 60;
+      const auraRadius = isLight ? 25 : 45; // Reduced radius
       const aura = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
       if (isLight) {
-        aura.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+        aura.addColorStop(0, 'rgba(59, 130, 246, 0.15)'); // More transparent light theme
         aura.addColorStop(1, 'rgba(59, 130, 246, 0)');
       } else {
-        aura.addColorStop(0, 'rgba(0, 210, 255, 0.25)');
+        aura.addColorStop(0, 'rgba(0, 210, 255, 0.2)');
         aura.addColorStop(1, 'rgba(0, 210, 255, 0)');
       }
       ctx.fillStyle = aura;
@@ -128,10 +128,10 @@ function CursorTrail() {
       ctx.fill();
 
       // Core glow
-      const coreRadius = isLight ? 15 : 20;
+      const coreRadius = isLight ? 10 : 15; // Reduced core size
       const core = ctx.createRadialGradient(x, y, 0, x, y, coreRadius);
-      core.addColorStop(0, '#ffffff');
-      core.addColorStop(0.4, isLight ? '#3b82f6' : '#00d2ff');
+      core.addColorStop(0, isLight ? 'rgba(255, 255, 255, 0.8)' : '#ffffff');
+      core.addColorStop(0.4, isLight ? 'rgba(59, 130, 246, 0.4)' : '#00d2ff');
       core.addColorStop(1, 'transparent');
       ctx.fillStyle = core;
       ctx.beginPath();
@@ -139,9 +139,9 @@ function CursorTrail() {
       ctx.fill();
 
       // Inner dot
-      ctx.fillStyle = isLight ? '#2563eb' : '#ffffff';
+      ctx.fillStyle = isLight ? 'rgba(37, 99, 235, 0.6)' : '#ffffff'; // Transparent dot in light theme
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
@@ -151,13 +151,14 @@ function CursorTrail() {
 
         // Add slight orbital drift
         p.angle += p.orbit;
-        p.vx += Math.cos(p.angle) * 0.1;
-        p.vy += Math.sin(p.angle) * 0.1;
+        p.vx += Math.cos(p.angle) * 0.08;
+        p.vy += Math.sin(p.angle) * 0.08;
 
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.015;
-        p.size *= 0.97;
+        p.life -= 0.02; // Faster decay (from 0.015)
+        p.size *= 0.96; // Faster shrink (from 0.97)
+
 
         if (p.life <= 0 || p.size < 0.5) {
           particles.current.splice(i, 1);
