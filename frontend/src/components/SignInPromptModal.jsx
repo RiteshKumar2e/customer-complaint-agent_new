@@ -22,7 +22,7 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
             // Show modal after 15 seconds (as per "15 section" request)
             const timer = setTimeout(() => {
                 setIsVisible(true);
-            }, 15000);
+            }, 20000);
 
             return () => clearTimeout(timer);
         }
