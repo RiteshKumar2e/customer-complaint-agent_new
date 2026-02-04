@@ -26,7 +26,7 @@
 <!-- Action Buttons -->
 <p align="center">
   <a href="https://riteshkr.online">
-    <img src="https://img.shields.io/badge/🚀_LIVE_DEMO-Launch_Platform-6366F1?style=for-the-badge&labelColor=1a1a1a" alt="Live Demo"/>
+    <img src="https://img.shields.io/badge/🚀_LIVE_DEMO-Launch_Platform-6366F1?style=for-the-badge&labelColor=1a1a1a" alt="Live"/>
   </a>
   <a href="#-quick-start">
     <img src="https://img.shields.io/badge/⚡_QUICK_START-5_Minutes-10B981?style=for-the-badge&labelColor=1a1a1a" alt="Quick Start"/>
