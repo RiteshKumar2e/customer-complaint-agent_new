@@ -19,7 +19,7 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
     useEffect(() => {
         // Only show modal if user is NOT logged in
         if (!isAuthenticated) {
-            // Show modal after 15 seconds (as per "15 section" request)
+            // Show modal after 20 seconds (as per "20 section" request)
             const timer = setTimeout(() => {
                 setIsVisible(true);
             }, 20000);
