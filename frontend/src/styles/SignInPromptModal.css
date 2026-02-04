@@ -1,0 +1,322 @@
+/* Sign-In Prompt Modal Styles - Quickfix AI Theme */
+
+.signin-prompt-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    z-index: 999998;
+}
+
+body.light-theme .signin-prompt-backdrop {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+.signin-prompt-modal {
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 460px;
+    max-height: 85vh;
+    background: linear-gradient(145deg, #0a0a0f 0%, #151520 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 28px;
+    padding: 32px;
+    z-index: 999999;
+    box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 60px rgba(99, 102, 241, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+body.light-theme .signin-prompt-modal {
+    background: linear-gradient(145deg, #ffffff 0%, #f4f7ff 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        0 0 60px rgba(99, 102, 241, 0.1);
+}
+
+.signin-prompt-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.signin-prompt-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+body.light-theme .signin-prompt-close {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.signin-prompt-close:hover {
+    transform: rotate(90deg) scale(1.1);
+}
+
+.signin-prompt-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.signin-prompt-icon-wrapper {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: portal-glow 3s infinite alternate;
+}
+
+@keyframes portal-glow {
+    0% {
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    100% {
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+    }
+}
+
+.signin-prompt-icon {
+    color: #818cf8;
+    animation: float-icon 4s ease-in-out infinite;
+}
+
+@keyframes float-icon {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(5deg);
+    }
+}
+
+.signin-prompt-header h2 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+}
+
+body.light-theme .signin-prompt-header h2 {
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    -webkit-background-clip: text;
+}
+
+.signin-prompt-header p {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 300px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+body.light-theme .signin-prompt-header p {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.signin-prompt-features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 36px;
+}
+
+.signin-prompt-feature {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.signin-prompt-feature:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateX(8px);
+}
+
+body.light-theme .signin-prompt-feature {
+    background: #f8faff;
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+.feature-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #818cf8;
+}
+
+.feature-content h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 2px 0;
+}
+
+body.light-theme .feature-content h3 {
+    color: #1e1b4b;
+}
+
+.feature-content p {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+}
+
+body.light-theme .feature-content p {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.signin-prompt-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.btn-signin-primary {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-signin-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4);
+}
+
+.btn-signin-primary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.btn-signin-primary:hover::after {
+    opacity: 1;
+}
+
+.btn-signin-secondary {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-signin-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.light-theme .btn-signin-secondary {
+    color: rgba(0, 0, 0, 0.6);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .btn-signin-secondary:hover {
+    background: rgba(0, 0, 0, 0.03);
+    color: #000;
+}
+
+/* Scrollbar Styles */
+.signin-prompt-modal::-webkit-scrollbar {
+    width: 5px;
+}
+
+.signin-prompt-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.signin-prompt-modal::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+}
+
+@media (max-width: 480px) {
+    .signin-prompt-modal {
+        padding: 24px;
+        width: 85%;
+    }
+
+    .signin-prompt-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .signin-prompt-feature {
+        padding: 10px 14px;
+    }
+}

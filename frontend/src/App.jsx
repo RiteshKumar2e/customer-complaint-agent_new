@@ -14,6 +14,7 @@ import Profile from "./components/Profile";
 import AdminDashboard from "./components/AdminDashboard";
 import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
+import SignInPromptModal from "./components/SignInPromptModal";
 import { getAllComplaints } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
@@ -205,7 +206,7 @@ function CursorTrail() {
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 100000, // Increased to appear above all modals
+        zIndex: 2000000, // Increased to appear above all modals (including Sign-In Prompt at 999999)
       }}
     />
   );
@@ -537,6 +538,14 @@ export default function App() {
       )}
 
       {renderPage()}
+
+      {/* Sign-In Prompt Modal (Triggered after 15s on Landing Page) */}
+      {page === "landing" && !user && (
+        <SignInPromptModal
+          onNavigate={navigateTo}
+          isAuthenticated={!!user}
+        />
+      )}
 
       {(page === "landing" || page === "profile" || page === "form" || !["login", "signup", "forgot-password", "reset-password"].includes(page)) && (
         <>
