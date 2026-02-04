@@ -40,24 +40,24 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
 
     const features = [
         {
-            icon: <Cpu size={22} />,
-            title: "Agentic Clusters",
-            description: "High-frequency agents for surgical precision"
-        },
-        {
-            icon: <MessageSquare size={22} />,
-            title: "Sentiment Engine",
-            description: "Deep emotional context extraction"
+            icon: <Sparkles size={22} />,
+            title: "AI Powered Assistant",
+            description: "Advanced AI agents to resolve your issues in seconds"
         },
         {
             icon: <Zap size={22} />,
-            title: "Atomic Latency",
-            description: "Resolutions in seconds, not days"
+            title: "Smart Complaint System",
+            description: "Automated classification and surgical priority detection"
         },
         {
-            icon: <Shield size={22} />,
-            title: "Kernel Security",
-            description: "Enterprise-grade AES-256 protection"
+            icon: <BarChart2 size={22} />,
+            title: "My Complaints History",
+            description: "Track and manage all your resolutions in one secure place"
+        },
+        {
+            icon: <TrendingUp size={22} />,
+            title: "Resolution Insights",
+            description: "Predictive satisfaction and deep sentiment analysis"
         }
     ];
 
