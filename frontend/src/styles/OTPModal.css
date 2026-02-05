@@ -108,7 +108,7 @@ body.light-theme .otp-email {
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     color: white;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     outline: none;
 }
 
@@ -155,7 +155,7 @@ body.light-theme .otp-input:focus {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
 }
 
@@ -176,7 +176,7 @@ body.light-theme .otp-input:focus {
     padding: 12px;
     font-size: 14px;
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: color 0.15s ease;
 }
 
 body.light-theme .otp-cancel {
@@ -211,7 +211,7 @@ body.light-theme .otp-cancel:hover:not(:disabled) {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     padding: 8px 16px;
     border-radius: 8px;
 }

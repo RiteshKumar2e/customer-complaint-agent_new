@@ -464,14 +464,17 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             </div >
 
             {/* OTP Modal for Google Sign-In */}
-            < OTPModal
-                isOpen={showOTPModal}
-                onClose={() => setShowOTPModal(false)
-                }
-                email={otpEmail}
-                onVerify={handleOTPVerify}
-                loading={otpLoading}
-            />
+            <AnimatePresence mode="wait">
+                {showOTPModal && (
+                    <OTPModal
+                        isOpen={showOTPModal}
+                        onClose={() => setShowOTPModal(false)}
+                        email={otpEmail}
+                        onVerify={handleOTPVerify}
+                        loading={otpLoading}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div >
     );
 }

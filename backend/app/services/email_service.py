@@ -31,6 +31,9 @@ class EmailService:
         if not self.api_key:
             print("\n⚠️ CRITICAL: BREVO_API_KEY not set in .env!")
             print("❌ Emails will be MOCKED (printed to console) instead of sending.\n")
+        
+        # 🚀 HIGH SPEED: Use persistent session for connection pooling
+        self.session = requests.Session()
     
     # ------------------------------------------------------------------
     # PUBLIC METHODS (Threaded for Speed)
@@ -308,7 +311,7 @@ class EmailService:
             priority_label = "[PRIORITY OTP]" if priority else ""
             print(f"🚀 {priority_label} Dispatching via Brevo... To: {to_email}")
             
-            response = requests.post(url, headers=headers, json=data, timeout=timeout_duration)
+            response = self.session.post(url, headers=headers, json=data, timeout=timeout_duration)
             
             if response.status_code in [200, 201, 202]:
                 msg_id = response.json().get('messageId', 'N/A')

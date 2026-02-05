@@ -71,90 +71,96 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
     if (!isOpen) return null;
 
     return (
-        <AnimatePresence>
+        <motion.div
+            className="otp-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+        >
             <motion.div
-                className="otp-modal-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
+                className="otp-modal-content"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                transition={{ 
+                    type: "spring", 
+                    stiffness: 500, 
+                    damping: 30,
+                    duration: 0.1
+                }}
+                onClick={(e) => e.stopPropagation()}
             >
-                <motion.div
-                    className="otp-modal-content"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="otp-modal-header">
-                        <div className="otp-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                <polyline points="22,6 12,13 2,6" />
-                            </svg>
-                        </div>
-                        <h2>Verify Your Email</h2>
-                        <p>We've sent a 6-digit code to</p>
-                        <p className="otp-email">{email}</p>
+                <div className="otp-modal-header">
+                    <div className="otp-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                    </div>
+                    <h2>Verify Your Email</h2>
+                    <p>We've sent a 6-digit code to</p>
+                    <p className="otp-email">{email}</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="otp-form">
+                    <div className="otp-inputs">
+                        {otp.map((digit, index) => (
+                            <input
+                                key={index}
+                                id={`otp-${index}`}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength="1"
+                                value={digit}
+                                onChange={(e) => handleChange(index, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(index, e)}
+                                onPaste={handlePaste}
+                                autoFocus={index === 0}
+                                className="otp-input"
+                            />
+                        ))}
                     </div>
 
-                    <form onSubmit={handleSubmit} className="otp-form">
-                        <div className="otp-inputs">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    id={`otp-${index}`}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength="1"
-                                    value={digit}
-                                    onChange={(e) => handleChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(index, e)}
-                                    onPaste={handlePaste}
-                                    autoFocus={index === 0}
-                                    className="otp-input"
-                                />
-                            ))}
-                        </div>
-
-                        {error && (
-                            <motion.div
-                                className="otp-error"
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                            >
-                                {error}
-                            </motion.div>
-                        )}
-
-                        <motion.button
-                            type="submit"
-                            className="otp-submit"
-                            disabled={loading || otp.join("").length !== 6}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                    {error && (
+                        <motion.div
+                            className="otp-error"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.1 }}
                         >
-                            {loading ? "Verifying..." : "Verify OTP"}
-                        </motion.button>
+                            {error}
+                        </motion.div>
+                    )}
 
-                        <button
-                            type="button"
-                            className="otp-cancel"
-                            onClick={onClose}
-                            disabled={loading}
-                        >
-                            Cancel
-                        </button>
-                    </form>
+                    <motion.button
+                        type="submit"
+                        className="otp-submit"
+                        disabled={loading || otp.join("").length !== 6}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {loading ? "Verifying..." : "Verify OTP"}
+                    </motion.button>
 
-                    <div className="otp-footer">
-                        <p>Didn't receive the code?</p>
-                        <button className="otp-resend" type="button">
-                            Resend OTP
-                        </button>
-                    </div>
-                </motion.div>
+                    <button
+                        type="button"
+                        className="otp-cancel"
+                        onClick={onClose}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
+                </form>
+
+                <div className="otp-footer">
+                    <p>Didn't receive the code?</p>
+                    <button className="otp-resend" type="button">
+                        Resend OTP
+                    </button>
+                </div>
             </motion.div>
-        </AnimatePresence>
+        </motion.div>
     );
 }
