@@ -5,8 +5,8 @@
 
 <br/>
 
-<br/>
 
+<br/>
 <!-- Premium Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a1a" alt="FastAPI"/>
@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/Groq-LLaMA_3.3-FF6B6B?style=for-the-badge&logo=ai&logoColor=white&labelColor=1a1a1a" alt="Groq"/>
   <img src="https://img.shields.io/badge/MariaDB-10.11+-003545?style=for-the-badge&logo=mariadb&logoColor=white&labelColor=1a1a1a" alt="MariaDB"/>
 </p>
+
 
 <p align="center">
   <img src="https://img.shields.io/github/stars/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a1a" alt="Stars"/>
