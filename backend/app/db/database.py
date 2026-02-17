@@ -104,7 +104,8 @@ def run_migrations():
             ("device_type", "VARCHAR(100)"),
             ("status", "VARCHAR(50)"),
             ("login_location", "VARCHAR(255)"),
-            ("created_at", "DATETIME")
+            ("created_at", "DATETIME"),
+            ("phone", "VARCHAR(20)")
         ]
         for col_name, col_type in history_columns:
             try:

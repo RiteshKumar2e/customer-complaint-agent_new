@@ -364,8 +364,18 @@ body:not(.light-theme) .device-type {
     color: #1e40af;
 }
 
+.phone-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #475569;
+}
+
 body:not(.light-theme) .location-cell {
     color: #60a5fa;
+}
+
+body:not(.light-theme) .phone-cell {
+    color: #94a3b8;
 }
 
 /* Failure Status reason */

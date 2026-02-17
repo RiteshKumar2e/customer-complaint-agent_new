@@ -30,6 +30,7 @@ class UserLogin(BaseModel):
 class PasswordLogin(BaseModel):
     email: EmailStr
     password: str
+    location: Optional[str] = None
 
 class ForgotPassword(BaseModel):
     email: EmailStr
@@ -42,10 +43,12 @@ class ResetPassword(BaseModel):
 class OTPVerify(BaseModel):
     email: EmailStr
     otp: str
+    location: Optional[str] = None
 
 class GoogleAuth(BaseModel):
     token: str
     name: Optional[str] = None
+    location: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int

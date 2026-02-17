@@ -122,7 +122,21 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
         setError("");
 
         try {
-            const data = await loginWithPassword(email, password);
+            // Get location if permission granted
+            let loginLocation = "India";
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                });
+                const { latitude, longitude } = pos.coords;
+                // Simple reverse geocoding approach or just coordinate string
+                loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                // Optionally use a free API for city/state if needed
+            } catch (locErr) {
+                console.log("Location access denied or failed:", locErr.message);
+            }
+
+            const data = await loginWithPassword(email, password, loginLocation);
 
             // Handle Remember Me logic
             if (rememberMe) {
@@ -170,8 +184,17 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                 setOtpEmail(userInfo.email);
                 setShowOTPModal(true);
 
+                // Get location
+                let loginLocation = "India";
+                try {
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                    });
+                    loginLocation = `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
+                } catch (locErr) { }
+
                 // Trigger backend OTP in background
-                googleAuth(userInfo.email, userInfo.name).catch(err => {
+                googleAuth(userInfo.email, userInfo.name, loginLocation).catch(err => {
                     setError(err.response?.data?.detail || "Failed to trigger OTP email");
                     setShowOTPModal(false);
                 });
@@ -189,7 +212,16 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const handleOTPVerify = async (otp) => {
         setOtpLoading(true);
         try {
-            const response = await googleVerifyOTP(otpEmail, otp);
+            // Get location
+            let loginLocation = "India";
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                });
+                loginLocation = `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
+            } catch (locErr) { }
+
+            const response = await googleVerifyOTP(otpEmail, otp, loginLocation);
             localStorage.setItem("token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
             localStorage.setItem("sessionTimestamp", Date.now().toString());

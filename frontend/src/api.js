@@ -78,13 +78,13 @@ export const requestOTP = async (email) => {
   return response.data;
 };
 
-export const verifyOTP = async (email, otp) => {
-  const response = await api.post("/auth/verify-otp", { email, otp });
+export const verifyOTP = async (email, otp, location = null) => {
+  const response = await api.post("/auth/verify-otp", { email, otp, location });
   return response.data;
 };
 
-export const loginWithPassword = async (email, password) => {
-  const response = await api.post("/auth/login-password", { email, password });
+export const loginWithPassword = async (email, password, location = null) => {
+  const response = await api.post("/auth/login-password", { email, password, location });
   return response.data;
 };
 
@@ -98,13 +98,13 @@ export const resetPassword = async (email, reset_token, new_password) => {
   return response.data;
 };
 
-export const googleAuth = async (token, name) => {
-  const response = await api.post("/auth/google", { token, name });
+export const googleAuth = async (token, name, location = null) => {
+  const response = await api.post("/auth/google", { token, name, location });
   return response.data;
 };
 
-export const googleVerifyOTP = async (email, otp) => {
-  const response = await api.post("/auth/google-verify-otp", { email, otp });
+export const googleVerifyOTP = async (email, otp, location = null) => {
+  const response = await api.post("/auth/google-verify-otp", { email, otp, location });
   return response.data;
 };
 

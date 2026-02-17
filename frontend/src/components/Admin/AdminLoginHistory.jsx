@@ -142,11 +142,12 @@ export default function AdminLoginHistory() {
         }
 
         // 5. Prepare High-Quality Table Data
-        const tableColumn = ["ID", "USER NAME", "EMAIL ADDRESS", "METHOD", "DEVICE", "LOCATION", "STATUS", "LOGIN TIME", "LOGOUT TIME"];
+        const tableColumn = ["ID", "USER NAME", "EMAIL ADDRESS", "PHONE", "METHOD", "DEVICE", "LOCATION", "STATUS", "LOGIN TIME", "LOGOUT TIME"];
         const tableRows = loginHistory.map(record => [
             record.id,
             record.user_name || 'N/A',
             record.email,
+            record.phone || 'N/A',
             record.login_method.toUpperCase(),
             record.device_type || 'Desktop',
             record.login_location || 'India',
@@ -316,6 +317,7 @@ export default function AdminLoginHistory() {
                             <tr>
                                 <th>ID</th>
                                 <th>User</th>
+                                <th>Contact No</th>
                                 <th>Method</th>
                                 <th>Device</th>
                                 <th>Location</th>
@@ -333,6 +335,9 @@ export default function AdminLoginHistory() {
                                             <span className="user-name">{record.user_name || 'N/A'}</span>
                                             <span className="user-email">{record.email}</span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span className="phone-cell">{record.phone || 'N/A'}</span>
                                     </td>
                                     <td>
                                         <span className={`method-badge ${getMethodBadgeClass(record.login_method)}`}>

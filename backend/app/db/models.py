@@ -30,6 +30,7 @@ class LoginHistory(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     user_name = Column(String(100), nullable=True) # User's full name
     email = Column(String(100), nullable=False, index=True)
+    phone = Column(String(20), nullable=True) # User's phone number
     login_method = Column(String(50), nullable=False)  # 'password', 'otp', 'google'
     ip_address = Column(String(50), nullable=True)
     user_agent = Column(Text, nullable=True)  # Browser info

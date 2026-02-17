@@ -21,7 +21,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def log_login_attempt(db: Session, user_id: int, email: str, method: str, 
                      success: bool = True, failure_reason: str = None,
                      ip_address: str = None, user_agent: str = None,
-                     user_name: str = None):
+                     user_name: str = None, login_location: str = None):
     """Log user login attempt for admin tracking"""
     # Simple device type detection
     ua = (user_agent or "").lower()
@@ -30,11 +30,16 @@ def log_login_attempt(db: Session, user_id: int, email: str, method: str,
         device_type = "Mobile"
     elif "tablet" in ua or "ipad" in ua:
         device_type = "Tablet"
+    
+    # Fetch phone from user model if not provided
+    user = db.query(User).filter(User.id == user_id).first()
+    phone = user.phone if user else None
         
     login_record = LoginHistory(
         user_id=user_id,
         user_name=user_name or email.split('@')[0],
         email=email,
+        phone=phone,
         login_method=method,
         success=success,
         failure_reason=failure_reason,
@@ -42,7 +47,7 @@ def log_login_attempt(db: Session, user_id: int, email: str, method: str,
         user_agent=user_agent,
         device_type=device_type,
         status="Completed" if success else "Failed",
-        login_location="India" # Default for now, can be improved with GeoIP
+        login_location=login_location or "India" # Use precise location if available
     )
     db.add(login_record)
     db.commit()
@@ -196,7 +201,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
             success=False, failure_reason="Invalid OTP",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
@@ -207,7 +213,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
             success=False, failure_reason="OTP expired",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(status_code=400, detail="OTP expired")
     
@@ -221,7 +228,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
         db, user.id, user.email, "otp",
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
-        user_name=user.full_name
+        user_name=user.full_name,
+        login_location=data.location
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -282,7 +290,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
             success=False, failure_reason="Invalid OTP",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
@@ -293,7 +302,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
             success=False, failure_reason="OTP expired",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(status_code=400, detail="OTP expired")
     
@@ -307,7 +317,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
         db, user.id, user.email, "google",
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
-        user_name=user.full_name
+        user_name=user.full_name,
+        login_location=data.location
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -336,7 +347,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
             success=False, failure_reason="No password set",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(
             status_code=400,
@@ -350,7 +362,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
             success=False, failure_reason="Wrong password",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            user_name=user.full_name
+            user_name=user.full_name,
+            login_location=data.location
         )
         raise HTTPException(
             status_code=401,
@@ -362,7 +375,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
         db, user.id, user.email, "password",
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
-        user_name=user.full_name
+        user_name=user.full_name,
+        login_location=data.location
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -445,6 +459,7 @@ def get_login_history(
                 "user_id": record.user_id,
                 "user_name": record.user_name or full_name or record.email.split('@')[0], # Fallback to email name
                 "email": record.email,
+                "phone": record.phone,
                 "login_method": record.login_method,
                 "ip_address": record.ip_address,
                 "user_agent": record.user_agent,
