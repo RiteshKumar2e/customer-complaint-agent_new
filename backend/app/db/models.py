@@ -28,13 +28,19 @@ class LoginHistory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    user_name = Column(String(100), nullable=True) # User's full name
     email = Column(String(100), nullable=False, index=True)
     login_method = Column(String(50), nullable=False)  # 'password', 'otp', 'google'
     ip_address = Column(String(50), nullable=True)
-    user_agent = Column(Text, nullable=True)  # Browser/device info
+    user_agent = Column(Text, nullable=True)  # Browser info
+    device_type = Column(String(100), nullable=True) # Mobile, Tablet, Desktop
+    login_location = Column(String(255), nullable=True) # City, Country (Approximate)
     success = Column(Boolean, default=True)  # Login successful or failed
+    status = Column(String(50), default="Completed") # Login Status
     failure_reason = Column(String(255), nullable=True)  # Reason if failed
     login_time = Column(DateTime, default=get_ist_time, index=True)
+    logout_time = Column(DateTime, nullable=True) # Time when user logged out
+    created_at = Column(DateTime, default=get_ist_time)
     
     def __repr__(self):
         return f"<LoginHistory(user_id={self.user_id}, email='{self.email}', method='{self.login_method}', time='{self.login_time}')>"

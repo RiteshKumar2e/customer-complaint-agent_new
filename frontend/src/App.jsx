@@ -16,7 +16,7 @@ import AdminLoginHistory from "./components/Admin/AdminLoginHistory";
 import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import SignInPromptModal from "./components/SignInPromptModal";
-import { getAllComplaints } from "./api";
+import { getAllComplaints, logoutUser } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
 import "./styles/Profile.css";
@@ -410,6 +410,9 @@ export default function App() {
 
   const handleLogout = () => {
     console.log("🚪 Logging out user");
+    if (user && user.email) {
+      logoutUser(user.email).catch(err => console.error("Logout log error:", err));
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("lastPage");

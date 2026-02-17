@@ -113,6 +113,11 @@ export const updateProfile = async (email, profileData) => {
   return response.data;
 };
 
+export const logoutUser = async (email) => {
+  const response = await api.post(`/auth/logout?email=${encodeURIComponent(email)}`);
+  return response.data;
+};
+
 export const submitResolutionFeedback = async (ticketId, isActuallyResolved, userComment = "") => {
   const response = await api.post(`/complaint/${ticketId}/resolution-feedback`, {
     is_actually_resolved: isActuallyResolved,

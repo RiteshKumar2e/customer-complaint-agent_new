@@ -20,19 +20,47 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Helper function to log login attempts
 def log_login_attempt(db: Session, user_id: int, email: str, method: str, 
                      success: bool = True, failure_reason: str = None,
-                     ip_address: str = None, user_agent: str = None):
+                     ip_address: str = None, user_agent: str = None,
+                     user_name: str = None):
     """Log user login attempt for admin tracking"""
+    # Simple device type detection
+    ua = (user_agent or "").lower()
+    device_type = "Desktop"
+    if "mobile" in ua or "iphone" in ua or "android" in ua:
+        device_type = "Mobile"
+    elif "tablet" in ua or "ipad" in ua:
+        device_type = "Tablet"
+        
     login_record = LoginHistory(
         user_id=user_id,
+        user_name=user_name or email.split('@')[0],
         email=email,
         login_method=method,
         success=success,
         failure_reason=failure_reason,
         ip_address=ip_address,
-        user_agent=user_agent
+        user_agent=user_agent,
+        device_type=device_type,
+        status="Completed" if success else "Failed",
+        login_location="India" # Default for now, can be improved with GeoIP
     )
     db.add(login_record)
     db.commit()
+
+@router.post("/logout")
+def logout(email: str, db: Session = Depends(get_db)):
+    """Record user logout time"""
+    last_login = db.query(LoginHistory).filter(
+        LoginHistory.email == email,
+        LoginHistory.success == True,
+        LoginHistory.logout_time == None
+    ).order_by(LoginHistory.login_time.desc()).first()
+    
+    if last_login:
+        last_login.logout_time = get_ist_time()
+        db.commit()
+    
+    return {"message": "Logged out successfully"}
 
 # ... (rest of imports)
 
@@ -167,7 +195,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
             db, user.id, user.email, "otp", 
             success=False, failure_reason="Invalid OTP",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
@@ -177,7 +206,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
             db, user.id, user.email, "otp", 
             success=False, failure_reason="OTP expired",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(status_code=400, detail="OTP expired")
     
@@ -190,7 +220,8 @@ def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db))
     log_login_attempt(
         db, user.id, user.email, "otp",
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
+        user_name=user.full_name
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -250,7 +281,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
             db, user.id, user.email, "google", 
             success=False, failure_reason="Invalid OTP",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
@@ -260,7 +292,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
             db, user.id, user.email, "google", 
             success=False, failure_reason="OTP expired",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(status_code=400, detail="OTP expired")
     
@@ -273,7 +306,8 @@ def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(g
     log_login_attempt(
         db, user.id, user.email, "google",
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
+        user_name=user.full_name
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -301,7 +335,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
             db, user.id, user.email, "password", 
             success=False, failure_reason="No password set",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(
             status_code=400,
@@ -314,7 +349,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
             db, user.id, user.email, "password", 
             success=False, failure_reason="Wrong password",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
+            user_name=user.full_name
         )
         raise HTTPException(
             status_code=401,
@@ -325,7 +361,8 @@ def login_with_password(data: PasswordLogin, request: Request, db: Session = Dep
     log_login_attempt(
         db, user.id, user.email, "password",
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
+        user_name=user.full_name
     )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -393,28 +430,34 @@ def get_login_history(
     - email: Filter by specific user email (optional)
     - limit: Number of records to return (default 100)
     """
-    query = db.query(LoginHistory)
+    query = db.query(LoginHistory, User.full_name).outerjoin(User, LoginHistory.user_id == User.id)
     
     if email:
         query = query.filter(LoginHistory.email == email)
     
-    login_records = query.order_by(LoginHistory.login_time.desc()).limit(limit).all()
+    results = query.order_by(LoginHistory.login_time.desc()).limit(limit).all()
     
     return {
-        "total": len(login_records),
+        "total": len(results),
         "records": [
             {
                 "id": record.id,
                 "user_id": record.user_id,
+                "user_name": record.user_name or full_name or record.email.split('@')[0], # Fallback to email name
                 "email": record.email,
                 "login_method": record.login_method,
                 "ip_address": record.ip_address,
                 "user_agent": record.user_agent,
+                "device_type": record.device_type,
+                "login_location": record.login_location,
                 "success": record.success,
+                "status": record.status,
                 "failure_reason": record.failure_reason,
-                "login_time": record.login_time.isoformat() if record.login_time else None
+                "login_time": record.login_time.isoformat() if record.login_time else None,
+                "logout_time": record.logout_time.isoformat() if record.logout_time else None,
+                "created_at": record.created_at.isoformat() if record.created_at else None
             }
-            for record in login_records
+            for record, full_name in results
         ]
     }
 

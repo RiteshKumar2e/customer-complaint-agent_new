@@ -42,16 +42,20 @@ export default function AdminLoginHistory() {
     };
 
     const downloadCSV = () => {
-        const headers = ['ID', 'Email', 'Method', 'IP Address', 'User Agent', 'Success', 'Failure Reason', 'Login Time'];
+        const headers = ['ID', 'User Name', 'Email', 'Method', 'IP Address', 'Device Type', 'Location', 'Status', 'Success', 'Login Time', 'Logout Time', 'Created At'];
         const csvData = loginHistory.map(record => [
             record.id,
+            record.user_name || 'N/A',
             record.email,
             record.login_method,
             record.ip_address || 'N/A',
-            record.user_agent || 'N/A',
+            record.device_type || 'N/A',
+            record.login_location || 'N/A',
+            record.status || 'N/A',
             record.success ? 'Yes' : 'No',
-            record.failure_reason || 'N/A',
-            new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+            new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+            record.logout_time ? new Date(record.logout_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Logged In',
+            new Date(record.created_at || record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
         ]);
 
         const csv = [
@@ -59,17 +63,17 @@ export default function AdminLoginHistory() {
             ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
         ].join('\n');
 
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `login-history-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `quickfix-login-audit-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
     };
 
     const downloadPDF = () => {
-        const doc = new jsPDF();
+        const doc = new jsPDF('landscape');
         const pageWidth = doc.internal.pageSize.width;
 
         // 1. Header with Background
@@ -91,7 +95,7 @@ export default function AdminLoginHistory() {
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
-        doc.text('LOGIN AUDIT REPORT', pageWidth - 14, 22, { align: 'right' });
+        doc.text('ADVANCED LOGIN AUDIT REPORT', pageWidth - 14, 22, { align: 'right' });
 
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
@@ -110,7 +114,6 @@ export default function AdminLoginHistory() {
             doc.line(14, 58, pageWidth - 14, 58);
 
             // Stats Grid 
-            // Total
             doc.setFontSize(10);
             doc.setTextColor(100, 116, 139);
             doc.text('TOTAL ATTEMPTS', 20, 70);
@@ -118,42 +121,38 @@ export default function AdminLoginHistory() {
             doc.setTextColor(30, 41, 59);
             doc.text(String(stats.total_logins), 20, 77);
 
-            // Success
-            doc.setFontSize(10);
-            doc.setTextColor(100, 116, 139);
-            doc.text('SUCCESSFUL', 70, 70);
+            doc.text('SUCCESSFUL', 80, 70);
             doc.setFontSize(12);
-            doc.setTextColor(22, 163, 74); // Success green
-            doc.text(String(stats.successful_logins), 70, 77);
+            doc.setTextColor(22, 163, 74);
+            doc.text(String(stats.successful_logins), 80, 77);
 
-            // Failed
-            doc.setFontSize(10);
             doc.setTextColor(100, 116, 139);
-            doc.text('FAILED', 120, 70);
+            doc.text('FAILED', 140, 70);
             doc.setFontSize(12);
-            doc.setTextColor(220, 38, 38); // Failed red
-            doc.text(String(stats.failed_logins), 120, 77);
+            doc.setTextColor(220, 38, 38);
+            doc.text(String(stats.failed_logins), 140, 77);
 
-            // Rate
-            doc.setFontSize(10);
             doc.setTextColor(100, 116, 139);
-            doc.text('SUCCESS RATE', 165, 70);
+            doc.text('SUCCESS RATE', 200, 70);
             doc.setFontSize(12);
-            doc.setTextColor(37, 99, 235); // Blue
-            doc.text(`${stats.success_rate}%`, 165, 77);
+            doc.setTextColor(37, 99, 235);
+            doc.text(`${stats.success_rate}%`, 200, 77);
 
             doc.line(14, 85, pageWidth - 14, 85);
         }
 
         // 5. Prepare High-Quality Table Data
-        const tableColumn = ["ID", "EMAIL ADDRESS", "METHOD", "IP ORIGIN", "STATUS", "TIMESTAMP (IST)"];
+        const tableColumn = ["ID", "USER NAME", "EMAIL ADDRESS", "METHOD", "DEVICE", "LOCATION", "STATUS", "LOGIN TIME", "LOGOUT TIME"];
         const tableRows = loginHistory.map(record => [
             record.id,
+            record.user_name || 'N/A',
             record.email,
             record.login_method.toUpperCase(),
-            record.ip_address || 'N/A',
-            record.success ? '✓ SUCCESS' : '✗ FAILED',
-            new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })
+            record.device_type || 'Desktop',
+            record.login_location || 'India',
+            record.success ? 'SUCCESS' : 'FAILED',
+            new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }),
+            record.logout_time ? new Date(record.logout_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }) : 'ACTIVE'
         ]);
 
         // 6. Professional Table Generation
@@ -165,51 +164,45 @@ export default function AdminLoginHistory() {
             headStyles: {
                 fillColor: [30, 41, 59],
                 textColor: [255, 255, 255],
-                fontSize: 9,
+                fontSize: 8,
                 fontStyle: 'bold',
-                halign: 'center',
-                padding: 4
+                halign: 'center'
             },
             bodyStyles: {
-                fontSize: 8,
+                fontSize: 7,
                 textColor: [51, 65, 85],
-                cellPadding: 3
+                cellPadding: 2
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252]
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 10 },
-                2: { halign: 'center', cellWidth: 25 },
-                4: { halign: 'center', fontStyle: 'bold' }
+                0: { halign: 'center', cellWidth: 8 },
+                3: { halign: 'center', cellWidth: 20 },
+                4: { halign: 'center', cellWidth: 20 },
+                6: { halign: 'center', fontStyle: 'bold' }
             },
             didParseCell: (data) => {
-                // Color status text
-                if (data.section === 'body' && data.column.index === 4) {
-                    if (data.cell.text[0].includes('SUCCESS')) {
-                        data.cell.styles.textColor = [22, 163, 74];
-                    } else if (data.cell.text[0].includes('FAILED')) {
-                        data.cell.styles.textColor = [220, 38, 38];
-                    }
+                if (data.section === 'body' && data.column.index === 6) {
+                    if (data.cell.text[0] === 'SUCCESS') data.cell.styles.textColor = [22, 163, 74];
+                    else if (data.cell.text[0] === 'FAILED') data.cell.styles.textColor = [220, 38, 38];
+                }
+                if (data.section === 'body' && data.column.index === 8 && data.cell.text[0] === 'ACTIVE') {
+                    data.cell.styles.textColor = [37, 99, 235];
+                    data.cell.styles.fontStyle = 'bold';
                 }
             },
             didDrawPage: (data) => {
-                // 7. Premium Footer
                 const str = `Page ${doc.internal.getNumberOfPages()}`;
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'italic');
                 doc.setTextColor(148, 163, 184);
-
-                // Footer divider
-                doc.setDrawColor(226, 232, 240);
                 doc.line(14, doc.internal.pageSize.height - 15, pageWidth - 14, doc.internal.pageSize.height - 15);
-
                 doc.text(str, 14, doc.internal.pageSize.height - 10);
-                doc.text('© 2026 Quickfix AI - Confidential Cloud Security Log', pageWidth - 14, doc.internal.pageSize.height - 10, { align: 'right' });
+                doc.text('© 2026 Quickfix AI - Confidential Security Audit Log', pageWidth - 14, doc.internal.pageSize.height - 10, { align: 'right' });
             }
         });
 
-        // 8. Secure Direct Download
         doc.save(`quickfix-login-audit-${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
@@ -225,8 +218,8 @@ export default function AdminLoginHistory() {
     return (
         <div className="admin-login-history">
             <div className="page-header">
-                <h1>🔐 Login History</h1>
-                <p>Monitor and analyze user login activity</p>
+                <h1>🔐 Advanced Login Audit</h1>
+                <p>Track user sessions, devices, and security events</p>
             </div>
 
             {/* Statistics Cards */}
@@ -268,7 +261,7 @@ export default function AdminLoginHistory() {
                 <div className="filters">
                     <input
                         type="email"
-                        placeholder="Filter by email..."
+                        placeholder="Search by email or name..."
                         value={filterEmail}
                         onChange={(e) => setFilterEmail(e.target.value)}
                         className="filter-input"
@@ -322,41 +315,60 @@ export default function AdminLoginHistory() {
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Email</th>
+                                <th>User</th>
                                 <th>Method</th>
-                                <th>IP Address</th>
-                                <th>User Agent</th>
+                                <th>Device</th>
+                                <th>Location</th>
                                 <th>Status</th>
-                                <th>Failure Reason</th>
                                 <th>Login Time</th>
+                                <th>Logout Time</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loginHistory.map((record) => (
                                 <tr key={record.id} className={record.success ? '' : 'failed-row'}>
                                     <td>{record.id}</td>
-                                    <td className="email-cell">{record.email}</td>
+                                    <td>
+                                        <div className="user-cell">
+                                            <span className="user-name">{record.user_name || 'N/A'}</span>
+                                            <span className="user-email">{record.email}</span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <span className={`method-badge ${getMethodBadgeClass(record.login_method)}`}>
                                             {record.login_method.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td className="ip-cell">{record.ip_address || 'N/A'}</td>
-                                    <td className="agent-cell" title={record.user_agent}>
-                                        {record.user_agent ? record.user_agent.substring(0, 30) + '...' : 'N/A'}
+                                    <td>
+                                        <div className="device-info">
+                                            <span className="device-type">{record.device_type || 'Desktop'}</span>
+                                            <span className="ip-addr">{record.ip_address || 'N/A'}</span>
+                                        </div>
                                     </td>
+                                    <td className="location-cell">{record.login_location || 'India'}</td>
                                     <td>
                                         <span className={`status-badge ${record.success ? 'success' : 'failed'}`}>
-                                            {record.success ? '✓ Success' : '✗ Failed'}
+                                            {record.success ? 'SUCCESS' : 'FAILED'}
                                         </span>
+                                        {record.failure_reason && <span className="fail-reason">{record.failure_reason}</span>}
                                     </td>
-                                    <td className="reason-cell">{record.failure_reason || '-'}</td>
                                     <td className="time-cell">
                                         {new Date(record.login_time).toLocaleString('en-IN', {
                                             timeZone: 'Asia/Kolkata',
-                                            dateStyle: 'medium',
+                                            dateStyle: 'short',
                                             timeStyle: 'short'
                                         })}
+                                    </td>
+                                    <td className="time-cell">
+                                        {record.logout_time ? (
+                                            new Date(record.logout_time).toLocaleString('en-IN', {
+                                                timeZone: 'Asia/Kolkata',
+                                                dateStyle: 'short',
+                                                timeStyle: 'short'
+                                            })
+                                        ) : (
+                                            <span className="active-session">Active Now</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -368,7 +380,7 @@ export default function AdminLoginHistory() {
             {/* Recent Failed Attempts */}
             {stats && stats.recent_failures && stats.recent_failures.length > 0 && (
                 <div className="recent-failures">
-                    <h2>🚨 Recent Failed Login Attempts</h2>
+                    <h2>🚨 Recent Critical Security Events</h2>
                     <div className="failures-list">
                         {stats.recent_failures.map((failure, index) => (
                             <div key={index} className="failure-item">

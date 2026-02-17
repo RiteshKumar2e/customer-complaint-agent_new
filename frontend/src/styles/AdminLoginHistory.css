@@ -313,51 +313,105 @@ body:not(.light-theme) .login-table td {
     color: #cbd5e1;
 }
 
-.email-cell {
-    font-weight: 500;
-    color: #1e293b;
+/* User Identity Cell */
+.user-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
-body:not(.light-theme) .email-cell {
+.user-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+body:not(.light-theme) .user-name {
     color: #f1f5f9;
 }
 
-.ip-cell {
+.user-email {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Device & IP Grouping */
+.device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.device-type {
+    font-weight: 600;
+    color: #475569;
+    font-size: 13px;
+}
+
+body:not(.light-theme) .device-type {
+    color: #94a3b8;
+}
+
+.ip-addr {
     font-family: 'Courier New', monospace;
-    color: #64748b;
-}
-
-body:not(.light-theme) .ip-cell {
+    font-size: 11px;
     color: #94a3b8;
 }
 
-.agent-cell {
-    color: #64748b;
-    font-size: 13px;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+/* Location Highlight */
+.location-cell {
+    font-weight: 500;
+    color: #1e40af;
 }
 
-body:not(.light-theme) .agent-cell {
-    color: #94a3b8;
+body:not(.light-theme) .location-cell {
+    color: #60a5fa;
 }
 
-.time-cell {
-    color: #64748b;
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-body:not(.light-theme) .time-cell {
-    color: #94a3b8;
-}
-
-.reason-cell {
+/* Failure Status reason */
+.fail-reason {
+    display: block;
+    font-size: 11px;
     color: #dc2626;
+    margin-top: 4px;
     font-style: italic;
 }
+
+body:not(.light-theme) .fail-reason {
+    color: #fca5a5;
+}
+
+/* Active Session Indicator */
+.active-session {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    animation: pulse 2s infinite;
+}
+
+body:not(.light-theme) .active-session {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
 
 /* Method Badges */
 .method-badge {

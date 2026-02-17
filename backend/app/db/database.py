@@ -97,6 +97,22 @@ def run_migrations():
             except Exception:
                 conn.rollback()
 
+        # Migration for 'login_history' table
+        history_columns = [
+            ("user_name", "VARCHAR(100)"),
+            ("logout_time", "DATETIME"),
+            ("device_type", "VARCHAR(100)"),
+            ("status", "VARCHAR(50)"),
+            ("login_location", "VARCHAR(255)"),
+            ("created_at", "DATETIME")
+        ]
+        for col_name, col_type in history_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE login_history ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
         # ✅ Ensure complaint_text is nullable for legacy compatibility
         try:
             conn.execute(text("ALTER TABLE complaints ALTER COLUMN complaint_text DROP NOT NULL"))
