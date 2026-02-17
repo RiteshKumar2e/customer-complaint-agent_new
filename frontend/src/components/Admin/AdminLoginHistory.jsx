@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../../api';
 import '../../styles/AdminLoginHistory.css';
 
@@ -67,76 +69,148 @@ export default function AdminLoginHistory() {
     };
 
     const downloadPDF = () => {
-        // Create HTML content for PDF
-        const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Login History Report</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #1e293b; text-align: center; }
-          .stats { margin: 20px 0; padding: 15px; background: #f1f5f9; border-radius: 8px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 12px; }
-          th { background: #1e293b; color: white; }
-          tr:nth-child(even) { background: #f8fafc; }
-          .success { color: #16a34a; font-weight: bold; }
-          .failed { color: #dc2626; font-weight: bold; }
-          .footer { margin-top: 30px; text-align: center; color: #64748b; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <h1>Login History Report</h1>
-        <div class="stats">
-          <p><strong>Generated:</strong> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-          ${stats ? `
-            <p><strong>Total Logins:</strong> ${stats.total_logins}</p>
-            <p><strong>Successful:</strong> ${stats.successful_logins} | <strong>Failed:</strong> ${stats.failed_logins}</p>
-            <p><strong>Success Rate:</strong> ${stats.success_rate}%</p>
-          ` : ''}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Email</th>
-              <th>Method</th>
-              <th>IP Address</th>
-              <th>Status</th>
-              <th>Failure Reason</th>
-              <th>Login Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${loginHistory.map(record => `
-              <tr>
-                <td>${record.id}</td>
-                <td>${record.email}</td>
-                <td>${record.login_method.toUpperCase()}</td>
-                <td>${record.ip_address || 'N/A'}</td>
-                <td class="${record.success ? 'success' : 'failed'}">
-                  ${record.success ? '✓ Success' : '✗ Failed'}
-                </td>
-                <td>${record.failure_reason || '-'}</td>
-                <td>${new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div class="footer">
-          <p>Quickfix AI - Login History Report</p>
-          <p>This is a system-generated report</p>
-        </div>
-      </body>
-      </html>
-    `;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.width;
 
-        // Open print dialog
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.print();
+        // 1. Header with Background
+        doc.setFillColor(30, 41, 59); // Dark blue header
+        doc.rect(0, 0, pageWidth, 40, 'F');
+
+        // 2. Logo / Branding
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('QUICKFIX', 14, 22);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(200, 200, 200);
+        doc.text('ARTIFICIAL INTELLIGENCE SOLUTIONS', 14, 30);
+
+        // 3. Report Title & Date
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('LOGIN AUDIT REPORT', pageWidth - 14, 22, { align: 'right' });
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Report Date: ${new Date().toLocaleString('en-IN')}`, pageWidth - 14, 30, { align: 'right' });
+
+        // 4. Statistics Summary Grid
+        if (stats) {
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(30, 41, 59);
+            doc.text('SECURITY STATUS SUMMARY', 14, 55);
+
+            // Draw a subtle border for stats
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.3);
+            doc.line(14, 58, pageWidth - 14, 58);
+
+            // Stats Grid 
+            // Total
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text('TOTAL ATTEMPTS', 20, 70);
+            doc.setFontSize(12);
+            doc.setTextColor(30, 41, 59);
+            doc.text(String(stats.total_logins), 20, 77);
+
+            // Success
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text('SUCCESSFUL', 70, 70);
+            doc.setFontSize(12);
+            doc.setTextColor(22, 163, 74); // Success green
+            doc.text(String(stats.successful_logins), 70, 77);
+
+            // Failed
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text('FAILED', 120, 70);
+            doc.setFontSize(12);
+            doc.setTextColor(220, 38, 38); // Failed red
+            doc.text(String(stats.failed_logins), 120, 77);
+
+            // Rate
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text('SUCCESS RATE', 165, 70);
+            doc.setFontSize(12);
+            doc.setTextColor(37, 99, 235); // Blue
+            doc.text(`${stats.success_rate}%`, 165, 77);
+
+            doc.line(14, 85, pageWidth - 14, 85);
+        }
+
+        // 5. Prepare High-Quality Table Data
+        const tableColumn = ["ID", "EMAIL ADDRESS", "METHOD", "IP ORIGIN", "STATUS", "TIMESTAMP (IST)"];
+        const tableRows = loginHistory.map(record => [
+            record.id,
+            record.email,
+            record.login_method.toUpperCase(),
+            record.ip_address || 'N/A',
+            record.success ? '✓ SUCCESS' : '✗ FAILED',
+            new Date(record.login_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })
+        ]);
+
+        // 6. Professional Table Generation
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: stats ? 95 : 55,
+            theme: 'striped',
+            headStyles: {
+                fillColor: [30, 41, 59],
+                textColor: [255, 255, 255],
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center',
+                padding: 4
+            },
+            bodyStyles: {
+                fontSize: 8,
+                textColor: [51, 65, 85],
+                cellPadding: 3
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 10 },
+                2: { halign: 'center', cellWidth: 25 },
+                4: { halign: 'center', fontStyle: 'bold' }
+            },
+            didParseCell: (data) => {
+                // Color status text
+                if (data.section === 'body' && data.column.index === 4) {
+                    if (data.cell.text[0].includes('SUCCESS')) {
+                        data.cell.styles.textColor = [22, 163, 74];
+                    } else if (data.cell.text[0].includes('FAILED')) {
+                        data.cell.styles.textColor = [220, 38, 38];
+                    }
+                }
+            },
+            didDrawPage: (data) => {
+                // 7. Premium Footer
+                const str = `Page ${doc.internal.getNumberOfPages()}`;
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(148, 163, 184);
+
+                // Footer divider
+                doc.setDrawColor(226, 232, 240);
+                doc.line(14, doc.internal.pageSize.height - 15, pageWidth - 14, doc.internal.pageSize.height - 15);
+
+                doc.text(str, 14, doc.internal.pageSize.height - 10);
+                doc.text('© 2026 Quickfix AI - Confidential Cloud Security Log', pageWidth - 14, doc.internal.pageSize.height - 10, { align: 'right' });
+            }
+        });
+
+        // 8. Secure Direct Download
+        doc.save(`quickfix-login-audit-${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     const getMethodBadgeClass = (method) => {
