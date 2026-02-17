@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
 from datetime import datetime
 from app.db.database import Base, get_ist_time
 
@@ -21,6 +21,23 @@ class User(Base):
     role = Column(String(100), default="Strategic Member")
     location = Column(String(100), default="India")
     created_at = Column(DateTime, default=get_ist_time)
+
+class LoginHistory(Base):
+    """Login history model for tracking user login attempts"""
+    __tablename__ = "login_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    email = Column(String(100), nullable=False, index=True)
+    login_method = Column(String(50), nullable=False)  # 'password', 'otp', 'google'
+    ip_address = Column(String(50), nullable=True)
+    user_agent = Column(Text, nullable=True)  # Browser/device info
+    success = Column(Boolean, default=True)  # Login successful or failed
+    failure_reason = Column(String(255), nullable=True)  # Reason if failed
+    login_time = Column(DateTime, default=get_ist_time, index=True)
+    
+    def __repr__(self):
+        return f"<LoginHistory(user_id={self.user_id}, email='{self.email}', method='{self.login_method}', time='{self.login_time}')>"
 
 class Complaint(Base):
     """Complaint model for storing customer complaints and AI analysis results"""

@@ -265,6 +265,12 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                         </svg>
                                         My Profile
                                     </button>
+                                    <button onClick={() => { onNavigate("login-history"); setIsMenuOpen(false); }}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                                        </svg>
+                                        Login History
+                                    </button>
                                     <div className="admin-dropdown-divider" />
                                     <button className="admin-logout-btn" onClick={onLogout}>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -722,7 +728,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                         </div>
                                         <div className="admin-modal-field">
                                             <label>Churn Risk</label>
-                                            <span style={{ 
+                                            <span style={{
                                                 color: selectedComplaint.churn_risk === 'Critical' ? '#ef4444' : selectedComplaint.churn_risk === 'Elevated' ? '#f59e0b' : '#10b981',
                                                 fontWeight: 'bold'
                                             }}>
@@ -819,9 +825,9 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                     <div className="admin-modal-section" style={{ background: '#fff7ed', border: '1px solid #ffedd5' }}>
                                         <h3 style={{ color: '#9a3412' }}>⚡ Urgency Intelligence</h3>
                                         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                            <div className="urgency-score-circle" style={{ 
-                                                width: '60px', height: '60px', borderRadius: '50%', background: '#ff7e5f', 
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' 
+                                            <div className="urgency-score-circle" style={{
+                                                width: '60px', height: '60px', borderRadius: '50%', background: '#ff7e5f',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold'
                                             }}>
                                                 {selectedComplaint.urgency_data.urgency_score}%
                                             </div>

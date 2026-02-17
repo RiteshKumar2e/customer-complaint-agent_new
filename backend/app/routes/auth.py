@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import random
@@ -6,7 +6,7 @@ import string
 import hashlib
 from passlib.context import CryptContext
 from app.db.database import get_db, get_ist_time
-from app.db.models import User
+from app.db.models import User, LoginHistory
 from app.schemas.user import (
     UserCreate, UserLogin, PasswordLogin, ForgotPassword, 
     ResetPassword, OTPVerify, UserResponse, Token, GoogleAuth, UserUpdate
@@ -16,6 +16,23 @@ from jose import jwt
 import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Helper function to log login attempts
+def log_login_attempt(db: Session, user_id: int, email: str, method: str, 
+                     success: bool = True, failure_reason: str = None,
+                     ip_address: str = None, user_agent: str = None):
+    """Log user login attempt for admin tracking"""
+    login_record = LoginHistory(
+        user_id=user_id,
+        email=email,
+        login_method=method,
+        success=success,
+        failure_reason=failure_reason,
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+    db.add(login_record)
+    db.commit()
 
 # ... (rest of imports)
 
@@ -139,21 +156,42 @@ def request_otp(data: UserLogin, db: Session = Depends(get_db)):
     return {"message": "OTP sent to your email", "is_new_user": user.id is None}
 
 @router.post("/verify-otp", response_model=Token)
-def verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
+def verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user or not user.otp:
         raise HTTPException(status_code=400, detail="Invalid request")
     
     if user.otp != data.otp:
+        # Log failed OTP attempt
+        log_login_attempt(
+            db, user.id, user.email, "otp", 
+            success=False, failure_reason="Invalid OTP",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     if get_ist_time() > user.otp_expiry:
+        # Log expired OTP attempt
+        log_login_attempt(
+            db, user.id, user.email, "otp", 
+            success=False, failure_reason="OTP expired",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(status_code=400, detail="OTP expired")
     
     # Clear OTP
     user.otp = None
     user.otp_expiry = None
     db.commit()
+    
+    # Log successful login
+    log_login_attempt(
+        db, user.id, user.email, "otp",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent")
+    )
     
     access_token = create_access_token(data={"sub": user.email})
     return {
@@ -198,7 +236,7 @@ def google_auth(data: GoogleAuth, db: Session = Depends(get_db)):
     }
 
 @router.post("/google-verify-otp", response_model=Token)
-def google_verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
+def google_verify_otp(data: OTPVerify, request: Request, db: Session = Depends(get_db)):
     """
     Step 2: Verify OTP sent to Google email and complete sign-in
     """
@@ -207,15 +245,36 @@ def google_verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid request")
     
     if user.otp != data.otp:
+        # Log failed Google OTP attempt
+        log_login_attempt(
+            db, user.id, user.email, "google", 
+            success=False, failure_reason="Invalid OTP",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     if get_ist_time() > user.otp_expiry:
+        # Log expired Google OTP attempt
+        log_login_attempt(
+            db, user.id, user.email, "google", 
+            success=False, failure_reason="OTP expired",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(status_code=400, detail="OTP expired")
     
     # Clear OTP
     user.otp = None
     user.otp_expiry = None
     db.commit()
+    
+    # Log successful Google login
+    log_login_attempt(
+        db, user.id, user.email, "google",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent")
+    )
     
     access_token = create_access_token(data={"sub": user.email})
     return {
@@ -225,7 +284,7 @@ def google_verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
     }
 
 @router.post("/login-password", response_model=Token)
-def login_with_password(data: PasswordLogin, db: Session = Depends(get_db)):
+def login_with_password(data: PasswordLogin, request: Request, db: Session = Depends(get_db)):
     """
     Login with email and password
     """
@@ -237,16 +296,37 @@ def login_with_password(data: PasswordLogin, db: Session = Depends(get_db)):
         )
     
     if not user.hashed_password:
+        # Log failed attempt - no password set
+        log_login_attempt(
+            db, user.id, user.email, "password", 
+            success=False, failure_reason="No password set",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(
             status_code=400,
             detail="No password set. Please use Google Sign-In or set a password."
         )
     
     if not verify_password(data.password, user.hashed_password):
+        # Log failed attempt - wrong password
+        log_login_attempt(
+            db, user.id, user.email, "password", 
+            success=False, failure_reason="Wrong password",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
         raise HTTPException(
             status_code=401,
             detail="Password is wrong. Try forgot password to reset it."
         )
+    
+    # Log successful password login
+    log_login_attempt(
+        db, user.id, user.email, "password",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent")
+    )
     
     access_token = create_access_token(data={"sub": user.email})
     return {
@@ -298,3 +378,81 @@ def reset_password(data: ResetPassword, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Password reset successfully. You can now login with your new password."}
+
+# ===== ADMIN ENDPOINTS FOR LOGIN HISTORY =====
+
+@router.get("/admin/login-history")
+def get_login_history(
+    email: str = None,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    Get login history for all users or a specific user (Admin only)
+    Query params:
+    - email: Filter by specific user email (optional)
+    - limit: Number of records to return (default 100)
+    """
+    query = db.query(LoginHistory)
+    
+    if email:
+        query = query.filter(LoginHistory.email == email)
+    
+    login_records = query.order_by(LoginHistory.login_time.desc()).limit(limit).all()
+    
+    return {
+        "total": len(login_records),
+        "records": [
+            {
+                "id": record.id,
+                "user_id": record.user_id,
+                "email": record.email,
+                "login_method": record.login_method,
+                "ip_address": record.ip_address,
+                "user_agent": record.user_agent,
+                "success": record.success,
+                "failure_reason": record.failure_reason,
+                "login_time": record.login_time.isoformat() if record.login_time else None
+            }
+            for record in login_records
+        ]
+    }
+
+@router.get("/admin/login-stats")
+def get_login_stats(db: Session = Depends(get_db)):
+    """
+    Get login statistics (Admin only)
+    """
+    from sqlalchemy import func
+    
+    total_logins = db.query(func.count(LoginHistory.id)).scalar()
+    successful_logins = db.query(func.count(LoginHistory.id)).filter(LoginHistory.success == True).scalar()
+    failed_logins = db.query(func.count(LoginHistory.id)).filter(LoginHistory.success == False).scalar()
+    
+    # Login methods breakdown
+    method_stats = db.query(
+        LoginHistory.login_method,
+        func.count(LoginHistory.id).label('count')
+    ).group_by(LoginHistory.login_method).all()
+    
+    # Recent failed attempts
+    recent_failures = db.query(LoginHistory).filter(
+        LoginHistory.success == False
+    ).order_by(LoginHistory.login_time.desc()).limit(10).all()
+    
+    return {
+        "total_logins": total_logins,
+        "successful_logins": successful_logins,
+        "failed_logins": failed_logins,
+        "success_rate": round((successful_logins / total_logins * 100) if total_logins > 0 else 0, 2),
+        "methods": {method: count for method, count in method_stats},
+        "recent_failures": [
+            {
+                "email": record.email,
+                "method": record.login_method,
+                "reason": record.failure_reason,
+                "time": record.login_time.isoformat() if record.login_time else None
+            }
+            for record in recent_failures
+        ]
+    }

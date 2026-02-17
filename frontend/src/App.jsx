@@ -12,6 +12,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import AdminDashboard from "./components/AdminDashboard";
+import AdminLoginHistory from "./components/Admin/AdminLoginHistory";
 import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import SignInPromptModal from "./components/SignInPromptModal";
@@ -491,6 +492,41 @@ export default function App() {
           onNavigate={navigateTo}
           onLogout={handleLogout}
         />
+      );
+    }
+
+    if (page === "login-history") {
+      return (
+        <div className="app-container">
+          <header className="profile-header">
+            <div className="header-content">
+              <div className="header-left">
+                <div className="logo" onClick={() => navigateTo("admin")}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                  <span>Quickfix Admin</span>
+                </div>
+              </div>
+              <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <ThemeToggle className="navbar-theme-toggle" />
+                <button
+                  className="nav-btn active"
+                  onClick={() => navigateTo("admin")}
+                >
+                  📊 Back to Dashboard
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={handleLogout}
+                >
+                  🚪 Logout
+                </button>
+              </div>
+            </div>
+          </header>
+          <AdminLoginHistory />
+        </div>
       );
     }
 
