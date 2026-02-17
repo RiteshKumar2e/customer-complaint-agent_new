@@ -32,6 +32,14 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [resolutionFeedbackLoading, setResolutionFeedbackLoading] = useState(false);
   const [resolutionComment, setResolutionComment] = useState("");
+  const [expandedSolutions, setExpandedSolutions] = useState({});
+
+  const toggleSolution = (id) => {
+    setExpandedSolutions(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   // Function to get estimated resolution time based on priority
   const getResolutionTime = (priority) => {
@@ -288,15 +296,35 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
                   <p className="complaint-text">{(complaint.complaint_text || complaint.text || "").substring(0, 100)}...</p>
 
                   {complaint.solution && (
-                    <div className="solution-preview" style={{
-                      marginTop: '8px',
-                      padding: '8px',
-                      background: 'rgba(16, 185, 129, 0.1)',
-                      borderLeft: '3px solid #10b981',
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}>
-                      <strong style={{ color: '#10b981' }}>Solution:</strong> {complaint.solution}
+                    <div className="solution-preview-container" style={{ marginTop: '8px' }}>
+                      <button
+                        onClick={() => toggleSolution(complaint.id || complaint.ticket_id)}
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          color: '#10b981',
+                          border: '1px solid #10b981',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'block',
+                          marginBottom: expandedSolutions[complaint.id || complaint.ticket_id] ? '4px' : '0'
+                        }}
+                      >
+                        {expandedSolutions[complaint.id || complaint.ticket_id] ? "Hide Solution ▲" : "View Solution ▼"}
+                      </button>
+                      {expandedSolutions[complaint.id || complaint.ticket_id] && (
+                        <div className="solution-preview" style={{
+                          padding: '8px',
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          borderLeft: '3px solid #10b981',
+                          borderRadius: '4px',
+                          fontSize: '12px'
+                        }}>
+                          <strong style={{ color: '#10b981' }}>Solution:</strong> {complaint.solution}
+                        </div>
+                      )}
                     </div>
                   )}
 

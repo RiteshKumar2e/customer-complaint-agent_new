@@ -118,6 +118,14 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [resolutionFeedbackLoading, setResolutionFeedbackLoading] = useState(false);
     const [resolutionComment, setResolutionComment] = useState("");
+    const [expandedSolutions, setExpandedSolutions] = useState({});
+
+    const toggleSolution = (id) => {
+        setExpandedSolutions(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
 
 
     // Ensure complaints is always an array
@@ -848,18 +856,48 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                             <p className="complaint-text">{complaint.description || complaint.complaint_text}</p>
 
                                             {complaint.solution && (
-                                                <div className="official-solution" style={{
-                                                    marginTop: '12px',
-                                                    padding: '12px',
-                                                    background: 'rgba(16, 185, 129, 0.1)',
-                                                    borderLeft: '4px solid #10b981',
-                                                    borderRadius: '4px',
-                                                    fontSize: '0.9rem'
-                                                }}>
-                                                    <strong style={{ color: '#10b981', display: 'block', marginBottom: '4px' }}>
-                                                        Solution:
-                                                    </strong>
-                                                    <p style={{ margin: 0, opacity: 0.9 }}>{complaint.solution}</p>
+                                                <div className="official-solution-container" style={{ marginTop: '12px' }}>
+                                                    <button
+                                                        onClick={() => toggleSolution(complaint.id || complaint.ticket_id)}
+                                                        className="view-solution-btn-mini"
+                                                        style={{
+                                                            background: 'rgba(16, 185, 129, 0.1)',
+                                                            color: '#10b981',
+                                                            border: '1px solid #10b981',
+                                                            padding: '4px 10px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            marginBottom: expandedSolutions[complaint.id || complaint.ticket_id] ? '8px' : '0'
+                                                        }}
+                                                    >
+                                                        {expandedSolutions[complaint.id || complaint.ticket_id] ? "Hide Solution ▲" : "View Solution ▼"}
+                                                    </button>
+
+                                                    <AnimatePresence>
+                                                        {expandedSolutions[complaint.id || complaint.ticket_id] && (
+                                                            <motion.div
+                                                                className="official-solution"
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                style={{
+                                                                    padding: '12px',
+                                                                    background: 'rgba(16, 185, 129, 0.1)',
+                                                                    borderLeft: '4px solid #10b981',
+                                                                    borderRadius: '4px',
+                                                                    fontSize: '0.9rem',
+                                                                    overflow: 'hidden'
+                                                                }}
+                                                            >
+                                                                <strong style={{ color: '#10b981', display: 'block', marginBottom: '4px' }}>
+                                                                    Solution:
+                                                                </strong>
+                                                                <p style={{ margin: 0, opacity: 0.9 }}>{complaint.solution}</p>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </div>
                                             )}
                                             <div className="complaint-footer">

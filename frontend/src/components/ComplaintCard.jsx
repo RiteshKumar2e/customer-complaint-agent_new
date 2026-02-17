@@ -1,6 +1,9 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
 import "../styles/ComplaintCard.css";
 
 export default function ComplaintCard({ data }) {
+  const [showSolution, setShowSolution] = useState(false);
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "High": return "#ff6b6b";
@@ -102,11 +105,29 @@ export default function ComplaintCard({ data }) {
 
       {/* Solution Section */}
       <div className="solution-section">
-        <div className="section-title">
-          <span>💡</span>
-          Suggested Solution
+        <div
+          className="section-title"
+          onClick={() => setShowSolution(!showSolution)}
+          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>💡</span>
+            Suggested Solution
+          </div>
+          <button className="view-solution-btn">
+            {showSolution ? "Hide Solution" : "View Solution"}
+          </button>
         </div>
-        <p className="solution-text">{data.solution}</p>
+        {showSolution && (
+          <motion.p
+            className="solution-text"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.3 }}
+          >
+            {data.solution}
+          </motion.p>
+        )}
       </div>
 
       {/* Action Section */}

@@ -249,6 +249,25 @@ body.light-theme .similar-section {
   .response-text,
   .solution-text,
   .similar-text {
-    font-size: 14px;
+    .view-solution-btn {
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+  }
+
+  .view-solution-btn:hover {
+    background: var(--accent-primary-hover);
+    transform: scale(1.05);
+  }
+
+  .solution-text {
+    overflow: hidden;
   }
 }
