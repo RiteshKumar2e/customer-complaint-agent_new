@@ -174,7 +174,10 @@ export default function SideChatBot({ open, onClose }) {
         <div className="chat-header-buttons">
           <button
             className="chat-maximize-btn"
-            onClick={() => setIsMaximized(!isMaximized)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event bubbling
+              setIsMaximized(!isMaximized);
+            }}
             aria-label={isMaximized ? "Minimize Chat" : "Maximize Chat"}
             title={isMaximized ? "Minimize" : "Maximize"}
           >

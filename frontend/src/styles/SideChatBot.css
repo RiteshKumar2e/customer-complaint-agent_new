@@ -8,13 +8,21 @@
   height: 100vh;
   background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
   box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth, natural easing */
   z-index: 2100;
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(139, 92, 246, 0.3);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  /* Reduced blur for better performance */
   visibility: hidden;
+  will-change: transform, width, height, top, right;
+  /* GPU acceleration */
+  transform-style: preserve-3d;
+  /* Better 3D rendering */
+  backface-visibility: hidden;
+  /* Prevent flickering */
 }
 
 body.light-theme .side-chat {
@@ -30,16 +38,31 @@ body.light-theme .side-chat {
 
 /* ===== MAXIMIZED STATE ===== */
 .side-chat.maximized {
-  width: 95vw !important;
-  height: 95vh !important;
+  width: 98vw !important;
+  /* Increased from 95vw for better coverage */
+  height: 96vh !important;
+  /* Increased from 95vh for better coverage */
   top: 50% !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: translate(-50%, -50%) !important;
+  right: 50% !important;
+  transform: translate(50%, -50%) !important;
+  /* Perfect centering */
   border-radius: 16px;
   border: 1px solid rgba(139, 92, 246, 0.3);
   box-shadow: 0 25px 100px rgba(0, 0, 0, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth, natural easing */
+}
+
+@keyframes maximizeIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 body.light-theme .side-chat.maximized {
