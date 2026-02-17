@@ -364,6 +364,11 @@ body.light-theme .chat-input input {
     right: -100%;
   }
 
+  /* Hide maximize button on tablet */
+  .chat-maximize-btn {
+    display: none !important;
+  }
+
   .chat-header {
     padding: 16px 18px;
     font-size: 15px;
@@ -405,6 +410,11 @@ body.light-theme .chat-input input {
 
   .side-chat.open {
     right: 20px;
+  }
+
+  /* Hide maximize button on mobile */
+  .chat-maximize-btn {
+    display: none !important;
   }
 
   .chat-header {
