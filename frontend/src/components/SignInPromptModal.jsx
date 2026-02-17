@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Zap, Shield, TrendingUp, Cpu, MessageSquare, BarChart2 } from 'lucide-react';
+import CustomNotification from './CustomNotification';
 import '../styles/SignInPromptModal.css';
 
 const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [notification, setNotification] = useState(null); // Custom notification state
 
     useEffect(() => {
         const handleResize = () => {
@@ -34,8 +36,11 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
     };
 
     const handleClose = () => {
-        // Subtle shake effect or alert as per user instructions
-        alert("Sign in is mandatory to access all enterprise features of Quickfix AI!");
+        // Show custom notification instead of alert
+        setNotification({
+            message: "Sign in is mandatory to access all enterprise features of Quickfix AI!",
+            type: "warning"
+        });
     };
 
     const features = [
@@ -135,6 +140,15 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
                             </button>
                         </div>
                     </motion.div>
+
+                    {/* Custom Notification */}
+                    {notification && (
+                        <CustomNotification
+                            message={notification.message}
+                            type={notification.type}
+                            onClose={() => setNotification(null)}
+                        />
+                    )}
                 </>
             )}
         </AnimatePresence>
