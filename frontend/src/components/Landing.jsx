@@ -92,6 +92,17 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
   const [activeFaq, setActiveFaq] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Location Permission Request on Site Entry
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        () => console.log("Location access granted"),
+        () => console.log("Location access denied"),
+        { timeout: 10000 }
+      );
+    }
+  }, []);
+
   // AI Voice Introduction - Sequentially English then Hindi
   useEffect(() => {
     const englishText = "Welcome to Quickfix AI! I am your AI assistant. This platform uses high-performance agents to resolve your billing, technical, and security issues with surgical precision. Experience the future of support today.";

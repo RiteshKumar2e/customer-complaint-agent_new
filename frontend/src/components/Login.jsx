@@ -129,9 +129,26 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
                 });
                 const { latitude, longitude } = pos.coords;
-                // Simple reverse geocoding approach or just coordinate string
-                loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-                // Optionally use a free API for city/state if needed
+
+                // Reverse geocoding to get City, State, Country
+                try {
+                    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
+                        headers: { 'User-Agent': 'QuickfixAI/1.0' }
+                    });
+                    const geoData = await geoResponse.json();
+                    if (geoData && geoData.address) {
+                        const addr = geoData.address;
+                        const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.district || "";
+                        const state = addr.state || "";
+                        const country = addr.country || "";
+                        loginLocation = [city, state, country].filter(Boolean).join(", ");
+                        if (!loginLocation) loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                    } else {
+                        loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                    }
+                } catch (geoErr) {
+                    loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                }
             } catch (locErr) {
                 console.log("Location access denied or failed:", locErr.message);
             }
@@ -190,7 +207,25 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     const pos = await new Promise((resolve, reject) => {
                         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
                     });
-                    loginLocation = `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
+                            headers: { 'User-Agent': 'QuickfixAI/1.0' }
+                        });
+                        const geoData = await geoResponse.json();
+                        if (geoData && geoData.address) {
+                            const addr = geoData.address;
+                            const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.district || "";
+                            const state = addr.state || "";
+                            const country = addr.country || "";
+                            loginLocation = [city, state, country].filter(Boolean).join(", ");
+                            if (!loginLocation) loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                        } else {
+                            loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                        }
+                    } catch (geoErr) {
+                        loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                    }
                 } catch (locErr) { }
 
                 // Trigger backend OTP in background
@@ -216,9 +251,27 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             let loginLocation = "India";
             try {
                 const pos = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
                 });
-                loginLocation = `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
+                        headers: { 'User-Agent': 'QuickfixAI/1.0' }
+                    });
+                    const geoData = await geoResponse.json();
+                    if (geoData && geoData.address) {
+                        const addr = geoData.address;
+                        const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.district || "";
+                        const state = addr.state || "";
+                        const country = addr.country || "";
+                        loginLocation = [city, state, country].filter(Boolean).join(", ");
+                        if (!loginLocation) loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                    } else {
+                        loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                    }
+                } catch (geoErr) {
+                    loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+                }
             } catch (locErr) { }
 
             const response = await googleVerifyOTP(otpEmail, otp, loginLocation);
