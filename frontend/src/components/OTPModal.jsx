@@ -10,10 +10,10 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
         if (isOpen) {
             setOtp(["", "", "", "", "", ""]);
             setError("");
-            // Focus first input for speed
+            // Focus first input for speed - ultra-fast
             setTimeout(() => {
                 document.getElementById('otp-0')?.focus();
-            }, 50);
+            }, 10);
         }
     }, [isOpen]);
 
@@ -76,7 +76,7 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.05 }}
             onClick={onClose}
         >
             <motion.div
@@ -84,11 +84,11 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                transition={{ 
-                    type: "spring", 
-                    stiffness: 500, 
-                    damping: 30,
-                    duration: 0.1
+                transition={{
+                    type: "spring",
+                    stiffness: 800,
+                    damping: 25,
+                    duration: 0.05
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -128,7 +128,7 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
                             className="otp-error"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.1 }}
+                            transition={{ duration: 0.03 }}
                         >
                             {error}
                         </motion.div>

@@ -304,8 +304,8 @@ class EmailService:
             "htmlContent": html_body
         }
         
-        # 🚀 PRIORITY: Faster timeout for OTP emails (3s vs 12s)
-        timeout_duration = 3 if priority else 10
+        # 🚀 PRIORITY: Ultra-fast timeout for OTP emails (1s vs 10s)
+        timeout_duration = 1 if priority else 5
         
         try:
             priority_label = "[PRIORITY OTP]" if priority else ""

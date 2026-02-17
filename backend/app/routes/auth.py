@@ -116,19 +116,27 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/request-otp")
 def request_otp(data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
-    if not user:
-        # If user doesn't exist, we might want to register them automatically or return error
-        # Requirement says: "if not id is present got to register page"
-        # So backend should probably just return 404
-        raise HTTPException(status_code=404, detail="User not found. Please register first.")
     
+    # 🚀 AUTO-CREATE USER: If user doesn't exist, create them instantly for seamless OTP flow
+    if not user:
+        user = User(
+            email=data.email,
+            full_name=data.email.split('@')[0],  # Use email prefix as default name
+            is_active=True,
+            role="Admin" if data.email == "riteshkumar90359@gmail.com" else "Strategic Member"
+        )
+        db.add(user)
+        db.flush()  # Get the user ID without committing yet
+    
+    # Generate and send OTP
     otp = generate_otp()
     user.otp = otp
     user.otp_expiry = get_ist_time() + timedelta(minutes=10)
     db.commit()
     
+    # 🚀 INSTANT SEND: Fire-and-forget for maximum speed
     email_service.send_otp(user.email, otp)
-    return {"message": "OTP sent to your email"}
+    return {"message": "OTP sent to your email", "is_new_user": user.id is None}
 
 @router.post("/verify-otp", response_model=Token)
 def verify_otp(data: OTPVerify, db: Session = Depends(get_db)):
