@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAllComplaints, deleteAllComplaints, updateComplaintStatus, deleteComplaint, bulkDeleteComplaints } from "../api";
 import ThemeToggle from "./ThemeToggle";
@@ -18,7 +18,27 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
     const [adminSolution, setAdminSolution] = useState("");
     const [showSolutionInput, setShowSolutionInput] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
+    const dropdownRef = useRef(null);
     const itemsPerPage = 10;
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     useEffect(() => {
         loadAllComplaints();
@@ -228,7 +248,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                         </motion.div>
                     </div>
 
-                    <div className="admin-header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="admin-header-right" ref={dropdownRef} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="admin-profile-btn"

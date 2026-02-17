@@ -119,6 +119,26 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const [resolutionFeedbackLoading, setResolutionFeedbackLoading] = useState(false);
     const [resolutionComment, setResolutionComment] = useState("");
     const [expandedSolutions, setExpandedSolutions] = useState({});
+    const dropdownRef = useRef(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     const toggleSolution = (id) => {
         setExpandedSolutions(prev => ({
@@ -391,7 +411,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                         )}
                     </nav>
 
-                    <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="header-right" ref={dropdownRef} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="profile-btn"
