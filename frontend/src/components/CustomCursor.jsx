@@ -4,7 +4,8 @@ import { motion, useSpring } from "framer-motion";
 export default function CustomCursor() {
     const [isHovering, setIsHovering] = useState(false);
 
-    const springConfig = { damping: 25, stiffness: 200 };
+    // 🚀 ULTRA-SMOOTH: Optimized spring config for lag-free cursor
+    const springConfig = { damping: 35, stiffness: 500, mass: 0.5 };
     const cursorX = useSpring(0, springConfig);
     const cursorY = useSpring(0, springConfig);
 
@@ -14,6 +15,7 @@ export default function CustomCursor() {
         setIsVisible(window.matchMedia("(pointer: fine)").matches);
 
         const handleMouseMove = (e) => {
+            // ⚡ INSTANT UPDATE: Direct position update for zero lag
             cursorX.set(e.clientX);
             cursorY.set(e.clientY);
         };
@@ -24,8 +26,9 @@ export default function CustomCursor() {
         };
 
         if (window.matchMedia("(pointer: fine)").matches) {
-            window.addEventListener("mousemove", handleMouseMove);
-            window.addEventListener("mouseover", handleHover);
+            // Use passive listener for better performance
+            window.addEventListener("mousemove", handleMouseMove, { passive: true });
+            window.addEventListener("mouseover", handleHover, { passive: true });
         }
 
         return () => {
@@ -48,6 +51,7 @@ export default function CustomCursor() {
                     scale: isHovering ? 2.5 : 1,
                     backgroundColor: isHovering ? "rgba(139, 92, 246, 0.3)" : "rgba(139, 92, 246, 0.8)",
                 }}
+                transition={{ type: "spring", damping: 20, stiffness: 400 }}
             />
             <motion.div
                 className="custom-cursor-outline"
@@ -59,7 +63,7 @@ export default function CustomCursor() {
                     scale: isHovering ? 1.5 : 1,
                     opacity: isHovering ? 0 : 1,
                 }}
-                transition={{ type: "spring", damping: 30, stiffness: 150 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
             />
         </>
     );

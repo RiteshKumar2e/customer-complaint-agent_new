@@ -180,7 +180,8 @@ button {
 }
 
 /* ===== GLOBAL CURSOR OVERRIDE (Enabled via App.jsx) ===== */
+/* Custom cursor effects are active, but default cursor remains visible */
 body.custom-cursor-active,
 body.custom-cursor-active * {
-  cursor: none !important;
+  /* cursor: none !important; */ /* Commented out to show default cursor */
 }

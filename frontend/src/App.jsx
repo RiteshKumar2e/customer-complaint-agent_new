@@ -83,7 +83,8 @@ function CursorTrail() {
         });
       }
 
-      const maxParticles = isTouch ? 40 : 60; // Reduced max particles to fix lag
+      // 🚀 PERFORMANCE: Reduced max particles to minimize lag
+      const maxParticles = isTouch ? 30 : 50; // Reduced from 40:60
       if (particles.current.length > maxParticles) {
         particles.current.splice(0, particles.current.length - maxParticles);
       }
@@ -102,8 +103,8 @@ function CursorTrail() {
     const render = (time) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Elastic smoothing
-      const lerpFactor = 0.22; // More responsive (increased from 0.18)
+      // 🚀 ULTRA-SMOOTH: Optimized elastic smoothing for lag-free tracking
+      const lerpFactor = 0.3; // More responsive (increased from 0.22)
       mousePos.current.x += (targetPos.current.x - mousePos.current.x) * lerpFactor;
       mousePos.current.y += (targetPos.current.y - mousePos.current.y) * lerpFactor;
 
