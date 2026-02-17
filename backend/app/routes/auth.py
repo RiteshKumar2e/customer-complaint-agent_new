@@ -514,3 +514,17 @@ def get_login_stats(db: Session = Depends(get_db)):
             for record in recent_failures
         ]
     }
+
+@router.delete("/admin/login-history/{history_id}")
+def delete_login_history(history_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific login history record (Admin only)
+    """
+    record = db.query(LoginHistory).filter(LoginHistory.id == history_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    
+    db.delete(record)
+    db.commit()
+    return {"message": "Record deleted successfully"}
+

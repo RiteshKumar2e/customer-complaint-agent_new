@@ -497,11 +497,40 @@ body:not(.light-theme) .status-badge.success {
     border: 1px solid #fca5a5;
 }
 
-body:not(.light-theme) .status-badge.failed {
+.status-badge.failed {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.2));
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+/* Delete Button */
+.delete-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: scale(1.1);
+}
+
+body:not(.light-theme) .delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.delete-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 
 /* Loading State */
 .loading-state {
