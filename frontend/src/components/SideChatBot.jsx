@@ -14,6 +14,7 @@ export default function SideChatBot({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false); // New state for maximize
   const recognitionRef = useRef(null);
   const chatBodyRef = useRef(null);
 
@@ -167,15 +168,41 @@ export default function SideChatBot({ open, onClose }) {
   };
 
   return (
-    <div className={`side-chat ${open ? "open" : ""}`}>
+    <div className={`side-chat ${open ? "open" : ""} ${isMaximized ? "maximized" : ""}`}>
       <div className="chat-header">
         <span>🤖 AI Agent</span>
-        <button className="chat-close-btn" onClick={onClose} aria-label="Close Chat">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        <div className="chat-header-buttons">
+          <button
+            className="chat-maximize-btn"
+            onClick={() => setIsMaximized(!isMaximized)}
+            aria-label={isMaximized ? "Minimize Chat" : "Maximize Chat"}
+            title={isMaximized ? "Minimize" : "Maximize"}
+          >
+            {isMaximized ? (
+              // Minimize icon
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            ) : (
+              // Maximize icon
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            )}
+          </button>
+          <button className="chat-close-btn" onClick={onClose} aria-label="Close Chat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="chat-body" ref={chatBodyRef}>
