@@ -61,6 +61,7 @@ class Complaint(Base):
     category = Column(String(50), nullable=False)  # Billing, Technical, Delivery, Service, Security
     priority = Column(String(20), nullable=False)  # High, Medium, Low
     sentiment = Column(String(20))  # Positive, Neutral, Negative, Angry
+    sentiment_score = Column(Float, default=0.0) # Numerical sentiment score
     response = Column(Text)  # AI-generated response
     solution = Column(Text)  # Proposed solution
     satisfaction_prediction = Column(String(20))  # High, Medium, Low

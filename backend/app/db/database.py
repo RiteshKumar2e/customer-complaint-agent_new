@@ -67,22 +67,15 @@ def run_migrations():
     """Add missing columns to existing tables if they don't exist"""
     from sqlalchemy import text
     
-    new_columns = [
-        ("bio", "TEXT"),
-        ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
-        ("location", "VARCHAR(100) DEFAULT 'India'"),
-        ("ai_analysis_steps", "TEXT"),
-        ("user_rating", "INTEGER"),
-        ("user_feedback", "TEXT"),
-        ("subject", "VARCHAR(255)"),
-        ("description", "TEXT"),
-        ("user_resolution_feedback", "BOOLEAN"),
-        ("user_resolution_comment", "TEXT")
-    ]
-    
     with engine.connect() as conn:
         # Migration for 'users' table
-        for col_name, col_type in new_columns[:3]:
+        user_columns = [
+            ("bio", "TEXT"),
+            ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
+            ("location", "VARCHAR(100) DEFAULT 'India'"),
+            ("is_agent", "BOOLEAN DEFAULT FALSE")
+        ]
+        for col_name, col_type in user_columns:
             try:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
@@ -90,7 +83,17 @@ def run_migrations():
                 conn.rollback()
 
         # Migration for 'complaints' table
-        for col_name, col_type in new_columns[3:]:
+        complaint_columns = [
+            ("ai_analysis_steps", "TEXT"),
+            ("user_rating", "INTEGER"),
+            ("user_feedback", "TEXT"),
+            ("subject", "VARCHAR(255)"),
+            ("description", "TEXT"),
+            ("user_resolution_feedback", "BOOLEAN"),
+            ("user_resolution_comment", "TEXT"),
+            ("sentiment_score", "FLOAT DEFAULT 0")
+        ]
+        for col_name, col_type in complaint_columns:
             try:
                 conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
