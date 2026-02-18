@@ -474,6 +474,7 @@ def get_all_resolutions(
     agent_email: str,
     category: Optional[str] = None,
     sentiment: Optional[str] = None,
+    search: Optional[str] = None,
     min_confidence: Optional[float] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -498,6 +499,18 @@ def get_all_resolutions(
     
     if sentiment:
         query = query.filter(Complaint.sentiment == sentiment)
+    
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                AgentResolution.ticket_id.like(search_term),
+                AgentResolution.agent_name.like(search_term),
+                AgentResolution.final_solution.like(search_term),
+                Complaint.name.like(search_term),
+                Complaint.email.like(search_term)
+            )
+        )
     
     if min_confidence:
         query = query.filter(AgentResolution.confidence_score >= min_confidence)
