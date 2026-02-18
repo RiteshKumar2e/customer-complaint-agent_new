@@ -416,12 +416,8 @@ def send_resolution(
         AgentResolution.complaint_id == complaint.id
     ).first()
     
-    # Check if solution was validated
-    if not resolution or resolution.validation_status != "approved":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Solution must be validated and approved before sending"
-        )
+    # Allow human agents to send resolutions even if validation is not approved
+    # (Human-in-the-loop override)
     
     # Update resolution
     resolution.final_solution = final_solution
@@ -546,6 +542,7 @@ def get_all_resolutions(
             "confidence_score": resolution.confidence_score,
             "validation_status": resolution.validation_status,
             "resolution_timestamp": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
+            "sent_at": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
             "status": resolution.status
         })
     

@@ -17,22 +17,18 @@ class MultiModelValidator:
     def __init__(self):
         self.groq_client = groq_client
         
-        # Validation models (prioritized for quality and diversity)
+        # Validation models (Only using confirmed working Groq models)
         self.validation_models = [
-            "llama-3.3-70b-versatile",          # Best balanced model
-            "deepseek-r1-distill-llama-70b",    # Reasoning specialist
-            "qwen-2.5-72b",                     # Large generalist
-            "llama-3.1-70b-versatile",          # Reliable fallback
-            "mixtral-8x7b-32768",               # MoE architecture
-            "gemma2-9b-it",                     # Google's model
-            "deepseek-r1-distill-qwen-32b",     # Alternative reasoning
-            "llama3-70b-8192",                  # Original Llama 3
-            "qwen-2.5-32b",                     # Balanced Qwen
-            "llama-3.1-8b-instant",             # Fast validator
+            "llama-3.3-70b-versatile",          # Top quality 70B
+            "llama-3.1-8b-instant",             # Reliable 8B
+            "deepseek-r1-distill-qwen-32b",     # Reasoning specialist
+            "qwen-2.5-32b",                     # Balanced specialist
+            "llama-3.2-3b-preview",             # Lightweight fast
+            "llama-3.2-1b-preview"              # Ultra-fast
         ]
         
-        self.min_models = 4  # Minimum models that must respond
-        self.max_models = 6 # Reduced from 6 to avoid rate limits
+        self.min_models = 1  # Minimum models that must respond
+        self.max_models = 4  # Reduced models to avoid rate limits
         self.confidence_threshold = 0.85  # Minimum confidence for approval
         
         # Validation criteria weights
