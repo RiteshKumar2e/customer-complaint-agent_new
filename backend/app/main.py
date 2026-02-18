@@ -10,6 +10,7 @@ from app.api.routes import router as complaint_router
 from app.api.chat import router as chat_router
 from app.routes.feedback import router as feedback_router
 from app.routes.auth import router as auth_router
+from app.routes.agent_routes import router as agent_router
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -52,6 +53,7 @@ app.include_router(complaint_router)
 app.include_router(chat_router)
 app.include_router(feedback_router)
 app.include_router(auth_router)
+app.include_router(agent_router)
 
 @app.get("/")
 def root():

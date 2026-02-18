@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, Float, JSON
 from datetime import datetime
 from app.db.database import Base, get_ist_time
 
@@ -17,6 +17,7 @@ class User(Base):
     otp = Column(String(255), nullable=True)
     otp_expiry = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_agent = Column(Boolean, default=False)  # Agent Module access
     bio = Column(Text, nullable=True)
     role = Column(String(100), default="Strategic Member")
     location = Column(String(100), default="India")
@@ -77,3 +78,71 @@ class Complaint(Base):
     def __repr__(self):
         return f"<Complaint(id={self.id}, category='{self.category}', priority='{self.priority}')>"
 
+class AgentResolution(Base):
+    """Agent Resolution model for storing human-verified solutions with multi-model validation"""
+    __tablename__ = "agent_resolutions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey('complaints.id'), nullable=False, index=True)
+    ticket_id = Column(String(50), index=True, nullable=False)
+    agent_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    agent_name = Column(String(100), nullable=False)
+    
+    # Solution content
+    draft_solution = Column(Text, nullable=True)  # Initial draft by agent
+    final_solution = Column(Text, nullable=False)  # Final verified solution
+    
+    # Validation data
+    validation_results = Column(JSON, nullable=True)  # Stores multi-model validation data
+    confidence_score = Column(Float, nullable=True)  # Average confidence from all models (0-1)
+    validation_status = Column(String(50), default="pending")  # pending, approved, rejected, needs_revision
+    model_agreement_metrics = Column(JSON, nullable=True)  # Detailed model consensus data
+    
+    # Status and timestamps
+    resolution_timestamp = Column(DateTime, nullable=True)  # When resolution was sent
+    status = Column(String(50), default="draft")  # draft, validated, sent, delivered
+    created_at = Column(DateTime, default=get_ist_time, index=True)
+    updated_at = Column(DateTime, default=get_ist_time, onupdate=get_ist_time)
+    
+    def __repr__(self):
+        return f"<AgentResolution(id={self.id}, ticket_id='{self.ticket_id}', status='{self.status}')>"
+
+class ModelValidation(Base):
+    """Model Validation results for individual AI model assessments"""
+    __tablename__ = "model_validations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    resolution_id = Column(Integer, ForeignKey('agent_resolutions.id'), nullable=False, index=True)
+    model_name = Column(String(100), nullable=False)  # e.g., "llama-3.3-70b-versatile"
+    
+    # Validation criteria
+    validation_type = Column(String(50), nullable=False)  # correctness, completeness, safety, actionability, clarity
+    score = Column(Float, nullable=False)  # 0-1 score for this criterion
+    feedback = Column(Text, nullable=True)  # Model's feedback/suggestions
+    passed = Column(Boolean, default=False)  # Whether this criterion passed threshold
+    
+    created_at = Column(DateTime, default=get_ist_time)
+    
+    def __repr__(self):
+        return f"<ModelValidation(model='{self.model_name}', type='{self.validation_type}', score={self.score})>"
+
+class AgentAuditLog(Base):
+    """Audit log for tracking all agent actions in the system"""
+    __tablename__ = "agent_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    agent_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    action = Column(String(100), nullable=False)  # view_complaint, draft_solution, submit_validation, send_resolution
+    
+    # Complaint reference
+    complaint_id = Column(Integer, nullable=True)
+    ticket_id = Column(String(50), nullable=True, index=True)
+    
+    # Audit details
+    details = Column(JSON, nullable=True)  # Additional action-specific data
+    ip_address = Column(String(50), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    timestamp = Column(DateTime, default=get_ist_time, index=True)
+    
+    def __repr__(self):
+        return f"<AgentAuditLog(agent_id={self.agent_id}, action='{self.action}', time='{self.timestamp}')>"

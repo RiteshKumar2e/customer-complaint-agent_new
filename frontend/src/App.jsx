@@ -13,6 +13,8 @@ import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import AdminDashboard from "./components/AdminDashboard";
 import AdminLoginHistory from "./components/Admin/AdminLoginHistory";
+import AgentModule from "./components/Agent/AgentModule";
+import AgentResolutions from "./components/Agent/AgentResolutions";
 import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import SignInPromptModal from "./components/SignInPromptModal";
@@ -530,6 +532,26 @@ export default function App() {
           </header>
           <AdminLoginHistory />
         </div>
+      );
+    }
+
+    if (page === "agent-queue") {
+      return (
+        <AgentModule
+          user={user}
+          onNavigate={navigateTo}
+          onLogout={handleLogout}
+        />
+      );
+    }
+
+    if (page === "agent-resolutions") {
+      return (
+        <AgentResolutions
+          user={user}
+          onNavigate={navigateTo}
+          onLogout={handleLogout}
+        />
       );
     }
 

@@ -126,4 +126,46 @@ export const submitResolutionFeedback = async (ticketId, isActuallyResolved, use
   return response.data;
 };
 
+// Agent Module API
+export const getAgentQueue = async (agentEmail, params = {}) => {
+  const queryParams = new URLSearchParams({ agent_email: agentEmail, ...params }).toString();
+  const response = await api.get(`/agent/complaints/queue?${queryParams}`);
+  return response.data;
+};
+
+export const getComplaintDetail = async (ticketId, agentEmail) => {
+  const response = await api.get(`/agent/complaints/${ticketId}?agent_email=${encodeURIComponent(agentEmail)}`);
+  return response.data;
+};
+
+export const validateSolution = async (agentEmail, ticketId, draftSolution) => {
+  const response = await api.post("/agent/validate-solution", {
+    agent_email: agentEmail,
+    ticket_id: ticketId,
+    draft_solution: draftSolution
+  });
+  return response.data;
+};
+
+export const sendResolution = async (agentEmail, ticketId, finalSolution) => {
+  const response = await api.post("/agent/send-resolution", {
+    agent_email: agentEmail,
+    ticket_id: ticketId,
+    final_solution: finalSolution
+  });
+  return response.data;
+};
+
+export const getAllResolutions = async (agentEmail, params = {}) => {
+  const queryParams = new URLSearchParams({ agent_email: agentEmail, ...params }).toString();
+  const response = await api.get(`/agent/resolutions?${queryParams}`);
+  return response.data;
+};
+
+export const getAuditLogs = async (agentEmail, params = {}) => {
+  const queryParams = new URLSearchParams({ agent_email: agentEmail, ...params }).toString();
+  const response = await api.get(`/agent/audit-logs?${queryParams}`);
+  return response.data;
+};
+
 export default api;
