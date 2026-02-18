@@ -1242,24 +1242,26 @@ class EmailService:
 """
 
     def send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str, 
-                             complaint_subject: str, agent_solution: str, agent_name: str):
+                             complaint_subject: str, agent_solution: str, agent_name: str, 
+                             agent_steps: list = None):
         """Send agent-verified resolution to user in background"""
         import threading
         thread = threading.Thread(
             target=self._worker_send_agent_resolution,
-            args=(user_email, user_name, ticket_id, complaint_subject, agent_solution, agent_name)
+            args=(user_email, user_name, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps)
         )
         thread.daemon = True
         thread.start()
         return True
 
     def _worker_send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str,
-                                      complaint_subject: str, agent_solution: str, agent_name: str):
+                                      complaint_subject: str, agent_solution: str, agent_name: str, 
+                                      agent_steps: list = None):
         """Background logic to send agent-verified resolution to user"""
         try:
             subject = f"✅ Agent Resolution: Ticket #{ticket_id} - Quickfix"
             html_body = self._generate_agent_resolution_html(
-                user_name, ticket_id, complaint_subject, agent_solution, agent_name
+                user_name, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps
             )
             print(f"📧 Sending agent resolution to USER: {user_email}...")
             self._dispatch_api(user_email, subject, html_body)
@@ -1267,7 +1269,7 @@ class EmailService:
             # Also notify admin
             admin_subject = f"📤 Agent Resolution Sent: Ticket #{ticket_id} - {agent_name}"
             admin_html = self._generate_admin_agent_resolution_html(
-                user_name, user_email, ticket_id, complaint_subject, agent_solution, agent_name
+                user_name, user_email, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps
             )
             print(f"📧 Sending agent resolution notification to ADMIN...")
             self._dispatch_api(self.admin_email, admin_subject, admin_html)
@@ -1279,9 +1281,28 @@ class EmailService:
 
     def _generate_agent_resolution_html(self, user_name: str, ticket_id: str, 
                                        complaint_subject: str, agent_solution: str, 
-                                       agent_name: str) -> str:
+                                       agent_name: str, agent_steps: list = None) -> str:
         """Generate HTML email for agent-verified resolution sent to user"""
         timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
+        
+        steps_html = ""
+        if agent_steps:
+            steps_items = "".join([f'<li style="margin-bottom: 10px; color: #1e3a8a;">{step}</li>' for step in agent_steps])
+            steps_html = f"""
+                    <!-- Actionable Steps -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <div style="background-color: #eff6ff; border-radius: 12px; padding: 25px; border-left: 4px solid #3b82f6;">
+                                <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 17px; font-weight: 700;">
+                                    📌 Actionable Next Steps
+                                </h3>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    {steps_items}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+            """
         
         return f"""
 <!DOCTYPE html>
@@ -1371,6 +1392,8 @@ class EmailService:
                         </td>
                     </tr>
                     
+                    {steps_html}
+                    
                     <!-- Thank You Message -->
                     <tr>
                         <td style="padding: 0 30px 30px 30px;">
@@ -1448,7 +1471,8 @@ class EmailService:
 
     def _generate_admin_agent_resolution_html(self, user_name: str, user_email: str, 
                                               ticket_id: str, complaint_subject: str,
-                                              agent_solution: str, agent_name: str) -> str:
+                                              agent_solution: str, agent_name: str,
+                                              agent_steps: list = None) -> str:
         """Generate HTML email for admin notification of agent resolution"""
         timestamp = get_ist_time().strftime("%B %d, %Y at %I:%M %p")
         

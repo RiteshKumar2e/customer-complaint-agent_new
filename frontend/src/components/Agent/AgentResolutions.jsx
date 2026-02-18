@@ -127,8 +127,15 @@ export default function AgentResolutions({ user, onNavigate }) {
                                             </div>
                                         </td>
                                         <td>
-                                            <div className="resolution-text-preview">
-                                                {res.final_solution}
+                                            <div className="resolution-text-preview" style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                                                <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{res.final_solution}</p>
+                                                {res.steps && res.steps.length > 0 && (
+                                                    <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.8rem', color: 'var(--agent-text-dim)' }}>
+                                                        {res.steps.map((step, i) => (
+                                                            <li key={i}>{step}</li>
+                                                        ))}
+                                                    </ul>
+                                                )}
                                             </div>
                                         </td>
                                         <td>

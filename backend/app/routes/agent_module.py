@@ -175,7 +175,9 @@ def get_complaint_queue(
             "created_at": complaint.created_at.isoformat() if complaint.created_at else None,
             "updated_at": complaint.updated_at.isoformat() if complaint.updated_at else None,
             "agent_status": resolution.status if resolution else None,
-            "agent_name": resolution.agent_name if resolution else None
+            "agent_name": resolution.agent_name if resolution else None,
+            "solution": complaint.solution, # Include current solution
+            "steps": json.loads(complaint.ai_analysis_steps) if complaint.ai_analysis_steps else [] # Include current steps
         }
         complaint_list.append(complaint_data)
     
@@ -237,6 +239,7 @@ def get_complaint_detail(
             "description": complaint.description or complaint.complaint_text,
             "ai_response": complaint.response,
             "ai_solution": complaint.solution,
+            "ai_steps": json.loads(complaint.ai_analysis_steps) if complaint.ai_analysis_steps else [],
             "ai_action": complaint.action,
             "satisfaction_prediction": complaint.satisfaction_prediction,
             "similar_complaints": complaint.similar_complaints,
@@ -248,6 +251,7 @@ def get_complaint_detail(
             "id": resolution.id if resolution else None,
             "draft_solution": resolution.draft_solution if resolution else None,
             "final_solution": resolution.final_solution if resolution else None,
+            "steps": json.loads(resolution.steps) if resolution and resolution.steps else None,
             "validation_status": resolution.validation_status if resolution else None,
             "confidence_score": resolution.confidence_score if resolution else None,
             "status": resolution.status if resolution else None,
@@ -264,6 +268,7 @@ async def validate_solution(
     agent_email: str = Body(...),
     ticket_id: str = Body(...),
     draft_solution: str = Body(...),
+    steps: Optional[List[str]] = Body(None),
     request: Request = None,
     db: Session = Depends(get_db)
 ):
@@ -318,6 +323,7 @@ async def validate_solution(
             agent_name=agent.full_name or agent.email,
             draft_solution=draft_solution,
             final_solution=draft_solution,  # Will be updated when sent
+            steps=json.dumps(steps) if steps else None,
             validation_results=validation_result.get("validation_results"),
             confidence_score=validation_result.get("confidence_score"),
             validation_status=validation_result.get("approval_status"),
@@ -327,6 +333,8 @@ async def validate_solution(
         db.add(resolution)
     else:
         resolution.draft_solution = draft_solution
+        if steps:
+            resolution.steps = json.dumps(steps)
         resolution.validation_results = validation_result.get("validation_results")
         resolution.confidence_score = validation_result.get("confidence_score")
         resolution.validation_status = validation_result.get("approval_status")
@@ -386,6 +394,7 @@ def send_resolution(
     agent_email: str = Body(...),
     ticket_id: str = Body(...),
     final_solution: str = Body(...),
+    steps: Optional[List[str]] = Body(None),
     request: Request = None,
     db: Session = Depends(get_db)
 ):
@@ -421,12 +430,17 @@ def send_resolution(
     
     # Update resolution
     resolution.final_solution = final_solution
+    if steps:
+        resolution.steps = json.dumps(steps)
     resolution.status = "sent"
     resolution.resolution_timestamp = get_ist_time()
     resolution.updated_at = get_ist_time()
     
-    # Mark complaint as resolved
+    # Mark complaint as resolved and update with verified data
     complaint.is_resolved = True
+    complaint.solution = final_solution
+    if steps:
+        complaint.ai_analysis_steps = json.dumps(steps)
     complaint.updated_at = get_ist_time()
     
     db.commit()
@@ -543,7 +557,8 @@ def get_all_resolutions(
             "validation_status": resolution.validation_status,
             "resolution_timestamp": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
             "sent_at": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
-            "status": resolution.status
+            "status": resolution.status,
+            "steps": json.loads(resolution.steps) if resolution.steps else []
         })
     
     return {

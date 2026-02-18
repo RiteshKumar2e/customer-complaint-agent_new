@@ -16,6 +16,7 @@ export default function AgentModule({ user, onNavigate }) {
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [draftSolution, setDraftSolution] = useState("");
+    const [draftSteps, setDraftSteps] = useState([]);
     const [validationResult, setValidationResult] = useState(null);
     const [isValidating, setIsValidating] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -65,6 +66,7 @@ export default function AgentModule({ user, onNavigate }) {
             const data = await getComplaintDetail(complaint.ticket_id, user.email);
             setSelectedComplaint(data.complaint);
             setDraftSolution(data.agent_resolution?.draft_solution || data.complaint.ai_solution || "");
+            setDraftSteps(data.agent_resolution?.steps || data.complaint.ai_steps || []);
             setValidationResult(data.agent_resolution ? {
                 confidence_score: data.agent_resolution.confidence_score,
                 approval_status: data.agent_resolution.validation_status,
@@ -82,7 +84,7 @@ export default function AgentModule({ user, onNavigate }) {
         setIsValidating(true);
         setValidationResult(null);
         try {
-            const result = await validateSolution(user.email, selectedComplaint.ticket_id, draftSolution);
+            const result = await validateSolution(user.email, selectedComplaint.ticket_id, draftSolution, draftSteps);
             setValidationResult(result);
         } catch (error) {
             console.error("Validation failed", error);
@@ -95,7 +97,7 @@ export default function AgentModule({ user, onNavigate }) {
         if (!draftSolution.trim()) return;
         setIsSending(true);
         try {
-            await sendResolution(user.email, selectedComplaint.ticket_id, draftSolution);
+            await sendResolution(user.email, selectedComplaint.ticket_id, draftSolution, draftSteps);
             setSelectedComplaint(null);
             fetchQueue();
             alert("Resolution sent successfully!");
@@ -319,10 +321,56 @@ export default function AgentModule({ user, onNavigate }) {
                                             <h3 className="panel-title"><span>✍️</span> Compose Resolution</h3>
                                             <textarea
                                                 className="solution-editor"
-                                                placeholder="Write a clear, step-by-step resolution..."
+                                                placeholder="Write a clear, descriptive solution summary..."
                                                 value={draftSolution}
                                                 onChange={(e) => setDraftSolution(e.target.value)}
+                                                style={{ minHeight: '120px' }}
                                             ></textarea>
+
+                                            <div className="steps-editor-section" style={{ marginTop: '1.5rem' }}>
+                                                <h4 style={{ fontSize: '0.9rem', color: 'var(--agent-text-dim)', marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span>Actionable Steps</span>
+                                                    <button
+                                                        onClick={() => setDraftSteps([...draftSteps, ""])}
+                                                        style={{ background: 'var(--agent-primary)', color: 'white', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                    >+ Add Step</button>
+                                                </h4>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    {draftSteps.map((step, idx) => (
+                                                        <div key={idx} style={{ display: 'flex', gap: '0.5rem' }}>
+                                                            <span style={{ color: 'var(--agent-primary)', fontWeight: '700', marginTop: '8px' }}>{idx + 1}.</span>
+                                                            <textarea
+                                                                value={step}
+                                                                onChange={(e) => {
+                                                                    const newSteps = [...draftSteps];
+                                                                    newSteps[idx] = e.target.value;
+                                                                    setDraftSteps(newSteps);
+                                                                }}
+                                                                placeholder={`Step ${idx + 1}...`}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: 'rgba(255,255,255,0.05)',
+                                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                                    borderRadius: '6px',
+                                                                    padding: '0.5rem',
+                                                                    color: 'inherit',
+                                                                    fontSize: '0.85rem',
+                                                                    resize: 'vertical',
+                                                                    minHeight: '40px'
+                                                                }}
+                                                            />
+                                                            <button
+                                                                onClick={() => setDraftSteps(draftSteps.filter((_, i) => i !== idx))}
+                                                                style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: '4px', width: '30px', height: '30px', cursor: 'pointer' }}
+                                                            >×</button>
+                                                        </div>
+                                                    ))}
+                                                    {draftSteps.length === 0 && (
+                                                        <p style={{ fontSize: '0.8rem', color: 'var(--agent-text-dim)', fontStyle: 'italic' }}>No steps added. Click "+ Add Step" to begin.</p>
+                                                    )}
+                                                </div>
+                                            </div>
 
                                             <div style={{ marginTop: '1.5rem' }}>
                                                 <button

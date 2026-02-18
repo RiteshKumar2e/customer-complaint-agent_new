@@ -92,6 +92,7 @@ class AgentResolution(Base):
     # Solution content
     draft_solution = Column(Text, nullable=True)  # Initial draft by agent
     final_solution = Column(Text, nullable=False)  # Final verified solution
+    steps = Column(Text, nullable=True)  # Actionable steps for resolution (JSON)
     
     # Validation data
     validation_results = Column(JSON, nullable=True)  # Stores multi-model validation data

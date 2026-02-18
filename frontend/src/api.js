@@ -138,20 +138,22 @@ export const getComplaintDetail = async (ticketId, agentEmail) => {
   return response.data;
 };
 
-export const validateSolution = async (agentEmail, ticketId, draftSolution) => {
+export const validateSolution = async (agentEmail, ticketId, draftSolution, steps = null) => {
   const response = await api.post("/agent/validate-solution", {
     agent_email: agentEmail,
     ticket_id: ticketId,
-    draft_solution: draftSolution
+    draft_solution: draftSolution,
+    steps: steps
   });
   return response.data;
 };
 
-export const sendResolution = async (agentEmail, ticketId, finalSolution) => {
+export const sendResolution = async (agentEmail, ticketId, finalSolution, steps = null) => {
   const response = await api.post("/agent/send-resolution", {
     agent_email: agentEmail,
     ticket_id: ticketId,
-    final_solution: finalSolution
+    final_solution: finalSolution,
+    steps: steps
   });
   return response.data;
 };

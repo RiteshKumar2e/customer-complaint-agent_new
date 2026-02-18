@@ -117,6 +117,17 @@ def run_migrations():
             except Exception:
                 conn.rollback()
 
+        # Migration for 'agent_resolutions' table
+        agent_res_columns = [
+            ("steps", "TEXT")
+        ]
+        for col_name, col_type in agent_res_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE agent_resolutions ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
         # ✅ Ensure complaint_text is nullable for legacy compatibility
         try:
             conn.execute(text("ALTER TABLE complaints ALTER COLUMN complaint_text DROP NOT NULL"))

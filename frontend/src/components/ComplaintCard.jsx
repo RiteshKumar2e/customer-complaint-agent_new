@@ -119,14 +119,27 @@ export default function ComplaintCard({ data }) {
           </button>
         </div>
         {showSolution && (
-          <motion.p
-            className="solution-text"
+          <motion.div
+            className="solution-content"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             transition={{ duration: 0.3 }}
           >
-            {data.solution}
-          </motion.p>
+            <p className="solution-text">{data.solution}</p>
+
+            {(data.ai_analysis_steps || data.steps) && (
+              <div className="steps-container" style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.8 }}>Actionable Steps:</h4>
+                <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                  {(typeof (data.ai_analysis_steps || data.steps) === 'string'
+                    ? JSON.parse(data.ai_analysis_steps || data.steps)
+                    : (data.ai_analysis_steps || data.steps)).map((step, idx) => (
+                      <li key={idx} style={{ fontSize: '0.85rem', marginBottom: '0.4rem', opacity: 0.9 }}>{step}</li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </motion.div>
         )}
       </div>
 
