@@ -54,8 +54,8 @@ export const deleteComplaint = async (ticketId) => {
   return response.data;
 };
 
-export const bulkDeleteComplaints = async (ticketIds) => {
-  const response = await api.delete("/complaints/bulk", { data: { ticket_ids: ticketIds } });
+export const bulkDeleteComplaints = async (ids) => {
+  const response = await api.delete("/complaints/bulk", { data: { ids } });
   return response.data;
 };
 

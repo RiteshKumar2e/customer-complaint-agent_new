@@ -112,11 +112,11 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
         }
     };
 
-    const toggleSelectItem = (ticketId) => {
+    const toggleSelectItem = (id) => {
         setSelectedItems(prev =>
-            prev.includes(ticketId)
-                ? prev.filter(id => id !== ticketId)
-                : [...prev, ticketId]
+            prev.includes(id)
+                ? prev.filter(selectedId => selectedId !== id)
+                : [...prev, id]
         );
     };
 
@@ -131,7 +131,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
             await bulkDeleteComplaints(selectedItems);
 
             // Update local state
-            setComplaints(prev => prev.filter(c => !selectedItems.includes(c.ticket_id)));
+            setComplaints(prev => prev.filter(c => !selectedItems.includes(c.id)));
             setSelectedItems([]);
 
             alert(`🗑️ Successfully deleted ${selectedItems.length} complaints!`);
@@ -142,16 +142,10 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
     };
 
     const toggleSelectAll = (filteredItems) => {
-        // Only select resolved ones as per user request (or at least prioritize them)
-        // But usually select all on current page is better.
-        // The user said "jo resolved ho jayenge usko delete kr skte hai selective option"
-        // I will allow selecting any but the button might filter or I just allow everything.
-        // Let's just allow selecting anything that is visible.
-
         if (selectedItems.length === filteredItems.length) {
             setSelectedItems([]);
         } else {
-            setSelectedItems(filteredItems.map(item => item.ticket_id));
+            setSelectedItems(filteredItems.map(item => item.id));
         }
     };
 
@@ -460,17 +454,25 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                             >
                                 <div className="bulk-actions-content" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
                                     <span style={{ fontWeight: '600', color: '#1f2937' }}>{selectedItems.length} items selected</span>
-                                    <button
-                                        className="bulk-delete-btn"
-                                        onClick={handleBulkDelete}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        </svg>
-                                        Delete Selected
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            className="bulk-delete-btn"
+                                            onClick={handleBulkDelete}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                            Delete Selected
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedItems([])}
+                                            style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+                                        >
+                                            Clear Selection
+                                        </button>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
@@ -526,7 +528,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             {paginatedComplaints.map((complaint, index) => (
                                                 <tr
                                                     key={complaint.id}
-                                                    className={selectedItems.includes(complaint.ticket_id) ? 'selected-row' : ''}
+                                                    className={selectedItems.includes(complaint.id) ? 'selected-row' : ''}
                                                     style={{
                                                         opacity: 1,
                                                         transition: 'background-color 0.3s ease'
@@ -535,8 +537,8 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                                     <td style={{ width: '40px' }}>
                                                         <input
                                                             type="checkbox"
-                                                            checked={selectedItems.includes(complaint.ticket_id)}
-                                                            onChange={() => toggleSelectItem(complaint.ticket_id)}
+                                                            checked={selectedItems.includes(complaint.id)}
+                                                            onChange={() => toggleSelectItem(complaint.id)}
                                                             className="admin-checkbox"
                                                         />
                                                     </td>

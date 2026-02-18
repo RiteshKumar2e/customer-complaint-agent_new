@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.agents.orchestrator import run_agent_pipeline
 from app.db.database import get_db, get_ist_time
 from app.db.models import Complaint
-from app.schemas.complaint import ComplaintRequest, ComplaintResponse
+from app.schemas.complaint import ComplaintRequest, ComplaintResponse, BulkDeleteRequest
 from app.services.email_service import email_service
 from app.services.auto_resolver import auto_resolver
 import datetime
@@ -203,7 +203,24 @@ async def delete_complaint(ticket_id: str, db: Session = Depends(get_db)):
         complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
         if not complaint:
             raise HTTPException(status_code=404, detail="Ticket not found")
+            
+        # Delete associated records manually to satisfy foreign key constraints
+        from app.db.models import AgentResolution, ModelValidation
         
+        # 1. Get complaint ID
+        complaint_id = complaint.id
+        
+        # 2. Find associated resolutions
+        resolutions = db.query(AgentResolution).filter(AgentResolution.complaint_id == complaint_id).all()
+        resolution_ids = [r.id for r in resolutions]
+        
+        if resolution_ids:
+            # 3. Delete model validations for these resolutions
+            db.query(ModelValidation).filter(ModelValidation.resolution_id.in_(resolution_ids)).delete(synchronize_session=False)
+            
+            # 4. Delete resolutions
+            db.query(AgentResolution).filter(AgentResolution.id.in_(resolution_ids)).delete(synchronize_session=False)
+
         db.delete(complaint)
         db.commit()
         
@@ -216,16 +233,36 @@ async def delete_complaint(ticket_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/complaints/bulk")
-async def bulk_delete_complaints(ticket_ids: list[str] = Body(..., embed=True), db: Session = Depends(get_db)):
+async def bulk_delete_complaints(payload: BulkDeleteRequest, db: Session = Depends(get_db)):
     """
-    Delete multiple complaints by ticket_ids
+    Delete multiple complaints by ids and handle associated records
     """
     try:
-        count = db.query(Complaint).filter(Complaint.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+        complaint_ids = payload.ids
+        if not complaint_ids:
+            return {"message": "No IDs provided", "deleted_count": 0}
+
+        from app.db.models import AgentResolution, ModelValidation
+        
+        # 1. Find associated resolutions
+        resolutions = db.query(AgentResolution).filter(AgentResolution.complaint_id.in_(complaint_ids)).all()
+        resolution_ids = [r.id for r in resolutions]
+        
+        if resolution_ids:
+            # 2. Delete associated model validations
+            db.query(ModelValidation).filter(ModelValidation.resolution_id.in_(resolution_ids)).delete(synchronize_session=False)
+            
+            # 3. Delete associated resolutions
+            db.query(AgentResolution).filter(AgentResolution.id.in_(resolution_ids)).delete(synchronize_session=False)
+
+        # 4. Delete complaints
+        count = db.query(Complaint).filter(Complaint.id.in_(complaint_ids)).delete(synchronize_session=False)
         db.commit()
-        return {"message": f"Successfully deleted {count} complaints", "deleted_count": count}
+        
+        return {"message": f"Successfully deleted {count} complaints and associated data", "deleted_count": count}
     except Exception as e:
         db.rollback()
+        print(f"❌ BULK DELETE ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/complaint/{ticket_id}/resolution-feedback")

@@ -56,3 +56,8 @@ class ComplaintDB(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BulkDeleteRequest(BaseModel):
+    """Request schema for bulk deleting complaints"""
+    ids: list[int]
