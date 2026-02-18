@@ -13,7 +13,11 @@ class AutoResolver:
     async def process_complaint(self, complaint_id: int):
         """
         Runs the full autonomous resolution pipeline for a complaint
+        Wait 5 minutes before processing to allow for natural resolution flow
         """
+        print(f"⏳ Complaint {complaint_id} received. Waiting 5 minutes before auto-resolution...")
+        await asyncio.sleep(300)  # Wait for 5 minutes
+        
         db = SessionLocal()
         try:
             print(f"🚀 Starting Auto-Resolution Pipeline for Complaint ID: {complaint_id}")

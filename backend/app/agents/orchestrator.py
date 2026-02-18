@@ -43,7 +43,7 @@ JSON format:
   "category": "Billing|Technical|Delivery|Service|Security|Other",
   "priority": "High|Medium|Low",
   "sentiment": "Positive|Neutral|Negative|Angry",
-  "solution": "Brief 1-sentence recommended solution",
+  "solution": "Detailed professional multi-step solution that directly resolves the user's issue with specific action steps and professional tone.",
   "satisfaction": "High|Medium|Low",
   "is_anomaly": false
 }}
