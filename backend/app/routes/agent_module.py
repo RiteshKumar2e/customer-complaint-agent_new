@@ -3,7 +3,7 @@ Agent Module API Routes
 Secure endpoints for human agents to review complaints and send verified solutions
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_, or_
 from typing import Optional, List
@@ -261,10 +261,10 @@ def get_complaint_detail(
 
 @router.post("/validate-solution")
 async def validate_solution(
-    agent_email: str,
-    ticket_id: str,
-    draft_solution: str,
-    request: Request,
+    agent_email: str = Body(...),
+    ticket_id: str = Body(...),
+    draft_solution: str = Body(...),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -383,10 +383,10 @@ async def validate_solution(
 
 @router.post("/send-resolution")
 def send_resolution(
-    agent_email: str,
-    ticket_id: str,
-    final_solution: str,
-    request: Request,
+    agent_email: str = Body(...),
+    ticket_id: str = Body(...),
+    final_solution: str = Body(...),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """
