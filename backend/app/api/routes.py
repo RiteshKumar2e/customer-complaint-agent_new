@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.agents.orchestrator import run_agent_pipeline
 from app.db.database import get_db, get_ist_time
 from app.db.models import Complaint
 from app.schemas.complaint import ComplaintRequest, ComplaintResponse
 from app.services.email_service import email_service
+from app.services.auto_resolver import auto_resolver
 import datetime
 import random
 import string
@@ -13,7 +14,11 @@ import json
 router = APIRouter()
 
 @router.post("/complaint", response_model=ComplaintResponse)
-async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
+async def handle_complaint(
+    data: ComplaintRequest, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(get_db)
+):
     """
     Handle complaint submission and run AI analysis pipeline (Async version for scaling)
     """
@@ -64,6 +69,10 @@ async def handle_complaint(data: ComplaintRequest, db: Session = Depends(get_db)
         db.add(complaint)
         db.commit()
         db.refresh(complaint)
+
+        # Trigger auto-resolution pipeline in the background
+        # This will validate the solution and mail it if confidence is high
+        background_tasks.add_task(auto_resolver.process_complaint, complaint.id)
 
         # Send confirmation email
         email_service.send_complaint_confirmation(data.name, data.email, {
