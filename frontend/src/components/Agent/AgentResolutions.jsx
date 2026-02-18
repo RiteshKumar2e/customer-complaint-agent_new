@@ -58,7 +58,11 @@ export default function AgentResolutions({ user, onNavigate }) {
                         <button className="nav-btn active" onClick={() => onNavigate("agent-resolutions")}>
                             📜 Resolution Log
                         </button>
-                        <button className="nav-btn nav-btn-error" onClick={() => logoutUser()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button className="nav-btn nav-btn-error" onClick={() => {
+                            logoutUser(user.email);
+                            localStorage.removeItem("user");
+                            window.location.reload();
+                        }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             🚪 Logout
                         </button>
                     </div>

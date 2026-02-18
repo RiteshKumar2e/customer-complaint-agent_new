@@ -92,7 +92,7 @@ export default function AgentModule({ user, onNavigate }) {
     };
 
     const handleSend = async () => {
-        if (!draftSolution.trim() || !validationResult || validationResult.approval_status !== 'approved') return;
+        if (!draftSolution.trim()) return;
         setIsSending(true);
         try {
             await sendResolution(user.email, selectedComplaint.ticket_id, draftSolution);
@@ -148,7 +148,11 @@ export default function AgentModule({ user, onNavigate }) {
                         <button className="nav-btn" onClick={() => onNavigate("agent-resolutions")}>
                             📜 Resolution Log
                         </button>
-                        <button className="nav-btn nav-btn-error" onClick={() => logoutUser()} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button className="nav-btn nav-btn-error" onClick={() => {
+                            logoutUser(user.email);
+                            localStorage.removeItem("user");
+                            window.location.reload();
+                        }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             🚪 Logout
                         </button>
                     </div>
@@ -377,9 +381,9 @@ export default function AgentModule({ user, onNavigate }) {
                                 <button
                                     className="btn btn-success"
                                     onClick={handleSend}
-                                    disabled={isSending || !validationResult || validationResult.approval_status !== 'approved'}
+                                    disabled={isSending || !draftSolution.trim()}
                                 >
-                                    {isSending ? <><div className="loader"></div> Delivering...</> : "Approve & Deliver to User"}
+                                    {isSending ? <><div className="loader"></div> Delivering...</> : (validationResult?.approval_status === 'rejected' ? "Force Approve & Deliver" : "Approve & Deliver to User")}
                                 </button>
                             </div>
                         </motion.div>

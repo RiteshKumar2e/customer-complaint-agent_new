@@ -11,9 +11,9 @@ class AutoResolver:
     """
     
     async def process_complaint(self, complaint_id: int):
-        \"\"\"
+        """
         Runs the full autonomous resolution pipeline for a complaint
-        \"\"\"
+        """
         db = SessionLocal()
         try:
             print(f"🚀 Starting Auto-Resolution Pipeline for Complaint ID: {complaint_id}")

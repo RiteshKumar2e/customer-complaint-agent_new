@@ -31,9 +31,9 @@ class MultiModelValidator:
             "llama-3.1-8b-instant",             # Fast validator
         ]
         
-        self.min_models = 5  # Minimum models that must respond
-        self.max_models = 10  # Maximum models to use
-        self.confidence_threshold = 0.75  # Minimum confidence for approval
+        self.min_models = 4  # Minimum models that must respond
+        self.max_models = 6 # Reduced from 6 to avoid rate limits
+        self.confidence_threshold = 0.85  # Minimum confidence for approval
         
         # Validation criteria weights
         self.criteria_weights = {
