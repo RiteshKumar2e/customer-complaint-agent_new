@@ -29,6 +29,11 @@ elif DATABASE_URL.startswith("mysql://"):
         import re
         DATABASE_URL = re.sub(r'[?&]ssl-mode=[^&]+', '', DATABASE_URL)
 
+# ✅ Handle Turso (libsql) URL conversion
+elif DATABASE_URL.startswith("libsql://"):
+    if "sqlite+libsql" not in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("libsql://", "sqlite+libsql://")
+
 # ✅ Create engine with SSL support for Aiven if needed
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
