@@ -13,11 +13,18 @@ from app.routes.auth import router as auth_router
 from app.routes.agent_module import router as agent_router
 
 # Create database tables
-models.Base.metadata.create_all(bind=engine)
-
-# Run custom migrations (add missing columns)
-from app.db.database import run_migrations
-run_migrations()
+try:
+    print("🚀 Initializing database...")
+    models.Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created/verified")
+    
+    # Run custom migrations (add missing columns)
+    from app.db.database import run_migrations
+    run_migrations()
+    print("✅ Migrations completed")
+except Exception as e:
+    print(f"❌ DATABASE ERROR during startup: {e}")
+    print("⚠️ The app will continue to run, but database-dependent features will fail.")
 
 app = FastAPI(title="Quickfix Agentic AI")
 

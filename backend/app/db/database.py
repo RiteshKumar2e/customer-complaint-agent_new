@@ -33,9 +33,17 @@ elif DATABASE_URL.startswith("mysql://"):
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+    print("📁 Using Local SQLite Database")
 elif "aivencloud.com" in DATABASE_URL:
     # Aiven requires SSL, but we must pass it via connect_args for pymysql
     connect_args = {"ssl": {"ca": None}} # This triggers standard SSL check for Aiven
+    
+    # Extract hostname for debugging (safe, as it doesn't include password)
+    from urllib.parse import urlparse
+    parsed = urlparse(DATABASE_URL)
+    print(f"🌍 Connecting to Aiven Database: {parsed.hostname}:{parsed.port}")
+else:
+    print("🚀 Connecting to External Database (Non-Aiven)")
 
 engine = create_engine(
     DATABASE_URL,
