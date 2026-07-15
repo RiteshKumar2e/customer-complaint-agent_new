@@ -12,7 +12,7 @@ from app.schemas.user import (
     ResetPassword, OTPVerify, UserResponse, Token, GoogleAuth, UserUpdate
 )
 from app.services.email_service import email_service
-from jose import jwt
+import jwt
 import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
