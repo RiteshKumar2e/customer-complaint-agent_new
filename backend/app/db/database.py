@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("TURSO_DATABASE_URL") or "
 # restart, so every complaint written to it is lost. Refuse to start that way
 # instead of pretending the writes succeeded.
 IS_HOSTED = bool(os.getenv("RENDER") or os.getenv("ENVIRONMENT") == "production")
+TURSO_AUTH_TOKEN = None
 if not DATABASE_URL:
     if IS_HOSTED:
         raise RuntimeError(
@@ -48,11 +50,24 @@ elif DATABASE_URL.startswith("mysql://"):
 
 # ✅ Handle Turso (libsql) URL conversion
 elif DATABASE_URL.startswith("libsql://"):
-    DATABASE_URL = DATABASE_URL.replace("libsql://", "sqlite+libsql://", 1)
-    # sqlalchemy-libsql picks its transport from this flag: secure=true -> https,
-    # otherwise plain http, which a TLS-only Turso host rejects.
-    if "secure=" not in DATABASE_URL:
-        DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "secure=true"
+    _parts = urlsplit(DATABASE_URL)
+    _params = dict(parse_qsl(_parts.query))
+
+    # The underlying libsql-experimental driver ignores an authToken carried in
+    # the query string and connects with an empty JWT (Turso answers 401). Pull
+    # it out here and hand it to the driver through connect_args instead.
+    TURSO_AUTH_TOKEN = _params.pop("authToken", None)
+
+    # sqlalchemy-libsql reads this flag to choose its transport: secure=true is
+    # https, anything else is plain http, which a TLS-only Turso host rejects.
+    _params["secure"] = "true"
+
+    DATABASE_URL = urlunsplit(
+        ("sqlite+libsql", _parts.netloc, _parts.path, urlencode(_params), "")
+    )
+
+    if not TURSO_AUTH_TOKEN:
+        print("[db] WARNING: Turso URL has no authToken — expect 401 Unauthorized.")
 
     # sqlalchemy-libsql ships no Windows wheel, so a dev machine can't talk to
     # Turso at all. Fall back to SQLite there rather than refusing to boot, but
@@ -66,6 +81,7 @@ elif DATABASE_URL.startswith("libsql://"):
                 "Install it (>=0.2.0) so writes reach Turso instead of a disposable file."
             )
         DATABASE_URL = "sqlite:///complaints.db"
+        TURSO_AUTH_TOKEN = None
         print(
             "[db] WARNING: sqlalchemy-libsql is unavailable (no Windows wheel). "
             "Falling back to local SQLite 'complaints.db'. This machine is NOT "
@@ -80,6 +96,10 @@ IS_SQLITE_FAMILY = DATABASE_URL.startswith("sqlite")
 connect_args = {}
 if IS_SQLITE_FAMILY:
     connect_args = {"check_same_thread": False}
+    if TURSO_AUTH_TOKEN:
+        # SQLAlchemy merges connect_args into the kwargs handed to the driver's
+        # connect(), which is the only place libsql-experimental reads the token.
+        connect_args["auth_token"] = TURSO_AUTH_TOKEN
 elif "aivencloud.com" in DATABASE_URL:
     # Aiven requires SSL, but we must pass it via connect_args for pymysql
     connect_args = {"ssl": {"ca": None}} # This triggers standard SSL check for Aiven
