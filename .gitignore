@@ -26,6 +26,16 @@ dist/
 build/
 
 # =====================
+# Local SQLite databases
+# =====================
+# Never commit these: a committed .db file is redeployed over the live data on
+# every push, and the real database is Turso (see DATABASE_URL).
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# =====================
 # OS / Editor
 # =====================
 .DS_Store
