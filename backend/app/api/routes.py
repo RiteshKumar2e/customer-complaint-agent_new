@@ -122,6 +122,8 @@ async def review_complaint(ticket_id: str, rating: int = Body(..., embed=True), 
         db.commit()
         
         return {"message": "Review submitted successfully", "ticket_id": ticket_id}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -147,6 +149,8 @@ def delete_complaints(email: str = None, db: Session = Depends(get_db)):
         count = db.query(Complaint).filter(Complaint.email == email).delete(synchronize_session=False)
         db.commit()
         return {"message": f"Deleted {count} complaints", "deleted_count": count}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -190,6 +194,8 @@ async def update_complaint_status(
             "is_resolved": is_resolved,
             "email_sent": is_resolved
         }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -228,6 +234,8 @@ async def delete_complaint(ticket_id: str, db: Session = Depends(get_db)):
             "message": "Complaint deleted successfully",
             "ticket_id": ticket_id
         }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -311,6 +319,8 @@ async def submit_resolution_feedback(
             "ticket_id": ticket_id,
             "is_actually_resolved": is_actually_resolved
         }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

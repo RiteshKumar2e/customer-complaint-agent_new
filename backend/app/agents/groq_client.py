@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from groq import Groq
+from groq import AsyncGroq
 from typing import Optional, List
 
 load_dotenv()
@@ -46,7 +46,7 @@ class GroqClient:
             "llama-3.2-11b-text-preview",       # 20. Mid-range text model
             "llama3-groq-70b-8192-tool-use-preview", # 21. Tool-use optimized
             "llama3-groq-8b-8192-tool-use-preview",  # 22. Fast tool-use
-            
+
             # === TIER 5: ALTERNATIVE & LEGACY ===
             "gemma-7b-it",                      # 23. Original Gemma
             "gemma2-7b-it",                     # 24. Gemma 2 7B
@@ -55,18 +55,25 @@ class GroqClient:
             "mixtral-8x7b-instruct-v0.1",       # 27. Instruct variant
             "llama-guard-3-8b",                 # 28. Safety filter model
             "deepseek-v3",                      # 29. DeepSeek V3 (Experimental)
-            
-            # === TIER 6: ULTRA-FAST FALLBACKS ===
-            "distil-whisper-large-v3-en",       # 30. Whisper variant
-            "whisper-large-v3",                 # 31. Audio model fallback
+            # NOTE: Whisper/distil-whisper are audio transcription models and
+            # always error on chat completions — removed so they don't waste
+            # fallback attempts and add latency.
         ]
+
+        # Cap how many models we try before giving up so a rate-limited or
+        # degraded Groq endpoint fails over to Gemini/local quickly instead of
+        # grinding through every model sequentially.
+        self.max_fallback_attempts = 4
         
         # Track which models have failed
         self.failed_models = set()
         self.current_model_index = 0
         
         if self.api_key:
-            self.client = Groq(api_key=self.api_key)
+            # Async client with a hard per-request timeout and no internal retry
+            # stacking (we handle model fallback ourselves). This keeps the event
+            # loop unblocked so the caller's asyncio.wait_for timeouts work.
+            self.client = AsyncGroq(api_key=self.api_key, timeout=8.0, max_retries=0)
             print(f"✅ Groq API initialized with {len(self.models)} fallback models")
             print(f"🎯 Primary model: {self.models[0]}")
         else:
@@ -106,9 +113,9 @@ class GroqClient:
         """
         if not self.client:
             return None
-        
-        max_attempts = len(self.models)
-        
+
+        max_attempts = min(len(self.models), self.max_fallback_attempts)
+
         for attempt in range(max_attempts):
             current_model = self.get_next_model()
             
@@ -119,8 +126,8 @@ class GroqClient:
             try:
                 print(f"🚀 Trying Groq model: {current_model} (attempt {attempt + 1}/{max_attempts})")
                 
-                # Groq API call with optimized parameters
-                chat_completion = self.client.chat.completions.create(
+                # Groq API call with optimized parameters (async — non-blocking)
+                chat_completion = await self.client.chat.completions.create(
                     messages=[
                         {
                             "role": "system",

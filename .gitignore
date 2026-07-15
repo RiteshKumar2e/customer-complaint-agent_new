@@ -32,3 +32,8 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# =====================
+# Claude Code (local agent config — do not push)
+# =====================
+.claude/

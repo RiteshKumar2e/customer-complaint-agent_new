@@ -4,6 +4,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from app.db.database import engine
 from app.db import models
 from app.api.routes import router as complaint_router
@@ -23,11 +24,15 @@ app = FastAPI(title="Quickfix Agentic AI")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # NOTE: Do not call `await request.body()` here — the body stream is already
+    # consumed during request parsing, so re-reading it raises ClientDisconnect
+    # and crashes the handler (client sees a reset instead of a 422).
+    # FastAPI attaches the raw body to the exception as `exc.body`.
     print(f"❌ VALIDATION ERROR: {exc.errors()}")
-    print(f"📋 REQUEST BODY: {await request.body()}")
+    print(f"📋 REQUEST BODY: {exc.body}")
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "body": str(await request.body())},
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
     )
 
 app.add_middleware(
