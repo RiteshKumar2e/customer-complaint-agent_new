@@ -79,6 +79,11 @@ export default function AgentModule({ user, onNavigate }) {
         }
     };
 
+    // The API errors carry the reason in detail; without this the agent just
+    // sees the spinner stop and has no idea the request failed.
+    const describeError = (error, fallback) =>
+        error.response?.data?.detail || error.message || fallback;
+
     const handleValidate = async () => {
         if (!draftSolution.trim()) return;
         setIsValidating(true);
@@ -88,6 +93,7 @@ export default function AgentModule({ user, onNavigate }) {
             setValidationResult(result);
         } catch (error) {
             console.error("Validation failed", error);
+            alert(`Validation failed: ${describeError(error, "please try again.")}`);
         } finally {
             setIsValidating(false);
         }
@@ -103,6 +109,7 @@ export default function AgentModule({ user, onNavigate }) {
             alert("Resolution sent successfully!");
         } catch (error) {
             console.error("Failed to send resolution", error);
+            alert(`Failed to send resolution: ${describeError(error, "please try again.")}`);
         } finally {
             setIsSending(false);
         }

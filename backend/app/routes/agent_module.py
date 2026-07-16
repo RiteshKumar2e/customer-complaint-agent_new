@@ -424,10 +424,25 @@ def send_resolution(
     resolution = db.query(AgentResolution).filter(
         AgentResolution.complaint_id == complaint.id
     ).first()
-    
+
     # Allow human agents to send resolutions even if validation is not approved
     # (Human-in-the-loop override)
-    
+
+    if resolution is None:
+        # Only /validate-solution creates this row, and validating is optional in
+        # the UI, so an agent who writes a solution and sends it straight away
+        # has no resolution yet. Create one rather than failing the send.
+        resolution = AgentResolution(
+            complaint_id=complaint.id,
+            ticket_id=ticket_id,
+            agent_id=agent.id,
+            agent_name=agent.full_name or agent.email,
+            draft_solution=final_solution,
+            final_solution=final_solution,
+            validation_status="skipped",
+        )
+        db.add(resolution)
+
     # Update resolution
     resolution.final_solution = final_solution
     if steps:
@@ -453,9 +468,10 @@ def send_resolution(
             ticket_id=ticket_id,
             complaint_subject=complaint.subject or "Your Complaint",
             agent_solution=final_solution,
-            agent_name=agent.full_name or agent.email
+            agent_name=agent.full_name or agent.email,
+            agent_steps=steps
         )
-        
+
         resolution.status = "delivered"
         db.commit()
         
