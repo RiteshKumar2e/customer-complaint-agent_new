@@ -10,6 +10,13 @@ const api = axios.create({
   },
 });
 
+// The backend runs on Render's free tier, which spins the container down after
+// ~15 min idle. The first request then pays a 30-60s cold-start boot. Auth is
+// usually that first request, so it gets a longer timeout — otherwise a healthy
+// login fails with a misleading "Failed to trigger OTP email" while the server
+// is merely waking up.
+const AUTH_TIMEOUT = 90000;
+
 export const submitComplaint = async (name, email, subject, description) => {
   const response = await api.post("/complaint", {
     name,
@@ -72,42 +79,42 @@ export const registerUser = async (email, fullName, password, phone, organizatio
     phone,
     organization,
     profile_image: profileImage
-  });
+  }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const requestOTP = async (email) => {
-  const response = await api.post("/auth/request-otp", { email });
+  const response = await api.post("/auth/request-otp", { email }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const verifyOTP = async (email, otp, location = null) => {
-  const response = await api.post("/auth/verify-otp", { email, otp, location });
+  const response = await api.post("/auth/verify-otp", { email, otp, location }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const loginWithPassword = async (email, password, location = null) => {
-  const response = await api.post("/auth/login-password", { email, password, location });
+  const response = await api.post("/auth/login-password", { email, password, location }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const forgotPassword = async (email) => {
-  const response = await api.post("/auth/forgot-password", { email });
+  const response = await api.post("/auth/forgot-password", { email }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const resetPassword = async (email, reset_token, new_password) => {
-  const response = await api.post("/auth/reset-password", { email, reset_token, new_password });
+  const response = await api.post("/auth/reset-password", { email, reset_token, new_password }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const googleAuth = async (token, name, location = null) => {
-  const response = await api.post("/auth/google", { token, name, location });
+  const response = await api.post("/auth/google", { token, name, location }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
 export const googleVerifyOTP = async (email, otp, location = null) => {
-  const response = await api.post("/auth/google-verify-otp", { email, otp, location });
+  const response = await api.post("/auth/google-verify-otp", { email, otp, location }, { timeout: AUTH_TIMEOUT });
   return response.data;
 };
 
