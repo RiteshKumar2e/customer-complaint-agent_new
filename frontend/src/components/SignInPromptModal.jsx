@@ -36,11 +36,7 @@ const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
     };
 
     const handleClose = () => {
-        // Show custom notification instead of alert
-        setNotification({
-            message: "Sign in is mandatory to access all enterprise features of Quickfix AI!",
-            type: "warning"
-        });
+        setIsVisible(false);
     };
 
     const features = [
