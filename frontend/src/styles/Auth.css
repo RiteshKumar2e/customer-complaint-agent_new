@@ -872,7 +872,7 @@ body.light-theme .terms-modal-content {
 }
 
 .login-password-toggle {
-    top: calc(50% + 1px);
+    top: 50%;
 }
 
 .password-toggle svg {

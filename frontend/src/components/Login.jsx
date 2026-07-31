@@ -461,7 +461,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                                 <label>Enter Password</label>
                                 <span className="auth-link" style={{ fontSize: '0.85rem' }} onClick={() => onNavigate("forgot-password")}>Forgot Access?</span>
                             </div>
-                            <div className="input-wrapper">
+                            <div className="input-wrapper login-password-wrapper">
                                 <motion.svg
                                     className="input-icon"
                                     viewBox="0 0 24 24"
