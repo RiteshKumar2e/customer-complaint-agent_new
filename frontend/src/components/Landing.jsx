@@ -474,11 +474,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
             <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
               {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign In")}
             </button>
-            {!user && (
-              <button className="btn-admin admin-special" onClick={() => { onAdminLogin(); setIsMenuOpen(false); }} style={{ marginTop: '10px', background: 'var(--secondary)' }}>
-                Admin Login
-              </button>
-            )}
           </div>
           <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
           <button onClick={() => { scrollToSection('mission'); setIsMenuOpen(false); }}>Mission</button>
@@ -500,11 +495,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
             <button className="btn-admin" onClick={onStart}>
               {user?.role === "Admin" ? `Admin Panel` : (user ? `Dashboard` : "Sign In")}
             </button>
-            {!user && (
-              <button className="btn-admin admin-special" onClick={onAdminLogin}>
-                Admin Login
-              </button>
-            )}
           </div>
         </div>
       </header>
