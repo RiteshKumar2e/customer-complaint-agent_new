@@ -529,7 +529,7 @@ body.light-theme .auth-title {
 .input-wrapper input,
 .input-wrapper select {
     width: 100%;
-    padding: 0.7rem 3rem 0.7rem 3rem;
+    padding: 0.7rem 1rem 0.7rem 3rem;
     background: #11121d;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
@@ -564,6 +564,10 @@ body.light-theme .input-wrapper input:focus {
     color: var(--text-tertiary);
     width: 18px;
     height: 18px;
+}
+
+.login-password-wrapper input {
+    padding-right: 3rem;
 }
 
 .auth-submit {
@@ -865,6 +869,10 @@ body.light-theme .terms-modal-content {
     cursor: pointer;
     color: var(--text-tertiary);
     z-index: 2;
+}
+
+.login-password-toggle {
+    top: calc(50% + 1px);
 }
 
 .password-toggle svg {

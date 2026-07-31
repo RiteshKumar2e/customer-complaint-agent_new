@@ -417,7 +417,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                             transition={{ delay: 0.1 }}
                         >
                             <label>Email Address</label>
-                            <div className="input-wrapper">
+                            <div className="input-wrapper login-password-wrapper">
                                 <motion.svg
                                     className="input-icon"
                                     viewBox="0 0 24 24"
@@ -500,16 +500,14 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                                         typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 500);
                                     }}
                                 />
-                                <motion.button
+                                <button
                                     type="button"
-                                    className="password-toggle"
+                                    className="password-toggle login-password-toggle"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    whileHover={{ scale: 1.2, rotate: 10 }}
-                                    whileTap={{ scale: 0.9 }}
                                     aria-label={showPassword ? "Hide password" : "Show password"}
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </motion.button>
+                                </button>
                             </div>
                         </motion.div>
 
