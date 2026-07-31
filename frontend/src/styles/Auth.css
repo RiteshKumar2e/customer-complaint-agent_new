@@ -529,7 +529,7 @@ body.light-theme .auth-title {
 .input-wrapper input,
 .input-wrapper select {
     width: 100%;
-    padding: 0.7rem 1rem 0.7rem 3rem;
+    padding: 0.7rem 3rem 0.7rem 3rem;
     background: #11121d;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
@@ -850,8 +850,25 @@ body.light-theme .terms-modal-content {
     right: 1rem;
     top: 50%;
     transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    line-height: 0;
+    appearance: none;
+    -webkit-appearance: none;
     cursor: pointer;
     color: var(--text-tertiary);
+    z-index: 2;
+}
+
+.password-toggle svg {
+    display: block;
 }
 
 /* MOBILE RESPONSIVE OVERRIDES */

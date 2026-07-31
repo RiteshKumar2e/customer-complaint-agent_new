@@ -522,7 +522,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
           </p>
 
           <div className="hero-cta">
-            <button className="btn-cta btn-primary" onClick={() => scrollToSection('solutions-demo')}>
+            <button className="btn-cta btn-primary" onClick={onStart}>
               Explore Solutions <span className="arrow">→</span>
             </button>
             <button className="btn-secondary" onClick={() => scrollToSection('features')}>
