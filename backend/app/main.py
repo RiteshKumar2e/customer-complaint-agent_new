@@ -63,3 +63,10 @@ app.include_router(agent_router)
 @app.get("/")
 def root():
     return {"status": "Quickfix Backend Running"}
+
+
+@app.get("/health")
+def health():
+    # Deliberately does no DB or LLM work: this is the endpoint load tests and
+    # platform health checks hit, so it must measure the web tier alone.
+    return {"status": "ok"}
