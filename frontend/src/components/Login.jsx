@@ -10,20 +10,17 @@ import "../styles/AuthAnimations.css";
 const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }) => {
     const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
 
+    // The offset depends on the element's measured position, so it has to be
+    // read after layout rather than derived during render.
     useEffect(() => {
         if (!containerRef.current || isHiding || isClosed) return;
         const rect = containerRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
 
-        let deltaX, deltaY;
-        if (targetPos) {
-            deltaX = targetPos.x - centerX;
-            deltaY = targetPos.y - centerY;
-        } else {
-            deltaX = mousePos.x - centerX;
-            deltaY = mousePos.y - centerY;
-        }
+        const target = targetPos || mousePos;
+        const deltaX = target.x - centerX;
+        const deltaY = target.y - centerY;
 
         const angle = Math.atan2(deltaY, deltaX);
         const distance = Math.min(6, Math.sqrt(deltaX ** 2 + deltaY ** 2) / 20);
@@ -93,7 +90,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                 setEmail(savedEmail);
                 setPassword(savedPassword);
                 setRememberMe(true);
-            } catch (e) {
+            } catch {
                 console.error("Failed to parse saved credentials");
             }
         }
@@ -149,11 +146,12 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     } else {
                         loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                     }
-                } catch (geoErr) {
+                } catch {
+                    // Reverse geocoding failed - fall back to raw coordinates
                     loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                 }
-            } catch (locErr) {
-                console.log("Location access denied or failed:", locErr.message);
+            } catch {
+                // Location is optional - fall through without it
             }
 
             const data = await loginWithPassword(email, password, loginLocation);
@@ -226,10 +224,13 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                         } else {
                             loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                         }
-                    } catch (geoErr) {
+                    } catch {
+                        // Reverse geocoding failed - fall back to raw coordinates
                         loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                     }
-                } catch (locErr) { }
+                } catch {
+                    // Location is optional - keep the "India" default
+                }
 
                 // Keep the details around so "Resend OTP" can ask for a fresh code
                 otpContextRef.current = {
@@ -279,10 +280,13 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     } else {
                         loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                     }
-                } catch (geoErr) {
+                } catch {
+                    // Reverse geocoding failed - fall back to raw coordinates
                     loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
                 }
-            } catch (locErr) { }
+            } catch {
+                // Location is optional - keep the "India" default
+            }
 
             const response = await googleVerifyOTP(otpEmail, otp, loginLocation);
             localStorage.setItem("token", response.access_token);
@@ -292,9 +296,8 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             // Hand off to OTPModal - it plays the success animation and then
             // calls onVerified, which finishes the login below.
             verifiedUserRef.current = response.user;
-        } catch (err) {
-            throw err; // Let OTPModal handle the error display
         } finally {
+            // Errors propagate to OTPModal, which handles the error display
             setOtpLoading(false);
         }
     };

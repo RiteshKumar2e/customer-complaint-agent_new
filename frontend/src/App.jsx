@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Landing from "./components/Landing";
 import chatbotImg from "./assets/chatbot.png";
 import ComplaintForm from "./components/ComplaintForm";
@@ -231,7 +231,6 @@ export default function App() {
 
       if (idleTime > SESSION_TIMEOUT) {
         // Session expired - clear everything
-        console.log("🔒 Session expired - Auto logout");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("saved_creds"); // Optional: Keep or remove based on preference
@@ -255,6 +254,52 @@ export default function App() {
   const [complaints, setComplaints] = useState([]);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
+  // These three are declared above the effects that call them. The session
+  // timers below are registered once on mount, so they need a reference that
+  // is already defined and stays stable for the life of the component.
+  const navigateTo = useCallback((newPage) => {
+    setPage(newPage);
+    if (newPage === "landing") {
+      setResult(null);
+    }
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    // Read the email from storage rather than `user` state: the session
+    // timers capture this function once, and on a mount-time expiry the
+    // state hasn't been populated yet.
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        const { email } = JSON.parse(savedUser);
+        if (email) {
+          logoutUser(email).catch(err => console.error("Logout log error:", err));
+        }
+      } catch {
+        // Malformed user in storage - nothing to log server-side
+      }
+    }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("lastPage");
+    localStorage.removeItem("sessionTimestamp");
+    localStorage.removeItem("lastActivity");
+    setUser(null);
+    setIsAdminMode(false);
+    navigateTo("landing");
+  }, [navigateTo]);
+
+  const loadComplaints = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const data = await getAllComplaints(user.email);
+      setComplaints(data.complaints || []);
+    } catch (error) {
+      console.error("Error loading complaints:", error);
+      setComplaints([]);
+    }
+  }, [user]);
+
   // Session timeout management
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -270,7 +315,9 @@ export default function App() {
         const SESSION_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
         if (idleTime > SESSION_TIMEOUT) {
-          console.log("🔒 Session expired on page load");
+          // Runs at most once on mount, and only to tear a dead session down
+          // before anything renders against it.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           handleLogout();
           return;
         }
@@ -293,7 +340,6 @@ export default function App() {
         const SESSION_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
         if (idleTime > SESSION_TIMEOUT) {
-          console.log("🔒 Session timeout - Auto logout");
           handleLogout();
           alert("आपका session 20 minutes के inactivity के बाद expire हो गया है। कृपया फिर से login करें।");
         }
@@ -315,7 +361,7 @@ export default function App() {
     window.addEventListener("scroll", updateActivity);
 
     // 🚪 Auto-logout on tab close/navigation
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = () => {
       const currentToken = localStorage.getItem("token");
 
       if (currentToken) {
@@ -324,7 +370,6 @@ export default function App() {
 
         if (!isRefreshing) {
           // This is a tab close or navigation away - clear session
-          console.log("🚪 Tab closing - Clearing session");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           localStorage.removeItem("saved_creds");
@@ -371,7 +416,8 @@ export default function App() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("pagehide", handlePageHide);
     };
-  }, []);
+    // handleLogout is stable, so this still runs only once on mount
+  }, [handleLogout]);
 
   useEffect(() => {
     localStorage.setItem("lastPage", page);
@@ -379,20 +425,12 @@ export default function App() {
 
   useEffect(() => {
     if (user && user.email) {
+      // setComplaints only lands after the request resolves, so this isn't
+      // the synchronous cascade the rule is guarding against.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadComplaints();
     }
-  }, [user]);
-
-  const loadComplaints = async () => {
-    if (!user?.email) return;
-    try {
-      const data = await getAllComplaints(user.email);
-      setComplaints(data.complaints || []);
-    } catch (error) {
-      console.error("Error loading complaints:", error);
-      setComplaints([]);
-    }
-  };
+  }, [user, loadComplaints]);
 
   const handleComplaintSubmit = async (data) => {
     setResult(data);
@@ -401,28 +439,6 @@ export default function App() {
       navigateTo("profile");
       window.scrollTo(0, 0);
     }, 3000);
-  };
-
-  const navigateTo = (newPage) => {
-    setPage(newPage);
-    if (newPage === "landing") {
-      setResult(null);
-    }
-  };
-
-  const handleLogout = () => {
-    console.log("🚪 Logging out user");
-    if (user && user.email) {
-      logoutUser(user.email).catch(err => console.error("Logout log error:", err));
-    }
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("lastPage");
-    localStorage.removeItem("sessionTimestamp");
-    localStorage.removeItem("lastActivity");
-    setUser(null);
-    setIsAdminMode(false);
-    navigateTo("landing");
   };
 
   const renderPage = () => {

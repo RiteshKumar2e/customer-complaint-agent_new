@@ -5,7 +5,6 @@ export function ResetCookiesButton() {
     const handleReset = () => {
         localStorage.removeItem('cookieConsent');
         localStorage.removeItem('cookieConsentDate');
-        console.log('🍪 Cookie consent reset! Refresh the page to see the banner.');
         alert('Cookie consent reset! Refresh the page to see the banner.');
         window.location.reload();
     };

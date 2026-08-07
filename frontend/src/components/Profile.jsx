@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Stars } from "@react-three/drei";
 import * as random from "maath/random/dist/maath-random.esm";
-import { updateProfile, deleteAllComplaints, getAllComplaints, submitFeedback, submitResolutionFeedback } from "../api";
+import { updateProfile, deleteAllComplaints, submitFeedback, submitResolutionFeedback } from "../api";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/Profile.css";
 
@@ -159,7 +159,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
 
     const categories = { Billing: 0, Technical: 0, Delivery: 0, Service: 0, Security: 0, Other: 0 };
     complaintsList.forEach(c => {
-        if (categories.hasOwnProperty(c.category)) {
+        if (Object.prototype.hasOwnProperty.call(categories, c.category)) {
             categories[c.category]++;
         } else {
             categories.Other++;
@@ -201,14 +201,11 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
 
         setIsDeleting(true);
         try {
-            console.log("🗑️ Attempting to delete complaints for:", user?.email);
-            const result = await deleteAllComplaints(user?.email);
-            console.log("📡 API Result:", result);
+            await deleteAllComplaints(user?.email);
 
             setComplaints([]);
             setShowDeleteConfirm(false);
             alert("All complaints have been successfully deleted.");
-            console.log("✅ Complaints deleted successfully");
         } catch (error) {
             console.error("❌ Error deleting complaints:", error);
             alert("Failed to delete complaints: " + (error.response?.data?.detail || error.message));

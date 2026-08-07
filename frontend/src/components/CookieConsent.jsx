@@ -4,30 +4,26 @@ import '../styles/CookieConsent.css';
 export default function CookieConsent({ onNavigate }) {
     const [showBanner, setShowBanner] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const [preferences, setPreferences] = useState({
-        essential: true,
-        analytics: false,
-        advertising: false
+    // Saved preferences are read once during initialisation rather than in an
+    // effect, so the banner never renders with the wrong toggles first.
+    const [preferences, setPreferences] = useState(() => {
+        const defaults = { essential: true, analytics: false, advertising: false };
+        const saved = localStorage.getItem('cookieConsent');
+        if (!saved) return defaults;
+        try {
+            return JSON.parse(saved);
+        } catch {
+            return defaults;
+        }
     });
 
     useEffect(() => {
-        // Check if user has already accepted/rejected cookies
-        const cookieConsent = localStorage.getItem('cookieConsent');
-        console.log('🍪 Cookie Consent Check:', cookieConsent ? 'Found in localStorage' : 'Not found - will show banner');
+        // Already accepted/rejected - nothing to prompt for
+        if (localStorage.getItem('cookieConsent')) return;
 
-        if (!cookieConsent) {
-            // Show banner after a short delay for better UX
-            console.log('🍪 Showing cookie banner in 500ms...');
-            setTimeout(() => {
-                setShowBanner(true);
-                console.log('🍪 Cookie banner is now visible!');
-            }, 500);
-        } else {
-            // Load saved preferences
-            const saved = JSON.parse(cookieConsent);
-            setPreferences(saved);
-            console.log('🍪 Loaded saved preferences:', saved);
-        }
+        // Show banner after a short delay for better UX
+        const id = setTimeout(() => setShowBanner(true), 500);
+        return () => clearTimeout(id);
     }, []);
 
     const handleAcceptAll = () => {

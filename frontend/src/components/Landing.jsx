@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Stars } from "@react-three/drei";
@@ -85,8 +85,62 @@ function HeroBackground() {
   );
 }
 
-export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNavigate }) {
-  const [hoveredFeature, setHoveredFeature] = useState(null);
+// Declared at module scope so it keeps its identity across Landing's renders
+// instead of remounting (and resetting its animation) on every state change.
+function FeatureModal({ feature, onClose }) {
+  if (!feature) return null;
+
+  return (
+    <div className="feature-modal-overlay" onClick={onClose}>
+      <motion.div
+        className="feature-modal-content"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div className="modal-icon-wrapper" style={{ background: feature.color }}>
+            <span className="modal-icon">{feature.icon}</span>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div className="modal-body">
+          <h2 className="modal-title">{feature.title}</h2>
+          <p className="modal-description">{feature.description}</p>
+
+          <div className="modal-details-grid">
+            {feature.details.map((detail, idx) => (
+              <div key={idx} className="modal-detail-item">
+                <div className="detail-check">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span>{detail}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="modal-footer">
+            <button className="btn-modal-action" onClick={onClose}>
+              Got it, Awesome!
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default function Landing({ user, onStart, onNavigate }) {
+  const [, setHoveredFeature] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [activeFaq, setActiveFaq] = useState(null);
@@ -96,8 +150,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        () => console.log("Location access granted"),
-        () => console.log("Location access denied"),
+        () => { },
+        () => { },
         { timeout: 10000 }
       );
     }
@@ -127,10 +181,7 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
 
       const voices = synth.getVoices();
       // If voices are not loaded yet, wait for them
-      if (voices.length === 0) {
-        console.log('⏳ Waiting for voices to load...');
-        return;
-      }
+      if (voices.length === 0) return;
 
       hasPlayed = true;
       synth.cancel();
@@ -150,7 +201,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
 
       if (engVoice) {
         utterEng.voice = engVoice;
-        console.log('🗣️ Selected English Voice:', engVoice.name);
       }
 
       // 2. Setup Hindi Utterance
@@ -167,7 +217,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
 
       if (hindiVoice) {
         utterHindi.voice = hindiVoice;
-        console.log('🗣️ Selected Hindi Voice:', hindiVoice.name);
       }
 
       utterEng.onend = () => {
@@ -175,7 +224,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
       };
 
       utterEng.onstart = () => {
-        console.log('🎤 AI Introduction Started');
         cleanup();
       };
 
@@ -186,9 +234,8 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
       }
     };
 
-    const onInteraction = (e) => {
+    const onInteraction = () => {
       if (hasPlayed) return;
-      console.log('👆 Interaction:', e.type);
       playVoice();
     };
 
@@ -284,58 +331,6 @@ export default function Landing({ user, onStart, onAdminLogin, onDashboard, onNa
         behavior: 'smooth'
       });
     }
-  };
-
-  const FeatureModal = ({ feature, onClose }) => {
-    if (!feature) return null;
-
-    return (
-      <div className="feature-modal-overlay" onClick={onClose}>
-        <motion.div
-          className="feature-modal-content"
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="modal-header">
-            <div className="modal-icon-wrapper" style={{ background: feature.color }}>
-              <span className="modal-icon">{feature.icon}</span>
-            </div>
-            <button className="modal-close-btn" onClick={onClose}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-
-          <div className="modal-body">
-            <h2 className="modal-title">{feature.title}</h2>
-            <p className="modal-description">{feature.description}</p>
-
-            <div className="modal-details-grid">
-              {feature.details.map((detail, idx) => (
-                <div key={idx} className="modal-detail-item">
-                  <div className="detail-check">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <span>{detail}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn-modal-action" onClick={onClose}>
-                Got it, Awesome!
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
   };
 
   const scrollToTop = () => {
