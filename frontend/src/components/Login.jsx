@@ -82,6 +82,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const passwordRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const verifiedUserRef = useRef(null);
+    const otpContextRef = useRef(null);
 
     // Load saved credentials on mount
     useEffect(() => {
@@ -230,6 +231,13 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     }
                 } catch (locErr) { }
 
+                // Keep the details around so "Resend OTP" can ask for a fresh code
+                otpContextRef.current = {
+                    email: userInfo.email,
+                    name: userInfo.name,
+                    location: loginLocation,
+                };
+
                 // Trigger backend OTP in background
                 googleAuth(userInfo.email, userInfo.name, loginLocation).catch(err => {
                     setError(err.response?.data?.detail || "Failed to trigger OTP email");
@@ -289,6 +297,12 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
         } finally {
             setOtpLoading(false);
         }
+    };
+
+    const handleOTPResend = async () => {
+        const ctx = otpContextRef.current;
+        // Hitting /auth/google again regenerates the OTP and re-sends the email
+        await googleAuth(ctx?.email || otpEmail, ctx?.name, ctx?.location);
     };
 
     const handleOTPVerified = () => {
@@ -568,6 +582,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                         email={otpEmail}
                         onVerify={handleOTPVerify}
                         onVerified={handleOTPVerified}
+                        onResend={handleOTPResend}
                         loading={otpLoading}
                     />
                 )}

@@ -27,11 +27,18 @@ const BLUR_IN = {
     }),
 };
 
-export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, loading }) {
+const RESEND_COOLDOWN = 30;
+
+export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, onResend, loading }) {
     const [otp, setOtp] = useState(EMPTY_OTP);
     const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
     // idle -> verifying -> success | error
     const [status, setStatus] = useState("idle");
+    const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
+    const [resending, setResending] = useState(false);
+    // Bumped on every resend so the boxes remount and replay their entry
+    const [round, setRound] = useState(0);
     const inputsRef = useRef([]);
     const submittingRef = useRef(false);
     const timersRef = useRef([]);
@@ -46,13 +53,25 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
         if (!isOpen) return;
         setOtp(EMPTY_OTP);
         setError("");
+        setNotice("");
         setStatus("idle");
+        setResending(false);
+        setRound(0);
+        // A code was just sent, so the cooldown starts full
+        setCooldown(RESEND_COOLDOWN);
         submittingRef.current = false;
         // Focus first input once the boxes have started settling
         const id = setTimeout(() => inputsRef.current[0]?.focus(), 260);
         addTimer(id);
         return clearTimers;
     }, [isOpen]);
+
+    // Resend countdown - one timeout per tick, so the deps stay simple
+    useEffect(() => {
+        if (!isOpen || cooldown <= 0) return;
+        const id = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+        return () => clearTimeout(id);
+    }, [isOpen, cooldown]);
 
     useEffect(() => clearTimers, []);
 
@@ -81,6 +100,28 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
             }, 700));
         }
     }, [onVerify, onVerified, onClose]);
+
+    const handleResend = async () => {
+        if (!onResend || resending || cooldown > 0 || status !== "idle") return;
+
+        setResending(true);
+        setError("");
+        setNotice("");
+        try {
+            await onResend();
+            setOtp(EMPTY_OTP);
+            submittingRef.current = false;
+            setRound((r) => r + 1);
+            setCooldown(RESEND_COOLDOWN);
+            setNotice("A new code is on its way to your inbox.");
+            addTimer(setTimeout(() => setNotice(""), 4000));
+            addTimer(setTimeout(() => focusInput(0), 260));
+        } catch (err) {
+            setError(err.response?.data?.detail || "Couldn't resend the code. Try again.");
+        } finally {
+            setResending(false);
+        }
+    };
 
     const commitOtp = (nextOtp) => {
         setOtp(nextOtp);
@@ -322,7 +363,7 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
                                 >
                                     {otp.map((digit, index) => (
                                         <motion.div
-                                            key={index}
+                                            key={`${round}-${index}`}
                                             className={`otp-box ${digit ? "filled" : ""} ${status === "error" ? "invalid" : ""}`}
                                             initial={{ ...SCATTER[index], opacity: 0, scale: 0.7 }}
                                             animate={{ x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }}
@@ -334,7 +375,9 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
                                             }}
                                         >
                                             <input
-                                                ref={(el) => (inputsRef.current[index] = el)}
+                                                ref={(el) => {
+                                                    inputsRef.current[index] = el;
+                                                }}
                                                 id={`otp-${index}`}
                                                 type="text"
                                                 inputMode="numeric"
@@ -369,6 +412,21 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
                                         transition={{ type: "spring", stiffness: 260, damping: 28 }}
                                     />
                                 </div>
+
+                                <AnimatePresence mode="wait">
+                                    {notice && !error && (
+                                        <motion.div
+                                            key={notice}
+                                            className="otp-notice"
+                                            initial={{ opacity: 0, y: -6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -6 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            {notice}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
                                 <AnimatePresence mode="wait">
                                     {error && (
@@ -412,12 +470,28 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
                                 </button>
                             </form>
 
-                            <div className="otp-footer">
-                                <p>Didn't receive the code?</p>
-                                <button className="otp-resend" type="button" disabled={isBusy}>
-                                    Resend OTP
-                                </button>
-                            </div>
+                            {onResend && (
+                                <div className="otp-footer">
+                                    <p>Didn't receive the code?</p>
+                                    <button
+                                        className="otp-resend"
+                                        type="button"
+                                        onClick={handleResend}
+                                        disabled={isBusy || resending || cooldown > 0}
+                                    >
+                                        {resending ? (
+                                            <span className="otp-submit-busy">
+                                                <span className="otp-spinner otp-spinner-accent" />
+                                                Sending...
+                                            </span>
+                                        ) : cooldown > 0 ? (
+                                            `Resend in ${cooldown}s`
+                                        ) : (
+                                            "Resend OTP"
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>
