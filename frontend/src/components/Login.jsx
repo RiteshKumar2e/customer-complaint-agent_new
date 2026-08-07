@@ -81,6 +81,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const verifiedUserRef = useRef(null);
 
     // Load saved credentials on mount
     useEffect(() => {
@@ -280,12 +281,21 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             localStorage.setItem("user", JSON.stringify(response.user));
             localStorage.setItem("sessionTimestamp", Date.now().toString());
             localStorage.setItem("lastActivity", Date.now().toString());
-            onLoginSuccess(response.user);
-            setShowOTPModal(false);
+            // Hand off to OTPModal - it plays the success animation and then
+            // calls onVerified, which finishes the login below.
+            verifiedUserRef.current = response.user;
         } catch (err) {
             throw err; // Let OTPModal handle the error display
         } finally {
             setOtpLoading(false);
+        }
+    };
+
+    const handleOTPVerified = () => {
+        setShowOTPModal(false);
+        if (verifiedUserRef.current) {
+            onLoginSuccess(verifiedUserRef.current);
+            verifiedUserRef.current = null;
         }
     };
 
@@ -557,6 +567,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                         onClose={() => setShowOTPModal(false)}
                         email={otpEmail}
                         onVerify={handleOTPVerify}
+                        onVerified={handleOTPVerified}
                         loading={otpLoading}
                     />
                 )}

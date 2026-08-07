@@ -1,74 +1,152 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "../styles/OTPModal.css";
 
-export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) {
-    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+const OTP_LENGTH = 6;
+const EMPTY_OTP = Array(OTP_LENGTH).fill("");
+
+// Each box drifts in from its own direction and snaps into the row,
+// so the group settles instead of just fading in.
+const SCATTER = [
+    { x: -64, y: -48, rotate: -18 },
+    { x: 30, y: -72, rotate: 13 },
+    { x: -26, y: 58, rotate: 10 },
+    { x: 68, y: 44, rotate: -15 },
+    { x: -58, y: 26, rotate: 17 },
+    { x: 44, y: -34, rotate: -9 },
+];
+
+// Success copy resolves out of a blur instead of just appearing
+const BLUR_IN = {
+    hidden: { opacity: 0, y: 12, filter: "blur(14px)" },
+    visible: (delay = 0) => ({
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] },
+    }),
+};
+
+export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, loading }) {
+    const [otp, setOtp] = useState(EMPTY_OTP);
     const [error, setError] = useState("");
+    // idle -> verifying -> success | error
+    const [status, setStatus] = useState("idle");
+    const inputsRef = useRef([]);
+    const submittingRef = useRef(false);
+    const timersRef = useRef([]);
+
+    const addTimer = (id) => timersRef.current.push(id);
+    const clearTimers = () => {
+        timersRef.current.forEach(clearTimeout);
+        timersRef.current = [];
+    };
 
     useEffect(() => {
-        if (isOpen) {
-            setOtp(["", "", "", "", "", ""]);
-            setError("");
-            // Focus first input for speed - ultra-fast
-            setTimeout(() => {
-                document.getElementById('otp-0')?.focus();
-            }, 10);
-        }
+        if (!isOpen) return;
+        setOtp(EMPTY_OTP);
+        setError("");
+        setStatus("idle");
+        submittingRef.current = false;
+        // Focus first input once the boxes have started settling
+        const id = setTimeout(() => inputsRef.current[0]?.focus(), 260);
+        addTimer(id);
+        return clearTimers;
     }, [isOpen]);
 
+    useEffect(() => clearTimers, []);
+
+    const focusInput = (index) => inputsRef.current[index]?.focus();
+
+    const submitOtp = useCallback(async (value) => {
+        if (submittingRef.current) return;
+        submittingRef.current = true;
+        setError("");
+        setStatus("verifying");
+
+        try {
+            await onVerify(value);
+            setStatus("success");
+            // Hold the success state long enough to be read, then hand back
+            addTimer(setTimeout(() => (onVerified || onClose)(), 2200));
+        } catch (err) {
+            setStatus("error");
+            setError(err.response?.data?.detail || "Invalid OTP. Please try again.");
+            // Shake, then reset the boxes so the user can retype
+            addTimer(setTimeout(() => {
+                setOtp(EMPTY_OTP);
+                setStatus("idle");
+                submittingRef.current = false;
+                focusInput(0);
+            }, 700));
+        }
+    }, [onVerify, onVerified, onClose]);
+
+    const commitOtp = (nextOtp) => {
+        setOtp(nextOtp);
+        const joined = nextOtp.join("");
+        // Auto-verify as soon as all six digits are in
+        if (joined.length === OTP_LENGTH) {
+            addTimer(setTimeout(() => submitOtp(joined), 180));
+        }
+    };
+
     const handleChange = (index, value) => {
+        if (status !== "idle") return;
         if (value.length > 1) return;
         if (!/^\d*$/.test(value)) return;
 
         const newOtp = [...otp];
         newOtp[index] = value;
-        setOtp(newOtp);
+        if (error) setError("");
+        commitOtp(newOtp);
 
-        // Auto-focus next input
-        if (value && index < 5) {
-            document.getElementById(`otp-${index + 1}`)?.focus();
-        }
+        if (value && index < OTP_LENGTH - 1) focusInput(index + 1);
     };
 
     const handleKeyDown = (index, e) => {
+        if (status !== "idle") return;
+
         if (e.key === "Backspace" && !otp[index] && index > 0) {
-            document.getElementById(`otp-${index - 1}`)?.focus();
+            focusInput(index - 1);
+        } else if (e.key === "ArrowLeft" && index > 0) {
+            e.preventDefault();
+            focusInput(index - 1);
+        } else if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+            e.preventDefault();
+            focusInput(index + 1);
         }
     };
 
     const handlePaste = (e) => {
         e.preventDefault();
-        const pastedData = e.clipboardData.getData("text").slice(0, 6);
-        if (!/^\d+$/.test(pastedData)) return;
+        if (status !== "idle") return;
 
-        const newOtp = [...otp];
-        for (let i = 0; i < pastedData.length && i < 6; i++) {
-            newOtp[i] = pastedData[i];
-        }
-        setOtp(newOtp);
+        const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+        if (!pastedData) return;
 
-        // Focus last filled input
-        const lastIndex = Math.min(pastedData.length, 5);
-        document.getElementById(`otp-${lastIndex}`)?.focus();
+        const newOtp = [...EMPTY_OTP];
+        for (let i = 0; i < pastedData.length; i++) newOtp[i] = pastedData[i];
+        if (error) setError("");
+        commitOtp(newOtp);
+
+        focusInput(Math.min(pastedData.length, OTP_LENGTH - 1));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         const otpValue = otp.join("");
-        if (otpValue.length !== 6) {
+        if (otpValue.length !== OTP_LENGTH) {
             setError("Please enter all 6 digits");
             return;
         }
-
-        try {
-            await onVerify(otpValue);
-        } catch (err) {
-            setError(err.response?.data?.detail || "Invalid OTP");
-        }
+        submitOtp(otpValue);
     };
 
     if (!isOpen) return null;
+
+    const isBusy = status === "verifying" || status === "success" || loading;
+    const filledCount = otp.filter(Boolean).length;
 
     return (
         <motion.div
@@ -76,90 +154,273 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, loading }) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.05 }}
-            onClick={onClose}
+            transition={{ duration: 0.18 }}
+            onClick={status === "idle" ? onClose : undefined}
         >
             <motion.div
-                className="otp-modal-content"
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                className={`otp-modal-content otp-status-${status}`}
+                initial={{ scale: 0.92, opacity: 0, y: 24 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                transition={{
-                    type: "spring",
-                    stiffness: 800,
-                    damping: 25,
-                    duration: 0.05
-                }}
+                exit={{ scale: 0.94, opacity: 0, y: 16 }}
+                transition={{ type: "spring", stiffness: 340, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="otp-modal-header">
-                    <div className="otp-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                    </div>
-                    <h2>Verify Your Email</h2>
-                    <p>We've sent a 6-digit code to</p>
-                    <p className="otp-email">{email}</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="otp-form">
-                    <div className="otp-inputs">
-                        {otp.map((digit, index) => (
-                            <input
-                                key={index}
-                                id={`otp-${index}`}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength="1"
-                                value={digit}
-                                onChange={(e) => handleChange(index, e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(index, e)}
-                                onPaste={handlePaste}
-                                autoFocus={index === 0}
-                                className="otp-input"
-                            />
-                        ))}
-                    </div>
-
-                    {error && (
+                <AnimatePresence mode="wait">
+                    {status === "success" ? (
                         <motion.div
-                            className="otp-error"
-                            initial={{ opacity: 0, scale: 0.95 }}
+                            key="success"
+                            className="otp-success"
+                            initial={{ opacity: 0, scale: 0.94 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.03 }}
+                            transition={{ duration: 0.28, ease: "easeOut" }}
                         >
-                            {error}
+                            <motion.h2
+                                className="otp-success-title"
+                                variants={BLUR_IN}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0}
+                            >
+                                Verified successfully
+                            </motion.h2>
+                            <motion.p
+                                className="otp-success-sub"
+                                variants={BLUR_IN}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0.14}
+                            >
+                                Your email has been verified.
+                            </motion.p>
+
+                            <div className="otp-success-stage">
+                                <svg className="otp-orbit" viewBox="0 0 200 200" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="otpArcGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#22c55e" stopOpacity="0" />
+                                            <stop offset="55%" stopColor="#22c55e" stopOpacity="0.85" />
+                                            <stop offset="100%" stopColor="#86efac" stopOpacity="1" />
+                                        </linearGradient>
+                                    </defs>
+
+                                    {/* Track draws itself once the check lands */}
+                                    <motion.circle
+                                        cx="100" cy="100" r="82"
+                                        fill="none"
+                                        stroke="rgba(34, 197, 94, 0.16)"
+                                        strokeWidth="1.5"
+                                        initial={{ pathLength: 0, opacity: 0 }}
+                                        animate={{ pathLength: 1, opacity: 1 }}
+                                        transition={{ duration: 0.9, ease: "easeOut", delay: 0.15 }}
+                                    />
+
+                                    {/* Bright arc sweeping clockwise */}
+                                    <motion.g
+                                        className="otp-orbit-spin"
+                                        initial={{ rotate: 0 }}
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2.6, repeat: Infinity, ease: "linear" }}
+                                    >
+                                        <circle
+                                            className="otp-orbit-arc"
+                                            cx="100" cy="100" r="82"
+                                            fill="none"
+                                            stroke="url(#otpArcGradient)"
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            strokeDasharray="150 365"
+                                        />
+                                    </motion.g>
+
+                                    {/* Dotted inner ring drifting the other way */}
+                                    <motion.g
+                                        className="otp-orbit-spin"
+                                        initial={{ rotate: 0 }}
+                                        animate={{ rotate: -360 }}
+                                        transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                                    >
+                                        <circle
+                                            cx="100" cy="100" r="64"
+                                            fill="none"
+                                            stroke="rgba(34, 197, 94, 0.5)"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeDasharray="2 12"
+                                        />
+                                    </motion.g>
+                                </svg>
+
+                                {/* Single shockwave on arrival */}
+                                <motion.span
+                                    className="otp-success-ring"
+                                    initial={{ scale: 0.3, opacity: 0.6 }}
+                                    animate={{ scale: 1.3, opacity: 0 }}
+                                    transition={{ duration: 1.1, ease: "easeOut", delay: 0.1 }}
+                                />
+
+                                <motion.div
+                                    className="otp-success-badge"
+                                    initial={{ scale: 0.4, opacity: 0, rotate: -12 }}
+                                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                    transition={{ type: "spring", stiffness: 420, damping: 18, delay: 0.08 }}
+                                >
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                                        <motion.path
+                                            d="M5 12.5L10 17.5L19 7.5"
+                                            stroke="currentColor"
+                                            strokeWidth="2.6"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 0.42, delay: 0.22, ease: "easeOut" }}
+                                        />
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            <motion.p
+                                className="otp-success-tag"
+                                variants={BLUR_IN}
+                                initial="hidden"
+                                animate="visible"
+                                custom={0.62}
+                            >
+                                Verified &amp; Secured 🔒
+                            </motion.p>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="form"
+                            initial={{ opacity: 1 }}
+                            exit={{ opacity: 0, scale: 0.97 }}
+                            transition={{ duration: 0.18 }}
+                        >
+                            <div className="otp-modal-header">
+                                <motion.div
+                                    className="otp-icon"
+                                    initial={{ scale: 0.6, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 420, damping: 20 }}
+                                >
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                        <polyline points="22,6 12,13 2,6" />
+                                    </svg>
+                                </motion.div>
+                                <h2>Let's verify your email</h2>
+                                <p>We've sent a 6-digit code to</p>
+                                <p className="otp-email">{email}</p>
+                                <p className="otp-hint">It'll auto-verify once entered.</p>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="otp-form">
+                                <motion.div
+                                    className="otp-inputs"
+                                    animate={status === "error" ? { x: [0, -11, 9, -7, 5, 0] } : { x: 0 }}
+                                    transition={{ duration: 0.42 }}
+                                >
+                                    {otp.map((digit, index) => (
+                                        <motion.div
+                                            key={index}
+                                            className={`otp-box ${digit ? "filled" : ""} ${status === "error" ? "invalid" : ""}`}
+                                            initial={{ ...SCATTER[index], opacity: 0, scale: 0.7 }}
+                                            animate={{ x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }}
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 300,
+                                                damping: 20,
+                                                delay: 0.05 + index * 0.06,
+                                            }}
+                                        >
+                                            <input
+                                                ref={(el) => (inputsRef.current[index] = el)}
+                                                id={`otp-${index}`}
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoComplete={index === 0 ? "one-time-code" : "off"}
+                                                maxLength="1"
+                                                value={digit}
+                                                disabled={isBusy}
+                                                onChange={(e) => handleChange(index, e.target.value)}
+                                                onKeyDown={(e) => handleKeyDown(index, e)}
+                                                onPaste={handlePaste}
+                                                className="otp-input"
+                                            />
+                                            <AnimatePresence>
+                                                {digit && (
+                                                    <motion.span
+                                                        className="otp-box-pop"
+                                                        initial={{ scale: 0.4, opacity: 0.55 }}
+                                                        animate={{ scale: 1.25, opacity: 0 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.45, ease: "easeOut" }}
+                                                    />
+                                                )}
+                                            </AnimatePresence>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+
+                                <div className="otp-progress">
+                                    <motion.span
+                                        className="otp-progress-bar"
+                                        animate={{ scaleX: filledCount / OTP_LENGTH }}
+                                        transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                                    />
+                                </div>
+
+                                <AnimatePresence mode="wait">
+                                    {error && (
+                                        <motion.div
+                                            key={error}
+                                            className="otp-error"
+                                            initial={{ opacity: 0, y: -6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -6 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            {error}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                <motion.button
+                                    type="submit"
+                                    className="otp-submit"
+                                    disabled={isBusy || filledCount !== OTP_LENGTH}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    {status === "verifying" ? (
+                                        <span className="otp-submit-busy">
+                                            <span className="otp-spinner" />
+                                            Verifying...
+                                        </span>
+                                    ) : (
+                                        "Verify OTP"
+                                    )}
+                                </motion.button>
+
+                                <button
+                                    type="button"
+                                    className="otp-cancel"
+                                    onClick={onClose}
+                                    disabled={isBusy}
+                                >
+                                    Cancel
+                                </button>
+                            </form>
+
+                            <div className="otp-footer">
+                                <p>Didn't receive the code?</p>
+                                <button className="otp-resend" type="button" disabled={isBusy}>
+                                    Resend OTP
+                                </button>
+                            </div>
                         </motion.div>
                     )}
-
-                    <motion.button
-                        type="submit"
-                        className="otp-submit"
-                        disabled={loading || otp.join("").length !== 6}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {loading ? "Verifying..." : "Verify OTP"}
-                    </motion.button>
-
-                    <button
-                        type="button"
-                        className="otp-cancel"
-                        onClick={onClose}
-                        disabled={loading}
-                    >
-                        Cancel
-                    </button>
-                </form>
-
-                <div className="otp-footer">
-                    <p>Didn't receive the code?</p>
-                    <button className="otp-resend" type="button">
-                        Resend OTP
-                    </button>
-                </div>
+                </AnimatePresence>
             </motion.div>
         </motion.div>
     );
