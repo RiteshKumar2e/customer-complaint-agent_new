@@ -83,11 +83,11 @@ app.add_middleware(
 
 @app.middleware("http")
 async def cross_origin_isolation_headers(request: Request, call_next):
-    # The Google Sign-In popup talks back to its opener via window.opener /
-    # window.closed. A COOP of "same-origin" severs that handle and the sign-in
-    # silently never resolves, so this API must stay on the permissive variant
-    # that still isolates us from unrelated top-level windows.
     response = await call_next(request)
+    # COOP only applies to top-level document responses, so it does nothing for
+    # the JSON this API returns - the header that matters for Google Sign-In is
+    # the one on the *frontend* origin (vercel.json / nginx.conf). This is kept
+    # only for the browsable pages FastAPI serves itself, i.e. /docs and /redoc.
     response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
     # Responses are consumed by the frontend on a different origin, so the
     # default "same-origin" CORP would block them.
