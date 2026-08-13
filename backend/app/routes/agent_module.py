@@ -6,7 +6,7 @@ Secure endpoints for human agents to review complaints and send verified solutio
 from fastapi import APIRouter, HTTPException, Depends, Request, status, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_, or_
-from typing import Optional, List
+from typing import Any, Optional, List
 from datetime import datetime
 import json
 
@@ -19,6 +19,39 @@ from app.services.multi_model_validator import multi_model_validator
 from app.services.email_service import email_service
 
 router = APIRouter(prefix="/agent", tags=["agent-module"])
+
+
+def normalize_steps(steps: Optional[List[Any]]) -> Optional[List[str]]:
+    """
+    Coerce incoming steps to a list of plain strings.
+
+    The AI pipeline stores ai_analysis_steps as dicts ({"step": ..., "status": ...}),
+    and the agent UI pre-fills its step editor from that field, so the browser sends
+    those dicts straight back here. Steps are rendered as bare text in the resolution
+    email and the resolution log, so anything non-string is flattened on the way in.
+    """
+    if not steps:
+        return None
+
+    normalized = []
+    for step in steps:
+        if step is None:
+            continue
+        if isinstance(step, str):
+            text = step.strip()
+        elif isinstance(step, dict):
+            label = step.get("step") or step.get("title") or step.get("name") or ""
+            detail = step.get("status") or step.get("description") or step.get("detail") or ""
+            text = " — ".join(part for part in (str(label).strip(), str(detail).strip()) if part)
+            if not text:
+                text = json.dumps(step, ensure_ascii=False)
+        else:
+            text = str(step).strip()
+
+        if text:
+            normalized.append(text)
+
+    return normalized or None
 
 # ============================================
 # AUTHENTICATION & AUTHORIZATION
@@ -268,7 +301,7 @@ async def validate_solution(
     agent_email: str = Body(...),
     ticket_id: str = Body(...),
     draft_solution: str = Body(...),
-    steps: Optional[List[str]] = Body(None),
+    steps: Optional[List[Any]] = Body(None),
     request: Request = None,
     db: Session = Depends(get_db)
 ):
@@ -282,18 +315,20 @@ async def validate_solution(
         "draft_solution": "Here is my proposed solution..."
     }
     """
+    steps = normalize_steps(steps)
+
     # Verify agent access
     agent = require_agent_access(agent_email, db)
-    
+
     # Get complaint
     complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-    
+
     if not complaint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Complaint with ticket ID {ticket_id} not found"
         )
-    
+
     # Prepare complaint data for validation
     complaint_data = {
         "category": complaint.category,
@@ -394,7 +429,7 @@ def send_resolution(
     agent_email: str = Body(...),
     ticket_id: str = Body(...),
     final_solution: str = Body(...),
-    steps: Optional[List[str]] = Body(None),
+    steps: Optional[List[Any]] = Body(None),
     request: Request = None,
     db: Session = Depends(get_db)
 ):
@@ -408,18 +443,20 @@ def send_resolution(
         "final_solution": "Final verified solution..."
     }
     """
+    steps = normalize_steps(steps)
+
     # Verify agent access
     agent = require_agent_access(agent_email, db)
-    
+
     # Get complaint
     complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-    
+
     if not complaint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Complaint with ticket ID {ticket_id} not found"
         )
-    
+
     # Get resolution
     resolution = db.query(AgentResolution).filter(
         AgentResolution.complaint_id == complaint.id

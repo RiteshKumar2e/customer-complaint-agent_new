@@ -60,13 +60,30 @@ export default function AgentModule({ user, onNavigate }) {
         }
     };
 
+    // The AI pipeline stores steps as objects ({step, status}), but the editor below
+    // and the resolution email both treat a step as plain text, so flatten on load.
+    const normalizeSteps = (steps) => {
+        if (!Array.isArray(steps)) return [];
+        return steps
+            .map((step) => {
+                if (typeof step === "string") return step.trim();
+                if (step && typeof step === "object") {
+                    const label = step.step || step.title || step.name || "";
+                    const detail = step.status || step.description || step.detail || "";
+                    return [label, detail].filter(Boolean).join(" — ") || JSON.stringify(step);
+                }
+                return step == null ? "" : String(step);
+            })
+            .filter(Boolean);
+    };
+
     const handleOpenComplaint = async (complaint) => {
         setDetailLoading(true);
         try {
             const data = await getComplaintDetail(complaint.ticket_id, user.email);
             setSelectedComplaint(data.complaint);
             setDraftSolution(data.agent_resolution?.draft_solution || data.complaint.ai_solution || "");
-            setDraftSteps(data.agent_resolution?.steps || data.complaint.ai_steps || []);
+            setDraftSteps(normalizeSteps(data.agent_resolution?.steps || data.complaint.ai_steps));
             setValidationResult(data.agent_resolution ? {
                 confidence_score: data.agent_resolution.confidence_score,
                 approval_status: data.agent_resolution.validation_status,
