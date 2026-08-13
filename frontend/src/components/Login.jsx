@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { googleAuth, googleVerifyOTP, loginWithPassword } from "../api";
+import { installGooglePopupShield } from "../utils/googlePopupShield";
 import { Eye, EyeOff } from "lucide-react";
 import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
@@ -80,6 +81,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const typingTimeoutRef = useRef(null);
     const verifiedUserRef = useRef(null);
     const otpContextRef = useRef(null);
+    const popupShieldRef = useRef(null);
 
     // Load saved credentials on mount
     useEffect(() => {
@@ -180,8 +182,19 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
         }
     };
 
-    const handleGoogleLogin = useGoogleLogin({
+    // Restores the real window.open once a sign-in attempt settles. Safe to call
+    // when no shield is installed, so every exit path can call it blindly.
+    const releasePopupShield = () => {
+        popupShieldRef.current?.();
+        popupShieldRef.current = null;
+    };
+
+    // Leaving the page mid-sign-in must not strand the patched window.open.
+    useEffect(() => releasePopupShield, []);
+
+    const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
+            releasePopupShield();
             setLoading(true);
             setError("");
             try {
@@ -251,9 +264,19 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             }
         },
         onError: () => {
+            releasePopupShield();
             setError("Google sign-in was cancelled or failed");
         },
     });
+
+    // The Google popup must be opened straight from the click so the browser
+    // still counts it as a user gesture — the shield install is synchronous and
+    // does not break that.
+    const handleGoogleLogin = () => {
+        releasePopupShield();
+        popupShieldRef.current = installGooglePopupShield();
+        googleLogin();
+    };
 
     const handleOTPVerify = async (otp) => {
         setOtpLoading(true);
