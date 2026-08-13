@@ -1,0 +1,57 @@
+/* ==========================================================================
+   BUTTON RESET — sabhi buttons ko simple / normal banata hai
+   --------------------------------------------------------------------------
+   Yeh file App.jsx me sabse last import hoti hai, isliye baaki saari CSS ke
+   button effects yahan se override ho jaate hain.
+
+   Hataye gaye effects: hover lift (translateY), scale/zoom, ripple aur shine
+   overlays (::before / ::after), glow / box-shadow, drop-shadow aur
+   brightness filters, backdrop blur, pulse animations aur transitions.
+
+   Jo rakha gaya hai: background colour, text colour, border, radius, padding,
+   font aur simple hover colour change — yaani ek normal button.
+
+   CHATBOT EXCLUDED: floating `.chatbot-toggle` button aur `.side-chat` panel
+   ke andar ke saare buttons (close, maximize, voice, send) bilkul pehle jaise
+   hi rahenge — unke effects touch nahi kiye gaye.
+
+   NOTE: `:not(#_)` ek specificity booster hai (aisa koi id hai hi nahi,
+   isliye selector hamesha match karta hai). Purani files me kai jagah
+   `!important` + lambe selectors lage hue hain, unhe beat karne ke liye
+   yeh zaroori hai.
+   ========================================================================== */
+
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *) {
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Hover / focus / active par koi movement, glow ya zoom nahi */
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *):is(:hover, :focus, :focus-visible, :active, :disabled) {
+  transform: none !important;
+  scale: none !important;
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Ripple / shine / underline jaise decorative overlays band */
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *)::before,
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *)::after,
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *):is(:hover, :active)::before,
+:is(button, [class*="btn"], [role="button"]):not(#_):not(#_):not(.chatbot-toggle):not(.side-chat *):is(:hover, :active)::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}

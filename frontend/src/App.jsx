@@ -22,6 +22,9 @@ import { getAllComplaints, logoutUser } from "./api";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
 import "./styles/Profile.css";
+// Sabse last import — sabhi buttons ke hover/ripple/glow effects hata kar
+// unhe normal button banata hai.
+import "./styles/ButtonReset.css";
 
 function CursorTrail() {
   const canvasRef = useRef(null);
