@@ -228,12 +228,13 @@ export default function SideChatBot({ open, onClose }) {
           </div>
         ))}
         {loading && (
-          <div className="chat-msg agent">
-            <div className="typing-indicator">
+          <div className="chat-msg agent chat-thinking" role="status" aria-live="polite">
+            <span className="chat-thinking-text">Thinking</span>
+            <span className="chat-thinking-dots" aria-hidden="true">
               <span></span>
               <span></span>
               <span></span>
-            </div>
+            </span>
           </div>
         )}
       </div>
