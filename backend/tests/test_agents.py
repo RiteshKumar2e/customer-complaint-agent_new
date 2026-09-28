@@ -191,6 +191,31 @@ def test_orchestrator_survives_non_json_llm_output(pipeline_stubs):
     assert result["solution"]  # fallback text, so auto-resolution has something to work with
 
 
+def test_orchestrator_ai_outage_still_returns_strings(pipeline_stubs, monkeypatch):
+    # Regression: the error fallback returned similar_issues=[] and /complaint 500'd
+    async def boom(prompt):
+        raise RuntimeError("all Groq models rate-limited")
+
+    monkeypatch.setattr(orchestrator, "async_ask_ai", boom)
+    result = run(orchestrator.run_agent_pipeline("My refund is missing"))
+    assert result["similar_issues"] == ""
+    for field in ("category", "priority", "sentiment", "solution", "response", "action", "satisfaction"):
+        assert isinstance(result[field], str)
+
+
+def test_orchestrator_flattens_list_solution_and_bad_labels(pipeline_stubs):
+    pipeline_stubs(json.dumps({
+        "category": "billing", "priority": "URGENT", "sentiment": ["Angry"],
+        "solution": ["Verify the charge", "Refund within 3 days"], "satisfaction": None,
+    }))
+    result = run(orchestrator.run_agent_pipeline("Charged twice"))
+    assert result["category"] == "Billing"
+    assert result["priority"] == "Medium"  # unknown label -> default
+    assert result["sentiment"] == "Angry"
+    assert result["satisfaction"] == "Medium"
+    assert result["solution"] == "1. Verify the charge\n2. Refund within 3 days"
+
+
 def test_orchestrator_rejects_empty_text():
     with pytest.raises(ValueError):
         run(orchestrator.run_agent_pipeline("  "))

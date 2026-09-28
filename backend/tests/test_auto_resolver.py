@@ -48,7 +48,8 @@ def test_high_confidence_is_delivered_automatically(db, fake_groq, sent_emails):
     to_user = [e for e in sent_emails if e["to"] == "asha@example.com"]
     assert len(to_user) == 1 and "QX-TEST-0001" in to_user[0]["subject"]
     # one ModelValidation row per model per criterion
-    assert db.query(models.ModelValidation).count() == 4 * 5
+    n_models = len(ar_module.multi_model_validator.validation_models)
+    assert db.query(models.ModelValidation).count() == n_models * 5
 
 
 def test_weak_solution_is_improved_then_delivered(db, fake_groq, sent_emails, monkeypatch):

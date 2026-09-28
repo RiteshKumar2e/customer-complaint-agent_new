@@ -19,11 +19,11 @@ class MultiModelValidator:
         
         # Validation models. The old list led with decommissioned Groq models
         # (deepseek-r1-distill, qwen-2.5, llama-3.2 previews) that always error.
+        # Fallback only - normally the live list from groq_client is used.
         self.validation_models = [
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b",
             "openai/gpt-oss-20b",
-            "meta-llama/llama-4-scout-17b-16e-instruct",
         ]
         
         self.min_models = 1  # Minimum models that must respond
@@ -62,9 +62,17 @@ class MultiModelValidator:
         """
         print(f"🔍 Starting multi-model validation with {len(self.validation_models)} models...")
         
+        # Prefer the models Groq says this key can use; the static list is only a
+        # fallback for when listing fails.
+        models = self.validation_models
+        if self.groq_client.client:
+            await self.groq_client.discover_models()
+            if self.groq_client.live_models:
+                models = self.groq_client.live_models
+
         # Run validation on multiple models in parallel
         validation_tasks = []
-        for model_name in self.validation_models[:self.max_models]:
+        for model_name in models[:self.max_models]:
             task = self.validate_with_model(model_name, complaint, draft_solution)
             validation_tasks.append(task)
         

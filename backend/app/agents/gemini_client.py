@@ -1,8 +1,9 @@
+import asyncio
 import os
+import re
 from dotenv import load_dotenv
 import google.generativeai as genai
 from typing import List, Optional
-import time
 
 # Import Groq client
 try:
@@ -27,15 +28,71 @@ else:
 current_key_index = 0
 failed_keys = set()
 
-# ✅ List of supported Gemini models for fallback
-SUPPORTED_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-exp-1206",
-    "gemini-2.0-flash-lite",
-    "gemini-flash-latest",
-    "gemini-pro-latest",
-    "gemma-3-27b-it",
+# Gemini retires model names regularly (gemini-2.0-flash now 404s), so the
+# model is picked from what the API lists for this key. GEMINI_MODEL pins one.
+GEMINI_MODEL_OVERRIDE = os.getenv("GEMINI_MODEL", "").strip()
+# Verified 2026-09-28 with this account's key, fastest first. Pro models are
+# left out (429 quota on this plan) and gemma returns multi-part responses.
+PREFERRED_MODELS = [
+    "gemini-flash-latest",     # ~4s, tracks Google's current flash
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-3.8-flash",        # works but ~15s
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
 ]
+# Used if listing fails
+FALLBACK_MODELS = ["gemini-flash-latest", "gemini-2.5-flash"]
+_SKIP_MARKERS = ("image", "tts", "audio", "live", "embedding", "vision", "thinking", "exp", "preview", "robotics")
+
+_gemini_models: Optional[List[str]] = None
+_dead_models = set()
+
+
+def rank_gemini_models(names: List[str]) -> List[str]:
+    """Stable text models first, flash before pro/lite, newest version first."""
+    def key(name):
+        short = name.split("/")[-1]
+        version = [float(v) for v in re.findall(r"gemini-(\d+(?:\.\d+)?)", short)]
+        return (
+            any(marker in short for marker in _SKIP_MARKERS),
+            not ("flash" in short and "lite" not in short),
+            -(version[0] if version else 0.0),
+            short,
+        )
+    return [n.split("/")[-1] for n in sorted(names, key=key)]
+
+
+def _list_gemini_models() -> List[str]:
+    try:
+        return [
+            m.name for m in genai.list_models()
+            if "generateContent" in getattr(m, "supported_generation_methods", [])
+            and "gemini" in m.name
+        ]
+    except Exception as e:
+        print(f"⚠️ Could not list Gemini models, using defaults: {e}")
+        return []
+
+
+async def gemini_models() -> List[str]:
+    """Candidate models in order of preference, discovered once per process."""
+    global _gemini_models
+    if _gemini_models is None:
+        listed = await asyncio.to_thread(_list_gemini_models)
+        short_names = {n.split("/")[-1] for n in listed}
+        # Known-good models the key still lists, then anything newer we haven't vetted
+        preferred = [m for m in PREFERRED_MODELS if not listed or m in short_names]
+        ordered = (
+            ([GEMINI_MODEL_OVERRIDE] if GEMINI_MODEL_OVERRIDE else [])
+            + preferred
+            + [m for m in rank_gemini_models(listed) if "pro" not in m]
+            + FALLBACK_MODELS
+        )
+        _gemini_models = list(dict.fromkeys(ordered))
+        print(f"✅ Gemini model order: {', '.join(_gemini_models[:4])}")
+    return [m for m in _gemini_models if m not in _dead_models]
 
 def get_next_available_key() -> Optional[str]:
     """Get the next available Gemini API key that hasn't failed."""
@@ -75,22 +132,31 @@ def configure_current_key():
         return True
     return False
 
-def get_model():
-    """Returns a Gemini generative model instance by trying multiple versions."""
-    for model_name in SUPPORTED_MODELS:
+def _is_model_gone(error_msg: str) -> bool:
+    return any(s in error_msg for s in ("404", "not found", "no longer available", "not supported", "deprecated"))
+
+
+async def _generate_with_any_model(prompt: str) -> Optional[str]:
+    """Try the discovered models in order; retired ones are skipped for good."""
+    for model_name in (await gemini_models())[:3]:
         try:
-            m = genai.GenerativeModel(model_name)
-            return m
-        except Exception:
-            continue
-    return genai.GenerativeModel("gemini-2.5-flash")  # Absolute fallback
+            response = await genai.GenerativeModel(model_name).generate_content_async(prompt)
+            if response and response.text:
+                print(f"✅ Gemini success with model: {model_name}")
+                return response.text.strip()
+        except Exception as e:
+            msg = str(e).lower()
+            if _is_model_gone(msg):
+                print(f"⚠️ Gemini model {model_name} unavailable, trying next: {e}")
+                _dead_models.add(model_name)
+                continue
+            raise  # quota / auth errors are handled per key by the caller
+    return None
+
 
 # Initialize Gemini with first available key
 if API_KEYS:
     configure_current_key()
-    model = get_model()
-else:
-    model = None
 
 async def async_ask_ai(prompt: str) -> str:
     """
@@ -130,13 +196,10 @@ async def async_ask_ai(prompt: str) -> str:
             if not configure_current_key():
                 raise Exception("All Gemini keys exhausted - triggering fallback")
             
-            current_model = get_model()
-            response = await current_model.generate_content_async(prompt)
-            
-            if response and response.text:
-                print("✅ Gemini API success!")
-                return response.text.strip()
-            
+            text = await _generate_with_any_model(prompt)
+            if text:
+                return text
+
             if attempt < max_key_attempts - 1:
                 continue
             else:
@@ -155,14 +218,6 @@ async def async_ask_ai(prompt: str) -> str:
                     continue
             else:
                 print(f"⚠️ Gemini error: {e}")
-                # Try fallback Gemini model once
-                try:
-                    fallback_m = genai.GenerativeModel("gemini-1.5-flash")
-                    res = await fallback_m.generate_content_async(prompt)
-                    if res and res.text:
-                        return res.text.strip()
-                except:
-                    pass
             
             # Last attempt - trigger local fallback
             if attempt == max_key_attempts - 1:

@@ -1,12 +1,7 @@
 import os
 import sys
-from dotenv import load_dotenv
-import google.generativeai as genai
+from app.agents.gemini_client import async_ask_ai
 from app.agents.language_detector import get_language_instruction, get_language_example
-
-load_dotenv()
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Import LOCAL LLM (unlimited usage)
 try:
@@ -14,26 +9,6 @@ try:
     LOCAL_LLM_AVAILABLE = True
 except ImportError:
     LOCAL_LLM_AVAILABLE = False
-
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    SUPPORTED_MODELS = [
-        "gemini-2.0-flash",
-        "gemini-exp-1206",
-        "gemini-2.0-flash-lite",
-        "gemini-flash-latest",
-        "gemini-pro-latest"
-    ]
-    def initialize_best_model():
-        for m_name in SUPPORTED_MODELS:
-            try:
-                return genai.GenerativeModel(m_name)
-            except:
-                continue
-        return genai.GenerativeModel("gemini-2.0-flash")
-    model = initialize_best_model()
-else:
-    model = None
 
 # Import training data
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
@@ -107,9 +82,10 @@ async def generate_response(category: str, text: str, user_language: str = None)
         hinglish_words = "hai, hain, aapka, aapke, aapki, hume, humne, humari, mera, meri, mere, kya, kaise, ke, liye, se, ko, ka, ki, mein, par, issue, problem, team, maafi, sachme, immediately, escalate, kar, diya, denge, karenge, milega, hoga"
         language_instruction = f"MANDATORY: You MUST respond in Hinglish (Hindi words in Roman/English script). Use these words: {hinglish_words}. DO NOT use pure English."
     
-    # Layer 1: Try AI (Groq/Gemini - Best quality, contextual)
-    if model is not None:
-        prompt = f"""You are an empathetic customer support specialist responding to a complaint.
+    # Layer 1: Try AI (Groq, then Gemini - Best quality, contextual). This used
+    # its own hardcoded Gemini model (gemini-2.0-flash, since retired), so it
+    # now goes through the shared client with live model discovery.
+    prompt = f"""You are an empathetic customer support specialist responding to a complaint.
 
 COMPLAINT: "{text}"
 CATEGORY: {category}
@@ -143,12 +119,12 @@ INSTRUCTIONS:
 5. Mention next steps briefly
 
 NOW WRITE YOUR RESPONSE (in {user_language.upper()} ONLY):"""
-        try:
-            response = await model.generate_content_async(prompt)
-            if response and response.text:
-                return response.text.strip()
-        except Exception as e:
-            print(f"Gemini generation error: {e}")
+    try:
+        text = await async_ask_ai(prompt)
+        if text and text.strip():
+            return text.strip()
+    except Exception as e:
+        print(f"AI response generation error: {e}")
     
     # Layer 2: Try Local LLM (No API quota, unlimited usage)
     if LOCAL_LLM_AVAILABLE:

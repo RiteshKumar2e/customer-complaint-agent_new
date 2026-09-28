@@ -1,9 +1,42 @@
 import os
+import re
 from dotenv import load_dotenv
 from groq import AsyncGroq
 from typing import Optional, List
 
 load_dotenv()
+
+# Not usable for complaint handling: audio/voice, safety classifiers, and
+# allam (answers in Arabic)
+_NON_CHAT_MARKERS = ("whisper", "tts", "guard", "playai", "orpheus", "compound", "embed", "allam")
+# Verified 2026-09-28 against this account's key (all return valid JSON mode
+# output); anything else the API lists follows, largest first.
+_PREFERRED = ("openai/gpt-oss-120b", "qwen/qwen3", "openai/gpt-oss-20b")
+
+
+def is_chat_model(model_id: str) -> bool:
+    lowered = model_id.lower()
+    return not any(marker in lowered for marker in _NON_CHAT_MARKERS)
+
+
+def _param_size(model_id: str) -> float:
+    sizes = re.findall(r"(\d+(?:\.\d+)?)b\b", model_id.lower())
+    return max((float(s) for s in sizes), default=0.0)
+
+
+def rank_models(model_ids: List[str]) -> List[str]:
+    """GROQ_MODELS (comma-separated) first, then known-good families, then by size."""
+    pinned = [m.strip() for m in os.getenv("GROQ_MODELS", "").split(",") if m.strip()]
+
+    def rank(model_id):
+        for i, prefix in enumerate(_PREFERRED):
+            if model_id.startswith(prefix):
+                return (0, i, 0.0)
+        return (1, 0, -_param_size(model_id))
+
+    ordered = sorted(set(model_ids), key=lambda m: (rank(m), m))
+    return [m for m in pinned if m in model_ids] + [m for m in ordered if m not in pinned]
+
 
 class GroqClient:
     """
@@ -14,50 +47,13 @@ class GroqClient:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
         
-        # Comprehensive list of 20+ Groq models (in order of preference)
-        # Organized by capability: Best Quality → Balanced → Fast → Ultra-Fast
+        # Used only if listing models fails; discover_models() normally
+        # replaces this with what the key can actually use. Every model in the
+        # old 29-entry list had been retired (400/404 in production).
         self.models: List[str] = [
-            # === TIER 1: ULTRA-FAST & BALANCED (Optimized for Chat) ===
-            "llama-3.3-70b-versatile",          # 1. Primary fast model
-            "llama-3.2-3b-preview",             # 2. Extremely lightning fast
-            "llama-3.2-1b-preview",             # 3. Smallest, fastest text model
-            "gemma2-9b-it",                     # 4. Google's balanced model
-            "llama3-8b-8192",                   # 5. Stable Llama 3
-            
-            # === TIER 2: HIGH-PERFORMANCE REASONING (DeepSeek & Qwen) ===
-            "deepseek-r1-distill-llama-70b",    # 6. DeepSeek reasoning (Llama 70B)
-            "deepseek-r1-distill-qwen-32b",     # 7. DeepSeek reasoning (Qwen 32B)
-            "deepseek-r1-distill-llama-8b",     # 8. DeepSeek reasoning (Llama 8B)
-            "qwen-2.5-72b",                     # 9. Qwen large generalist
-            "qwen-2.5-32b",                     # 10. Qwen balanced model
-            "qwen-2.5-coder-32b",               # 11. Qwen coding/logic expert
-            
-            # === TIER 3: LARGE SCALE (70B+ Parameters) ===
-            "llama-3.1-8b-instant",             # 12. Latest Llama 3.3
-            "llama-3.1-70b-versatile",          # 13. Reliable 3.1 70B
-            "llama3-70b-8192",                  # 14. Original Llama 3 70B
-            "mixtral-8x7b-32768",               # 15. MoE architecture champion
-            "llama-3.3-70b-specdec",            # 16. Speculative decoding variant
-            "llama-3.1-70b-specdec",            # 17. Speculative decoding fallback
-            
-            # === TIER 4: SPECIALIZED & VISION ===
-            "llama-3.2-90b-vision-preview",     # 18. Largest vision model
-            "llama-3.2-11b-vision-preview",     # 19. Faster vision model
-            "llama-3.2-11b-text-preview",       # 20. Mid-range text model
-            "llama3-groq-70b-8192-tool-use-preview", # 21. Tool-use optimized
-            "llama3-groq-8b-8192-tool-use-preview",  # 22. Fast tool-use
-
-            # === TIER 5: ALTERNATIVE & LEGACY ===
-            "gemma-7b-it",                      # 23. Original Gemma
-            "gemma2-7b-it",                     # 24. Gemma 2 7B
-            "llama2-70b-4096",                  # 25. Llama 2 70B
-            "llama2-7b-2048",                   # 26. Llama 2 7B
-            "mixtral-8x7b-instruct-v0.1",       # 27. Instruct variant
-            "llama-guard-3-8b",                 # 28. Safety filter model
-            "deepseek-v3",                      # 29. DeepSeek V3 (Experimental)
-            # NOTE: Whisper/distil-whisper are audio transcription models and
-            # always error on chat completions — removed so they don't waste
-            # fallback attempts and add latency.
+            "openai/gpt-oss-120b",   # best quality, ~0.6s
+            "qwen/qwen3.8-27b",      # fastest, ~0.2s
+            "openai/gpt-oss-20b",
         ]
 
         # Cap how many models we try before giving up so a rate-limited or
@@ -68,7 +64,12 @@ class GroqClient:
         # Track which models have failed
         self.failed_models = set()
         self.current_model_index = 0
-        
+        # The hardcoded list above goes stale as Groq retires models (every one
+        # of them 400/404'd in production). On first use we ask the API which
+        # models this key can actually use and rebuild the list from that.
+        self._models_discovered = False
+        self.live_models: Optional[List[str]] = None  # set only if discovery succeeded
+
         if self.api_key:
             # Async client with a hard per-request timeout and no internal retry
             # stacking (we handle model fallback ourselves). This keeps the event
@@ -80,6 +81,30 @@ class GroqClient:
             self.client = None
             print("⚠️ GROQ_API_KEY not set - Groq will be skipped")
     
+    async def discover_models(self) -> List[str]:
+        """Replace self.models with the chat models this API key can use (once)."""
+        if self._models_discovered or not self.client:
+            return self.models
+        self._models_discovered = True
+        try:
+            listing = await self.client.models.list()
+            available = [
+                m.id for m in listing.data
+                if getattr(m, "active", True) is not False and is_chat_model(m.id)
+            ]
+        except Exception as e:
+            print(f"⚠️ Could not list Groq models, keeping built-in list: {e}")
+            return self.models
+
+        if available:
+            self.models = rank_models(available)
+            self.live_models = list(self.models)
+            self.failed_models.clear()
+            self.current_model_index = 0
+            print(f"✅ Groq models available: {', '.join(self.models[:6])}"
+                  f"{' …' if len(self.models) > 6 else ''}")
+        return self.models
+
     def get_next_model(self) -> Optional[str]:
         """Get the next available model that hasn't failed"""
         attempts = 0
@@ -114,6 +139,7 @@ class GroqClient:
         if not self.client:
             return None
 
+        await self.discover_models()
         max_attempts = min(len(self.models), self.max_fallback_attempts)
 
         for attempt in range(max_attempts):

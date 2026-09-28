@@ -107,6 +107,24 @@ def test_submit_complaint_saves_and_queues_auto_resolution(client, db):
     assert client.queued == [complaint.id]
 
 
+def test_submit_complaint_survives_ai_outage(client, db, monkeypatch):
+    """Real pipeline with every LLM failing must still save the complaint (was a 500)."""
+    from app.agents import orchestrator
+    from app.api import routes
+
+    async def boom(*args, **kwargs):
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr(routes, "run_agent_pipeline", orchestrator.run_agent_pipeline)
+    monkeypatch.setattr(orchestrator, "async_ask_ai", boom)
+
+    res = client.post("/complaint", json={
+        "name": "Asha", "email": "asha@x.com", "subject": "Refund", "description": "Still waiting",
+    })
+    assert res.status_code == 200, res.text
+    assert db.query(models.Complaint).count() == 1
+
+
 # --- agent module -----------------------------------------------------------------
 
 @pytest.fixture

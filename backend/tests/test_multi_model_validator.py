@@ -20,8 +20,9 @@ def test_awaits_async_groq_client_and_approves_good_solution(fake_groq):
 
     assert result["approval_status"] == "approved"
     assert result["confidence_score"] == pytest.approx(0.95)
-    assert len(result["validation_results"]) == 4
-    assert len(completions.calls) == 4
+    n = len(MultiModelValidator().validation_models)
+    assert len(result["validation_results"]) == n
+    assert len(completions.calls) == n
 
 
 @pytest.mark.parametrize("value, status", [(0.95, "approved"), (0.7, "needs_revision"), (0.3, "rejected")])
@@ -32,11 +33,11 @@ def test_approval_thresholds(fake_groq, value, status):
 
 def test_failing_models_are_ignored(fake_groq):
     def scorer(prompt, model):
-        return RuntimeError("model decommissioned") if model != "llama-3.3-70b-versatile" else scores(0.9)
+        return RuntimeError("model decommissioned") if model != "openai/gpt-oss-120b" else scores(0.9)
 
     fake_groq(scorer)
     result = run(MultiModelValidator().validate_solution(COMPLAINT, "x"))
-    assert [r["model"] for r in result["validation_results"]] == ["llama-3.3-70b-versatile"]
+    assert [r["model"] for r in result["validation_results"]] == ["openai/gpt-oss-120b"]
     assert result["approval_status"] == "approved"
 
 
@@ -69,13 +70,13 @@ def test_keeps_partial_results_on_timeout(fake_groq, monkeypatch):
     fast_create = completions.create
 
     async def create(**kwargs):
-        if kwargs["model"] == "llama-3.1-8b-instant":
+        if kwargs["model"] == "qwen/qwen3.8-27b":
             await asyncio.sleep(5)
         return await fast_create(**kwargs)
 
     completions.create = create
     result = run(validator.validate_solution(COMPLAINT, "x"))
-    assert len(result["validation_results"]) == 3
+    assert len(result["validation_results"]) == len(validator.validation_models) - 1
     assert result["approval_status"] == "approved"
 
 
