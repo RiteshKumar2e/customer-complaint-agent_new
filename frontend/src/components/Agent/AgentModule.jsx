@@ -164,7 +164,7 @@ export default function AgentModule({ user, onNavigate }) {
                         </svg>
                         <span style={{ fontWeight: 800 }}>Quickfix Agent</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                    <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
                         <ThemeToggle className="navbar-theme-toggle" />
                         <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             📊 Back to Dashboard
@@ -275,18 +275,18 @@ export default function AgentModule({ user, onNavigate }) {
                                         onClick={() => !detailLoading && handleOpenComplaint(complaint)}
                                         style={detailLoading ? { cursor: 'progress' } : undefined}
                                     >
-                                        <td><span className="ticket-id">{complaint.ticket_id}</span></td>
-                                        <td>
+                                        <td data-label="Ticket ID"><span className="ticket-id">{complaint.ticket_id}</span></td>
+                                        <td data-label="User Details">
                                             <div className="user-info">
                                                 <span className="user-name">{complaint.user_name}</span>
                                                 <span className="user-email">{complaint.user_email}</span>
                                             </div>
                                         </td>
-                                        <td>{complaint.category}</td>
-                                        <td>{getSentimentBadge(complaint.sentiment)}</td>
-                                        <td><span className={getPriorityClass(complaint.priority)}>{complaint.priority}</span></td>
-                                        <td><span className="user-email">{new Date(complaint.created_at).toLocaleString()}</span></td>
-                                        <td><span className={`status-${complaint.status}`}>{complaint.status.replace('_', ' ')}</span></td>
+                                        <td data-label="Category">{complaint.category}</td>
+                                        <td data-label="Sentiment">{getSentimentBadge(complaint.sentiment)}</td>
+                                        <td data-label="Priority"><span className={getPriorityClass(complaint.priority)}>{complaint.priority}</span></td>
+                                        <td data-label="Timestamp"><span className="user-email">{new Date(complaint.created_at).toLocaleString()}</span></td>
+                                        <td data-label="Status"><span className={`status-${complaint.status}`}>{complaint.status.replace('_', ' ')}</span></td>
                                     </tr>
                                 ))
                             )}

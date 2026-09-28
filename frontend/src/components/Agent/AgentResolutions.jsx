@@ -48,7 +48,7 @@ export default function AgentResolutions({ user, onNavigate }) {
                         </svg>
                         <span style={{ fontWeight: 800 }}>Quickfix Agent</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                    <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
                         <ThemeToggle className="navbar-theme-toggle" />
                         <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             📊 Back to Dashboard
@@ -113,21 +113,21 @@ export default function AgentResolutions({ user, onNavigate }) {
                                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '4rem' }}>No archived resolutions found.</td></tr>
                             ) : (
                                 resolutions.map(res => (
-                                    <tr key={res.id} className="queue-row">
-                                        <td><span className="ticket-id">{res.ticket_id}</span></td>
-                                        <td>
+                                    <tr key={res.id ?? `${res.ticket_id}-${res.sent_at}`} className="queue-row">
+                                        <td data-label="Ticket ID"><span className="ticket-id">{res.ticket_id}</span></td>
+                                        <td data-label="Support Agent">
                                             <div className="user-info">
                                                 <span className="user-name">{res.agent_name}</span>
                                                 <span className="user-email">Verification Specialist</span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Customer">
                                             <div className="user-info">
                                                 <span className="user-name">{res.user_name}</span>
                                                 <span className="user-email">{res.user_email}</span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Resolution Strategy">
                                             <div className="resolution-text-preview" style={{ maxHeight: '100px', overflowY: 'auto' }}>
                                                 <p style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{res.final_solution}</p>
                                                 {res.steps && res.steps.length > 0 && (
@@ -139,7 +139,7 @@ export default function AgentResolutions({ user, onNavigate }) {
                                                 )}
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="AI Validation">
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                                 <span className="badge badge-positive" style={{ justifyContent: 'center' }}>
                                                     {(res.confidence_score * 100).toFixed(1)}% Consensus
@@ -149,7 +149,7 @@ export default function AgentResolutions({ user, onNavigate }) {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Sent Date">
                                             <span className="user-email">
                                                 {new Date(res.sent_at).toLocaleDateString()}<br />
                                                 {new Date(res.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

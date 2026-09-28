@@ -804,7 +804,7 @@ body:not(.light-theme) .admin-spinner {
 
 @media (max-width: 768px) {
     .admin-login-history {
-        padding: 16px;
+        padding: 88px 16px 16px;
     }
 
     .page-header h1 {

@@ -946,3 +946,11 @@ body.light-theme .terms-modal-content {
         gap: 0.5rem;
     }
 }
+/* On phones the absolutely positioned back link collided with the form header. */
+@media (max-width: 600px) {
+    .back-link {
+        position: static;
+        margin-bottom: 1.25rem;
+        align-self: flex-start;
+    }
+}

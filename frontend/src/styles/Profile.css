@@ -1242,7 +1242,7 @@ body.light-theme .complaint-item {
     }
 
     .profile-main {
-        padding: 1.5rem 1rem;
+        padding: 88px 1rem 1.5rem;
     }
 
     .page-title {
@@ -1650,8 +1650,7 @@ body.light-theme .nps-btn.active {
 /* Mobile Adjustments Overhaul */
 @media (max-width: 768px) {
     .profile-main {
-        padding: 1rem;
-        margin-top: 20px;
+        padding: 80px 1rem 1rem;
     }
 
     .page-title {
@@ -2135,5 +2134,49 @@ body.light-theme .resolution-comment-input:focus {
     .feedback-btn {
         width: 100%;
         justify-content: center;
+    }
+}
+/* ===== Phone header + stats (keep last so it wins over earlier blocks) ===== */
+@media (max-width: 600px) {
+    .profile-header {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .profile-header .header-content {
+        gap: 0.5rem;
+    }
+
+    .profile-header .logo {
+        font-size: 1.05rem;
+        white-space: nowrap;
+    }
+
+    /* header-right has an inline gap */
+    .profile-header .header-right {
+        gap: 0.4rem !important;
+        flex-shrink: 0;
+    }
+
+    .profile-btn {
+        padding: 0.3rem;
+        gap: 0.25rem;
+    }
+
+    .profile-btn > svg {
+        display: none;
+    }
+
+    /* Dashboard.css loads later and sets .stats-grid to 1fr; out-specify it. */
+    .profile-container .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .profile-container .stat-card {
+        padding: 1rem;
+    }
+
+    .profile-header .navbar-theme-toggle {
+        flex-shrink: 0;
     }
 }

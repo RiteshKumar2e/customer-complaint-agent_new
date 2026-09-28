@@ -598,6 +598,7 @@ def get_all_resolutions(
     resolutions = []
     for resolution, complaint in results:
         resolutions.append({
+            "id": resolution.id,
             "complaint_id": complaint.id,
             "ticket_id": resolution.ticket_id,
             "user_name": complaint.name,

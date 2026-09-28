@@ -780,3 +780,239 @@ body.light-theme .status-under_review {
         grid-template-columns: 1fr;
     }
 }
+/* ===== Mobile & tablet ===== */
+/* Header layout lives in inline styles, so the overrides below need !important. */
+@media (max-width: 900px) {
+    .agent-header .header-content {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem !important;
+    }
+
+    /* Buttons wrap onto rows instead of needing a sideways swipe. */
+    .agent-header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+    }
+
+    .agent-header-actions .navbar-theme-toggle {
+        flex-shrink: 0;
+    }
+
+    .agent-header-actions .nav-btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        justify-content: center;
+        white-space: nowrap;
+        padding: 0.55rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .agent-banner {
+        padding: 2.5rem 1rem 4rem !important;
+    }
+
+    .agent-title {
+        font-size: 2.25rem;
+    }
+
+    .agent-content {
+        padding: 0 1rem;
+        margin-top: -2rem;
+    }
+
+    .agent-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-glow-card {
+        padding: 1.25rem;
+        border-radius: 18px;
+    }
+
+    .stat-value {
+        font-size: 1.9rem;
+    }
+
+    .agent-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .filter-group {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .filter-group select {
+        flex: 1 1 140px;
+        padding: 0.85rem 1rem;
+    }
+
+    .search-wrapper input {
+        padding: 0.9rem 1rem 0.9rem 3rem;
+    }
+
+    /* Rows become stacked cards (label from data-label) so nothing scrolls sideways. */
+    .queue-table-container {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        border-radius: 0;
+        overflow: visible;
+    }
+
+    body.light-theme .queue-table-container {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .queue-table,
+    .queue-table tbody,
+    .queue-table tr,
+    .queue-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .queue-table thead {
+        display: none;
+    }
+
+    .queue-table tr {
+        background: var(--agent-glass);
+        border: 1px solid var(--agent-border);
+        border-radius: 18px;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    body.light-theme .queue-table tr {
+        background: #ffffff;
+    }
+
+    .queue-row td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.6rem 0;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .queue-row td:last-child {
+        border-bottom: none;
+    }
+
+    .queue-row td[data-label]::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        text-align: left;
+    }
+
+    .queue-row .user-info {
+        align-items: flex-end;
+        min-width: 0;
+    }
+
+    .resolution-text-preview {
+        max-width: 100%;
+    }
+
+    .agent-modal-overlay {
+        padding: 0.75rem;
+    }
+
+    .agent-modal {
+        border-radius: 20px;
+        max-height: 95vh;
+        max-height: 95dvh;
+    }
+
+    .modal-header {
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .modal-header h2 {
+        font-size: 1.15rem !important;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .analysis-grid {
+        gap: 1rem;
+    }
+
+    .panel {
+        padding: 1.25rem;
+        border-radius: 16px;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .solution-editor {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .agent-title {
+        font-size: 1.75rem;
+    }
+
+    .agent-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .stat-glow-card {
+        padding: 1rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .agent-modal-overlay {
+        padding: 0;
+    }
+
+    .agent-modal {
+        border-radius: 0;
+        max-height: 100vh;
+        max-height: 100dvh;
+    }
+
+    .btn {
+        padding: 0.75rem 1.25rem;
+    }
+
+    .models-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+}
