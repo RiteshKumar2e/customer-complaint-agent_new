@@ -36,18 +36,17 @@ const THEMES = {
 };
 
 // 0 = off, 1 = orb + few embers, 2 = full.
-// Touch-only devices (phones/tablets) run the light mode: the orb and trail
-// follow the finger while it is down and fade out after it lifts.
+// Phones/tablets get the same effect driven by touch (see onTouch); only
+// reduced-motion, data-saver and low-end hardware drop to the lighter mode.
 function detectQuality() {
   if (typeof window === "undefined" || !window.matchMedia) return 0;
   const mq = (q) => window.matchMedia(q).matches;
-  if (!mq("(any-pointer: fine)")) return 1;
   const nav = window.navigator || {};
   if (mq("(prefers-reduced-motion: reduce)")) return 1;
   if (nav.connection && nav.connection.saveData) return 1;
   const cores = nav.hardwareConcurrency || 4;
   const memory = nav.deviceMemory || 4;
-  return cores <= 4 || memory <= 4 ? 1 : 2;
+  return cores < 4 || memory < 4 ? 1 : 2;
 }
 
 function makeSprite(size, stops) {
@@ -270,30 +269,23 @@ export default function CursorTrail() {
     };
     // Touch uses touch events rather than pointer events: pointermove stops
     // (pointercancel) as soon as the page starts scrolling, touchmove does not.
-    let hideTimer = 0;
+    // A tap jumps the orb to the finger and releases a small burst; the orb
+    // then stays at the last touch point like the desktop cursor does.
+    const TAP_BURST = 8;
     const onTouch = (e) => {
       const t = e.touches[0];
       if (!t) return;
-      clearTimeout(hideTimer);
       target.x = t.clientX;
       target.y = t.clientY;
-      if (e.type === "touchstart" || !visible) {
+      if (e.type === "touchstart") {
         orb.x = lastSpawn.x = target.x;
         orb.y = lastSpawn.y = target.y;
         travel = 0;
+        for (let i = 0; i < TAP_BURST; i++) spawn(target.x, target.y);
       }
       hasPointer = true;
       visible = true;
       wake();
-    };
-    const onTouchEnd = (e) => {
-      if (e.touches.length) return;
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => {
-        visible = false;
-        hasPointer = false;
-        wake();
-      }, 350);
     };
 
     const onVisibility = () => {
@@ -315,8 +307,6 @@ export default function CursorTrail() {
     window.addEventListener("pointerdown", onPointerMove, { passive: true });
     window.addEventListener("touchstart", onTouch, { passive: true });
     window.addEventListener("touchmove", onTouch, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
     resize();
 
@@ -332,9 +322,6 @@ export default function CursorTrail() {
       window.removeEventListener("pointerdown", onPointerMove);
       window.removeEventListener("touchstart", onTouch);
       window.removeEventListener("touchmove", onTouch);
-      window.removeEventListener("touchend", onTouchEnd);
-      window.removeEventListener("touchcancel", onTouchEnd);
-      clearTimeout(hideTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       observer.disconnect();
       document.body.classList.remove("custom-cursor-active");
