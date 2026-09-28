@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@100..900&display=swap');
 
-:root {
+/* On body, where the theme tokens are defined (see AdminDashboard.css) */
+body {
     --auth-bg: var(--bg-primary);
     --auth-primary: var(--text-primary);
     --auth-accent: var(--accent-primary);

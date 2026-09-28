@@ -1,7 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-:root {
+/* Declared on body, not :root: the theme tokens (--accent-primary etc.) live
+   on body, so from :root this var() was invalid and the avatar, logo and
+   highlights lost their colour. On body they also follow the light theme. */
+body {
     --admin-primary: var(--accent-primary);
+    --admin-text-primary: var(--text-primary);
     --admin-secondary: #ff8a3d;
     --admin-success: #22c55e;
     --admin-warning: #f59e0b;

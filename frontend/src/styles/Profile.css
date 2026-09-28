@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-:root {
+/* On body, where the theme tokens are defined (see AdminDashboard.css) */
+body {
     --primary: var(--accent-primary);
     --secondary: #ff8a3d;
     --success: #22c55e;
