@@ -528,6 +528,7 @@ body.light-theme .auth-title {
 
 .input-wrapper input,
 .input-wrapper select {
+    display: block;
     width: 100%;
     padding: 0.7rem 1rem 0.7rem 3rem;
     background: #11121d;
@@ -556,14 +557,18 @@ body.light-theme .input-wrapper input:focus {
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
+/* Centered with top/bottom + auto margin (not translateY) so framer-motion's
+   inline transform on the login icons can't knock them off-center. */
 .input-icon {
     position: absolute;
     left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
     color: var(--text-tertiary);
     width: 18px;
     height: 18px;
+    pointer-events: none;
 }
 
 .login-password-wrapper input {
@@ -849,11 +854,14 @@ body.light-theme .terms-modal-content {
     margin: 0 4px;
 }
 
+/* Same centering trick: ButtonReset.css forces transform: none on
+   hover/focus, which used to drop the eye icon. */
 .password-toggle {
     position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 0.75rem;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -862,17 +870,12 @@ body.light-theme .terms-modal-content {
     border: none;
     background: transparent;
     padding: 0;
-    margin: 0;
     line-height: 0;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
     color: var(--text-tertiary);
     z-index: 2;
-}
-
-.login-password-toggle {
-    top: 50%;
 }
 
 .password-toggle svg {
