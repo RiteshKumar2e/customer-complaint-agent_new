@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAllComplaints, deleteAllComplaints, updateComplaintStatus, deleteComplaint, bulkDeleteComplaints } from "../api";
+import { getAllComplaints, updateComplaintStatus, deleteComplaint, bulkDeleteComplaints } from "../api";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/AdminDashboard.css";
 
@@ -40,11 +40,8 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
         };
     }, [isMenuOpen]);
 
-    useEffect(() => {
-        loadAllComplaints();
-    }, []);
 
-    const loadAllComplaints = async () => {
+    const loadAllComplaints = useCallback(async () => {
         if (!user?.email) return;
         try {
             setLoading(true);
@@ -55,7 +52,11 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.email]);
+
+    useEffect(() => {
+        loadAllComplaints();
+    }, [loadAllComplaints]);
 
     const handleUpdateStatus = async (ticketId, currentStatus) => {
         try {
@@ -174,9 +175,10 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                 return new Date(b.created_at) - new Date(a.created_at);
             case "date-asc":
                 return new Date(a.created_at) - new Date(b.created_at);
-            case "priority":
+            case "priority": {
                 const priorityOrder = { High: 3, Medium: 2, Low: 1 };
                 return priorityOrder[b.priority] - priorityOrder[a.priority];
+            }
             case "name":
                 return a.name?.localeCompare(b.name);
             default:
@@ -525,7 +527,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {paginatedComplaints.map((complaint, index) => (
+                                            {paginatedComplaints.map((complaint) => (
                                                 <tr
                                                     key={complaint.id}
                                                     className={selectedItems.includes(complaint.id) ? 'selected-row' : ''}
@@ -925,7 +927,7 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                                             </div>
                                                         );
                                                     });
-                                                } catch (e) {
+                                                } catch {
                                                     return <div className="admin-modal-text">{String(selectedComplaint.ai_analysis_steps)}</div>;
                                                 }
                                             })()}

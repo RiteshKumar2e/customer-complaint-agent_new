@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAllResolutions, logoutUser } from "../../api";
 import ThemeToggle from "../ThemeToggle";
 import "../../styles/AgentModule.css";
@@ -11,13 +11,8 @@ export default function AgentResolutions({ user, onNavigate }) {
         search: ""
     });
 
-    useEffect(() => {
-        if (user) {
-            fetchResolutions();
-        }
-    }, [user, filters]);
 
-    const fetchResolutions = async () => {
+    const fetchResolutions = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getAllResolutions(user.email, { search: filters.search });
@@ -27,7 +22,13 @@ export default function AgentResolutions({ user, onNavigate }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, filters.search]);
+
+    useEffect(() => {
+        if (user) {
+            fetchResolutions();
+        }
+    }, [user, fetchResolutions]);
 
     return (
         <div className="agent-module">

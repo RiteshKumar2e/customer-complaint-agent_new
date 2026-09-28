@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../../api';
@@ -11,12 +11,8 @@ export default function AdminLoginHistory() {
     const [filterEmail, setFilterEmail] = useState('');
     const [limit, setLimit] = useState(100);
 
-    useEffect(() => {
-        fetchLoginHistory();
-        fetchLoginStats();
-    }, [filterEmail, limit]);
 
-    const fetchLoginHistory = async () => {
+    const fetchLoginHistory = useCallback(async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
@@ -30,16 +26,21 @@ export default function AdminLoginHistory() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filterEmail, limit]);
 
-    const fetchLoginStats = async () => {
+    const fetchLoginStats = useCallback(async () => {
         try {
             const response = await api.get('/auth/admin/login-stats');
             setStats(response.data);
         } catch (error) {
             console.error('Error fetching login stats:', error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchLoginHistory();
+        fetchLoginStats();
+    }, [fetchLoginHistory, fetchLoginStats]);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this login record?')) return;
@@ -208,7 +209,7 @@ export default function AdminLoginHistory() {
                 }
             },
 
-            didDrawPage: (data) => {
+            didDrawPage: () => {
                 const str = `Page ${doc.internal.getNumberOfPages()}`;
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'italic');

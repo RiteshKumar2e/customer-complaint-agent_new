@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  getAllComplaints,
   deleteAllComplaints,
   submitResolutionFeedback
 } from "../api";
@@ -41,20 +40,6 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
     }));
   };
 
-  // Function to get estimated resolution time based on priority
-  const getResolutionTime = (priority) => {
-    switch (priority) {
-      case "High":
-        return "24-48 hours";
-      case "Medium":
-        return "3-5 days";
-      case "Low":
-        return "7-10 days";
-      default:
-        return "5-7 days";
-    }
-  };
-
   useEffect(() => {
     if (complaints.length > 0) {
       const highCount = complaints.filter(c => c.priority === "High").length;
@@ -62,7 +47,7 @@ export default function Dashboard({ onNavigate, onLogout, user, complaints = [],
       const categories = { Billing: 0, Technical: 0, Delivery: 0, Service: 0, Security: 0, Other: 0 };
 
       complaints.forEach(c => {
-        if (categories.hasOwnProperty(c.category)) {
+        if (Object.hasOwn(categories, c.category)) {
           categories[c.category]++;
         } else {
           categories.Other++;

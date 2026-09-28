@@ -83,17 +83,18 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const otpContextRef = useRef(null);
     const popupShieldRef = useRef(null);
 
-    // Load saved credentials on mount
+    // Restore the remembered email. Older builds also stored the password here
+    // in plain text; rewrite the entry so that copy is dropped.
     useEffect(() => {
         const savedCreds = localStorage.getItem("saved_creds");
         if (savedCreds) {
             try {
-                const { email: savedEmail, password: savedPassword } = JSON.parse(savedCreds);
-                setEmail(savedEmail);
-                setPassword(savedPassword);
+                const { email: savedEmail } = JSON.parse(savedCreds);
+                localStorage.setItem("saved_creds", JSON.stringify({ email: savedEmail }));
+                setEmail(savedEmail || "");
                 setRememberMe(true);
             } catch {
-                console.error("Failed to parse saved credentials");
+                localStorage.removeItem("saved_creds");
             }
         }
     }, []);
@@ -160,7 +161,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
 
             // Handle Remember Me logic
             if (rememberMe) {
-                localStorage.setItem("saved_creds", JSON.stringify({ email, password }));
+                localStorage.setItem("saved_creds", JSON.stringify({ email }));
             } else {
                 localStorage.removeItem("saved_creds");
             }

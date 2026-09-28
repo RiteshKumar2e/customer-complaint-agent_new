@@ -7,7 +7,7 @@ import os
 import asyncio
 
 # Import training data
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
 try:
     from training_data import CLASSIFICATION_EXAMPLES, SENTIMENT_EXAMPLES, RESPONSE_TEMPLATES
 except ImportError:

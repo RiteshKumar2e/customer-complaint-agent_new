@@ -15,14 +15,9 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
 
-        let deltaX, deltaY;
-        if (targetPos) {
-            deltaX = targetPos.x - centerX;
-            deltaY = targetPos.y - centerY;
-        } else {
-            deltaX = mousePos.x - centerX;
-            deltaY = mousePos.y - centerY;
-        }
+        const target = targetPos || mousePos;
+        const deltaX = target.x - centerX;
+        const deltaY = target.y - centerY;
 
         const angle = Math.atan2(deltaY, deltaX);
         const distance = Math.min(6, Math.sqrt(deltaX ** 2 + deltaY ** 2) / 20);
@@ -63,10 +58,14 @@ const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }
 
 const TermsModal = ({ isOpen, onClose, onAccept, initialTab = "terms" }) => {
     const [activeTab, setActiveTab] = useState(initialTab);
-
-    useEffect(() => {
-        if (isOpen) setActiveTab(initialTab);
-    }, [isOpen, initialTab]);
+    // Reset to the requested tab each time the modal opens (adjusting state
+    // during render, instead of an effect that renders twice)
+    const openKey = isOpen ? initialTab : null;
+    const [prevOpenKey, setPrevOpenKey] = useState(openKey);
+    if (openKey !== prevOpenKey) {
+        setPrevOpenKey(openKey);
+        if (openKey) setActiveTab(openKey);
+    }
 
     return (
         <AnimatePresence>
@@ -170,7 +169,6 @@ export default function Signup({ onNavigate }) {
     const [showTerms, setShowTerms] = useState(false);
     const [termsTab, setTermsTab] = useState("terms");
     const [isTyping, setIsTyping] = useState(false);
-    const [activeField, setActiveField] = useState(null);
     const typingTimeoutRef = useRef(null);
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -232,7 +230,7 @@ export default function Signup({ onNavigate }) {
                 colors: ['#8b5cf6', '#ffffff', '#ff8a3d']
             });
             setTimeout(() => onNavigate("login"), 2500);
-        } catch (err) { setError("Registration failed. Email might exist."); }
+        } catch { setError("Registration failed. Email might exist."); }
         finally { setLoading(false); }
     };
 

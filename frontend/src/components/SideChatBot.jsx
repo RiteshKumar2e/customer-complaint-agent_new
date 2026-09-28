@@ -16,6 +16,9 @@ export default function SideChatBot({ open, onClose }) {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false); // New state for maximize
   const recognitionRef = useRef(null);
+  // The speech handlers are set up once; this always points at the latest
+  // sendMessage so a voice message sees current `loading`/`input` state.
+  const sendMessageRef = useRef(null);
   const chatBodyRef = useRef(null);
 
   // Helper function to format markdown text to HTML
@@ -91,7 +94,7 @@ export default function SideChatBot({ open, onClose }) {
           // Small delay before auto-sending for better UX
           setTimeout(() => {
             if (transcript.trim()) {
-              sendMessage(null, transcript.trim());
+              sendMessageRef.current?.(null, transcript.trim());
             }
           }, 500);
         }
@@ -166,6 +169,9 @@ export default function SideChatBot({ open, onClose }) {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  });
 
   return (
     <div className={`side-chat ${open ? "open" : ""} ${isMaximized ? "maximized" : ""}`}>

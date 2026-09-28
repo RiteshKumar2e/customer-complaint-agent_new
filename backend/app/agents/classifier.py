@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from app.agents.gemini_client import async_ask_gemini
+from app.agents.keywords import contains_keyword
 
 # Import LOCAL ML models (unlimited usage)
 try:
@@ -13,7 +14,7 @@ except ImportError:
     LOCAL_CLASSIFIER_AVAILABLE = False
 
 # Import training data
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
 try:
     from training_data import CLASSIFICATION_EXAMPLES, CATEGORY_KEYWORDS
 except ImportError:
@@ -23,7 +24,7 @@ except ImportError:
 def fallback_classify(text: str) -> str:
     text = text.lower()
     for cat, keywords in CATEGORY_KEYWORDS.items():
-        if any(w in text for w in keywords):
+        if contains_keyword(text, keywords):
             return cat
     return "Other"
 

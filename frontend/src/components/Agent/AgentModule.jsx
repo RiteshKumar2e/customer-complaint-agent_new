@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAgentQueue, getComplaintDetail, validateSolution, sendResolution, logoutUser } from "../../api";
 import ThemeToggle from "../ThemeToggle";
 import "../../styles/AgentModule.css";
@@ -27,13 +27,8 @@ export default function AgentModule({ user, onNavigate }) {
         avg_confidence: 0
     });
 
-    useEffect(() => {
-        if (user) {
-            fetchQueue();
-        }
-    }, [user, filters]);
 
-    const fetchQueue = async () => {
+    const fetchQueue = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getAgentQueue(user.email, {
@@ -58,7 +53,13 @@ export default function AgentModule({ user, onNavigate }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, filters]);
+
+    useEffect(() => {
+        if (user) {
+            fetchQueue();
+        }
+    }, [user, fetchQueue]);
 
     // The AI pipeline stores steps as objects ({step, status}), but the editor below
     // and the resolution email both treat a step as plain text, so flatten on load.
@@ -271,7 +272,8 @@ export default function AgentModule({ user, onNavigate }) {
                                     <tr
                                         key={complaint.id}
                                         className="queue-row"
-                                        onClick={() => handleOpenComplaint(complaint)}
+                                        onClick={() => !detailLoading && handleOpenComplaint(complaint)}
+                                        style={detailLoading ? { cursor: 'progress' } : undefined}
                                     >
                                         <td><span className="ticket-id">{complaint.ticket_id}</span></td>
                                         <td>

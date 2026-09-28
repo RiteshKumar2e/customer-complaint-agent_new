@@ -39,7 +39,7 @@ export default function Feedback({ onClose }) {
 
         try {
             // Send feedback to backend API
-            const data = await submitFeedback({
+            await submitFeedback({
                 name: formData.name,
                 email: formData.email,
                 rating: parseInt(formData.rating),

@@ -2,6 +2,7 @@ import sys
 import os
 from textblob import TextBlob
 from app.agents.gemini_client import async_ask_gemini
+from app.agents.keywords import contains_keyword
 
 # Import LOCAL ML models (unlimited usage)
 try:
@@ -11,7 +12,7 @@ except ImportError:
     LOCAL_SENTIMENT_AVAILABLE = False
 
 # Import training data
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
 try:
     from training_data import SENTIMENT_KEYWORDS, SENTIMENT_EXAMPLES
 except ImportError:
@@ -26,7 +27,7 @@ async def analyze_sentiment(text: str) -> str:
     
     # Layer 1: Heuristic check (Deterministic - 0ms)
     for sentiment, keywords in SENTIMENT_KEYWORDS.items():
-        if any(word in text_lower for word in keywords):
+        if contains_keyword(text_lower, keywords):
             return sentiment
 
     # Layer 2: Local DistilBERT (Transformer ML - No API quota)

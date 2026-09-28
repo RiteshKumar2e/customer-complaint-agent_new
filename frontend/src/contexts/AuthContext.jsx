@@ -48,6 +48,8 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// Hook lives beside its provider; only affects fast refresh of this file
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

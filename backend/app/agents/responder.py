@@ -36,7 +36,7 @@ else:
     model = None
 
 # Import training data
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
 try:
     from training_data import RESPONSE_TEMPLATES
 except ImportError:

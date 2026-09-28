@@ -6,17 +6,7 @@ import '../styles/SignInPromptModal.css';
 
 const SignInPromptModal = ({ onNavigate, isAuthenticated }) => {
     const [isVisible, setIsVisible] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [notification, setNotification] = useState(null); // Custom notification state
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     useEffect(() => {
         // Only show modal if user is NOT logged in

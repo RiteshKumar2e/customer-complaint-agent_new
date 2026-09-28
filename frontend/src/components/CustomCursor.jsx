@@ -9,11 +9,10 @@ export default function CustomCursor() {
     const cursorX = useSpring(0, springConfig);
     const cursorY = useSpring(0, springConfig);
 
-    const [isVisible, setIsVisible] = useState(false);
+    // Only show the custom cursor on devices with a real pointer
+    const [isVisible] = useState(() => window.matchMedia("(pointer: fine)").matches);
 
     useEffect(() => {
-        setIsVisible(window.matchMedia("(pointer: fine)").matches);
-
         const handleMouseMove = (e) => {
             // ⚡ INSTANT UPDATE: Direct position update for zero lag
             cursorX.set(e.clientX);

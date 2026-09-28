@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { submitComplaint, submitReview } from "../api";
-import { showNotification } from "./NotificationCenter";
+import { showNotification } from "../utils/notifications";
 import "../styles/ComplaintForm.css";
 
 export default function ComplaintForm({ onResult, user }) {
@@ -13,7 +13,6 @@ export default function ComplaintForm({ onResult, user }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [steps, setSteps] = useState([]);
   const [showReview, setShowReview] = useState(false);
   const [rating, setRating] = useState(0);
@@ -47,7 +46,6 @@ export default function ComplaintForm({ onResult, user }) {
 
     setLoading(true);
     setError("");
-    setSuccess(false);
     setShowReview(false);
 
     // Initial steps for visible solving
@@ -79,7 +77,6 @@ export default function ComplaintForm({ onResult, user }) {
 
       setTicketId(res.ticket_id);
       if (typeof onResult === "function") onResult(res);
-      setSuccess(true);
       setShowReview(true);
 
       showNotification("success", "✅ Issue Resolved!", "AI agents completed the orchestration successfully.", "✨");

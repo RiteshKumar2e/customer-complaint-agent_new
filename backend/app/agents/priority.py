@@ -1,9 +1,10 @@
 import sys
 import os
 from app.agents.gemini_client import async_ask_gemini
+from app.agents.keywords import contains_keyword
 
 # Import training data
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Training_data'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'Training_data'))
 try:
     from training_data import PRIORITY_KEYWORDS
 except ImportError:
@@ -21,9 +22,9 @@ async def detect_priority(text: str) -> str:
     text_lower = text.lower()
     
     # Layer 1: Check keywords first
-    if any(word in text_lower for word in PRIORITY_KEYWORDS.get("High", [])):
+    if contains_keyword(text_lower, PRIORITY_KEYWORDS.get("High", [])):
         return "High"
-    if any(word in text_lower for word in PRIORITY_KEYWORDS.get("Medium", [])):
+    if contains_keyword(text_lower, PRIORITY_KEYWORDS.get("Medium", [])):
         return "Medium"
 
     # Layer 2: AI Contextual check
