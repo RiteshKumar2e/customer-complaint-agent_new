@@ -36,12 +36,12 @@ const THEMES = {
 };
 
 // 0 = off, 1 = orb + few embers, 2 = full.
-// Only touch-only devices (phones/tablets) get 0; anything with a mouse or
-// trackpad — including touchscreen laptops — always keeps the orb.
+// Touch-only devices (phones/tablets) run the light mode: the orb and trail
+// follow the finger while it is down and fade out after it lifts.
 function detectQuality() {
   if (typeof window === "undefined" || !window.matchMedia) return 0;
   const mq = (q) => window.matchMedia(q).matches;
-  if (!mq("(any-pointer: fine)")) return 0;
+  if (!mq("(any-pointer: fine)")) return 1;
   const nav = window.navigator || {};
   if (mq("(prefers-reduced-motion: reduce)")) return 1;
   if (nav.connection && nav.connection.saveData) return 1;
@@ -112,11 +112,24 @@ export default function CursorTrail() {
     observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
     // Capped DPR keeps the full-viewport clear cheap on 4K / retina screens.
-    let dpr = 1;
+    // On phones the address bar shows/hides while scrolling and fires resize
+    // constantly; only rebuild when the width changes or the height grows.
+    let dpr = 0;
+    let cssW = 0;
+    let cssH = 0;
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      canvas.width = Math.round(window.innerWidth * dpr);
-      canvas.height = Math.round(window.innerHeight * dpr);
+      const nextDpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const widthChanged = w !== cssW || nextDpr !== dpr;
+      if (!widthChanged && h <= cssH) return;
+      dpr = nextDpr;
+      cssW = w;
+      cssH = widthChanged ? h : Math.max(h, cssH);
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
       wake();
     };
 
@@ -255,6 +268,34 @@ export default function CursorTrail() {
       visible = true;
       wake();
     };
+    // Touch uses touch events rather than pointer events: pointermove stops
+    // (pointercancel) as soon as the page starts scrolling, touchmove does not.
+    let hideTimer = 0;
+    const onTouch = (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+      clearTimeout(hideTimer);
+      target.x = t.clientX;
+      target.y = t.clientY;
+      if (e.type === "touchstart" || !visible) {
+        orb.x = lastSpawn.x = target.x;
+        orb.y = lastSpawn.y = target.y;
+        travel = 0;
+      }
+      hasPointer = true;
+      visible = true;
+      wake();
+    };
+    const onTouchEnd = (e) => {
+      if (e.touches.length) return;
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        visible = false;
+        hasPointer = false;
+        wake();
+      }, 350);
+    };
+
     const onVisibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(rafId);
@@ -272,6 +313,10 @@ export default function CursorTrail() {
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerover", onPointerMove, { passive: true });
     window.addEventListener("pointerdown", onPointerMove, { passive: true });
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
     resize();
 
@@ -285,6 +330,11 @@ export default function CursorTrail() {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerover", onPointerMove);
       window.removeEventListener("pointerdown", onPointerMove);
+      window.removeEventListener("touchstart", onTouch);
+      window.removeEventListener("touchmove", onTouch);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      clearTimeout(hideTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       observer.disconnect();
       document.body.classList.remove("custom-cursor-active");
@@ -303,8 +353,7 @@ export default function CursorTrail() {
         position: "fixed",
         top: 0,
         left: 0,
-        width: "100%",
-        height: "100%",
+        // width/height are set in px by resize() to match the backing store
         pointerEvents: "none",
         zIndex: 2147483647, // max, so no modal/toast can cover the cursor
       }}
