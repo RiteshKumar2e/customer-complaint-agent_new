@@ -160,7 +160,7 @@ describe("input icon CSS", () => {
 
 describe("remembered login", () => {
   test("an old saved password is purged and only the email is restored", () => {
-    localStorage.setItem("saved_creds", JSON.stringify({ email: "a@x.com", password: "hunter2" }));
+    localStorage.setItem("saved_creds", JSON.stringify({ email: "a@x.com", password: "dummy-old-password" }));
     const { email, password } = renderLogin();
 
     expect(email).toHaveValue("a@x.com");
@@ -173,11 +173,11 @@ describe("remembered login", () => {
     api.loginWithPassword.mockResolvedValue({ access_token: "jwt", user: { email: "a@x.com" } });
     const { container, password, onLoginSuccess } = renderLogin();
 
-    fireEvent.change(password, { target: { value: "hunter2" } });
+    fireEvent.change(password, { target: { value: "dummy-old-password" } });
     submit(container);
 
     await waitFor(() => expect(onLoginSuccess).toHaveBeenCalled());
-    expect(localStorage.getItem("saved_creds")).not.toContain("hunter2");
+    expect(localStorage.getItem("saved_creds")).not.toContain("dummy-old-password");
   });
 
   test("corrupt saved data is discarded", () => {

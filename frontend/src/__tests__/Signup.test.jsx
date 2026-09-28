@@ -16,8 +16,8 @@ const VALID = {
   phone: "+91 98765 43210",
   email: "asha@x.com",
   organization: "Acme",
-  password: "s3cret!pw",
-  confirmPassword: "s3cret!pw",
+  password: "dummy-test-password",
+  confirmPassword: "dummy-test-password",
 };
 
 function renderSignup() {
@@ -62,7 +62,7 @@ test("successful signup registers and moves to login", async () => {
 
   await act(async () => { submit(); });
   expect(api.registerUser).toHaveBeenCalledWith(
-    "asha@x.com", "Asha Rao", "s3cret!pw", "+91 98765 43210", "Acme", expect.anything(),
+    "asha@x.com", "Asha Rao", "dummy-test-password", "+91 98765 43210", "Acme", expect.anything(),
   );
 
   act(() => { jest.advanceTimersByTime(2600); });

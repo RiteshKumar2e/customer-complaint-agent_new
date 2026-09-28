@@ -78,11 +78,11 @@ def test_google_otp_flow(client, db, sent_emails):
 
 
 def test_register_and_password_login(client):
-    body = {"email": "p@x.com", "full_name": "P", "phone": "1", "organization": "O", "password": "s3cret!pw"}
+    body = {"email": "p@x.com", "full_name": "P", "phone": "1", "organization": "O", "password": "dummy-test-password"}
     assert client.post("/auth/register", json=body).status_code == 200
     assert client.post("/auth/register", json=body).status_code == 400  # duplicate
 
-    ok = client.post("/auth/login-password", json={"email": "p@x.com", "password": "s3cret!pw"})
+    ok = client.post("/auth/login-password", json={"email": "p@x.com", "password": "dummy-test-password"})
     assert ok.status_code == 200
     wrong = client.post("/auth/login-password", json={"email": "p@x.com", "password": "nope"})
     assert wrong.status_code == 401

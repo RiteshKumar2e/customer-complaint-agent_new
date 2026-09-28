@@ -1,0 +1,9 @@
+# GitGuardian (ggshield / GitHub app) config.
+# Test suites use throwaway credentials against a temp DB and mocked APIs,
+# so they are not real secrets.
+version: 2
+secret:
+  ignored_paths:
+    - "frontend/src/__tests__/**"
+    - "frontend/test/**"
+    - "backend/tests/**"
