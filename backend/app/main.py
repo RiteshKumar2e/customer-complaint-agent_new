@@ -22,6 +22,14 @@ run_migrations()
 
 app = FastAPI(title="Quickfix Agentic AI")
 
+
+@app.on_event("startup")
+async def resume_auto_resolution():
+    # Pending auto-resolutions are in-memory tasks, so a restart would drop them
+    import asyncio
+    from app.services.auto_resolver import auto_resolver
+    asyncio.create_task(auto_resolver.resume_pending())
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     # NOTE: Do not call `await request.body()` here — the body stream is already

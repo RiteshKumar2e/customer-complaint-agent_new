@@ -17,14 +17,13 @@ class MultiModelValidator:
     def __init__(self):
         self.groq_client = groq_client
         
-        # Validation models (Only using confirmed working Groq models)
+        # Validation models. The old list led with decommissioned Groq models
+        # (deepseek-r1-distill, qwen-2.5, llama-3.2 previews) that always error.
         self.validation_models = [
-            "llama-3.3-70b-versatile",          # Top quality 70B
-            "llama-3.1-8b-instant",             # Reliable 8B
-            "deepseek-r1-distill-qwen-32b",     # Reasoning specialist
-            "qwen-2.5-32b",                     # Balanced specialist
-            "llama-3.2-3b-preview",             # Lightweight fast
-            "llama-3.2-1b-preview"              # Ultra-fast
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "openai/gpt-oss-20b",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
         ]
         
         self.min_models = 1  # Minimum models that must respond
@@ -69,15 +68,18 @@ class MultiModelValidator:
             task = self.validate_with_model(model_name, complaint, draft_solution)
             validation_tasks.append(task)
         
-        # Wait for all validations to complete (with timeout)
-        try:
-            validation_results = await asyncio.wait_for(
-                asyncio.gather(*validation_tasks, return_exceptions=True),
-                timeout=30.0  # 30 second timeout
-            )
-        except asyncio.TimeoutError:
-            print("⚠️  Validation timeout, using partial results...")
-            validation_results = []
+        # Wait up to 30s, keeping whatever finished in time. wait_for(gather(...))
+        # threw away every result on timeout, even the models that had answered.
+        tasks = [asyncio.ensure_future(t) for t in validation_tasks]
+        done, pending = await asyncio.wait(tasks, timeout=30.0)
+        for task in pending:
+            task.cancel()
+        if pending:
+            print(f"⚠️  Validation timeout, using {len(done)} partial results...")
+        validation_results = [
+            task.result() if not task.exception() else task.exception()
+            for task in done
+        ]
         
         # Filter out failed validations
         successful_validations = [
@@ -156,7 +158,9 @@ class MultiModelValidator:
             
             print(f"🤖 Validating with {model_name}...")
             
-            response = self.groq_client.client.chat.completions.create(
+            # client is AsyncGroq - without the await this returned a coroutine,
+            # `.choices` raised, and every validation came back as a failure.
+            response = await self.groq_client.client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
@@ -197,6 +201,10 @@ Respond ONLY with a valid JSON object in this exact format:
                 print(f"⚠️  Failed to parse JSON from {model_name}")
                 return None
             
+            # Models occasionally answer on a 0-10 / 0-100 scale or as strings
+            for criterion in self.criteria_weights:
+                scores[criterion] = self._normalize_score(scores.get(criterion, 0))
+
             # Calculate overall score
             overall_score = sum(
                 scores.get(criterion, 0) * weight 
@@ -228,6 +236,18 @@ Respond ONLY with a valid JSON object in this exact format:
             print(f"❌ Validation failed with {model_name}: {e}")
             return None
     
+    @staticmethod
+    def _normalize_score(value) -> float:
+        try:
+            score = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        if score > 10:
+            score /= 100
+        elif score > 1:
+            score /= 10
+        return max(0.0, min(1.0, score))
+
     def _create_validation_prompt(self, complaint: Dict, solution: str) -> str:
         """Creates the validation prompt for the model"""
         return f"""
