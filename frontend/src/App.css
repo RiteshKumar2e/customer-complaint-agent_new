@@ -379,3 +379,14 @@ body.light-theme .chat-fab {
     display: none;
   }
 }
+
+@media (max-width: 360px) {
+  /* Let the action buttons drop to a second row on the narrowest phones. */
+  .app-container > .profile-header .header-content {
+    flex-wrap: wrap;
+  }
+
+  .app-container > .profile-header .header-right {
+    margin-left: auto;
+  }
+}

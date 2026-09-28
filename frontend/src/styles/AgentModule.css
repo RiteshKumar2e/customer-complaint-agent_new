@@ -783,6 +783,11 @@ body.light-theme .status-under_review {
 /* ===== Mobile & tablet ===== */
 /* Header layout lives in inline styles, so the overrides below need !important. */
 @media (max-width: 900px) {
+    /* The wrapped header is tall; don't pin it over the content on phones. */
+    .agent-header {
+        position: static;
+    }
+
     .agent-header .header-content {
         flex-wrap: wrap;
         gap: 0.75rem;

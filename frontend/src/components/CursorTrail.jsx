@@ -35,17 +35,18 @@ const THEMES = {
   },
 };
 
-// 0 = off, 1 = orb + few embers, 2 = full
+// 0 = off, 1 = orb + few embers, 2 = full.
+// Only touch-only devices (phones/tablets) get 0; anything with a mouse or
+// trackpad — including touchscreen laptops — always keeps the orb.
 function detectQuality() {
   if (typeof window === "undefined" || !window.matchMedia) return 0;
   const mq = (q) => window.matchMedia(q).matches;
-  if (mq("(pointer: coarse)") || !mq("(hover: hover)")) return 0;
-  if (mq("(prefers-reduced-motion: reduce)")) return 0;
+  if (!mq("(any-pointer: fine)")) return 0;
   const nav = window.navigator || {};
-  if (nav.connection && nav.connection.saveData) return 0;
+  if (mq("(prefers-reduced-motion: reduce)")) return 1;
+  if (nav.connection && nav.connection.saveData) return 1;
   const cores = nav.hardwareConcurrency || 4;
   const memory = nav.deviceMemory || 4;
-  if (cores <= 2 || memory <= 2) return 0;
   return cores <= 4 || memory <= 4 ? 1 : 2;
 }
 
@@ -254,11 +255,6 @@ export default function CursorTrail() {
       visible = true;
       wake();
     };
-    const onPointerLeave = () => {
-      visible = false;
-      hasPointer = false;
-      wake();
-    };
     const onVisibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(rafId);
@@ -270,8 +266,12 @@ export default function CursorTrail() {
     };
 
     window.addEventListener("resize", resize, { passive: true });
+    // No pointerleave/fade-out: once shown, the orb stays at the last known
+    // position (leaving the window or hovering an iframe no longer hides it).
+    // pointerover/pointerdown re-sync after returning from an iframe.
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onPointerLeave);
+    window.addEventListener("pointerover", onPointerMove, { passive: true });
+    window.addEventListener("pointerdown", onPointerMove, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
     resize();
 
@@ -283,7 +283,8 @@ export default function CursorTrail() {
       rafId = 0;
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
-      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
+      window.removeEventListener("pointerover", onPointerMove);
+      window.removeEventListener("pointerdown", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibility);
       observer.disconnect();
       document.body.classList.remove("custom-cursor-active");
@@ -305,7 +306,7 @@ export default function CursorTrail() {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: 2000000, // above all modals (Sign-In Prompt is 999999)
+        zIndex: 2147483647, // max, so no modal/toast can cover the cursor
       }}
     />
   );

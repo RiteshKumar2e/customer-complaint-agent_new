@@ -843,3 +843,9 @@ body:not(.light-theme) .admin-spinner {
         justify-content: space-between;
     }
 }
+/* Header wraps to two rows below 360px (see App.css); keep the title clear of it. */
+@media (max-width: 360px) {
+    .admin-login-history {
+        padding-top: 124px;
+    }
+}
