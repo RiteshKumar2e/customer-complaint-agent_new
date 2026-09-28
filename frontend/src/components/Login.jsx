@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
-import { googleAuth, googleVerifyOTP, loginWithPassword } from "../api";
+import { googleAuth, googleVerifyOTP, loginWithPassword, warmUpBackend } from "../api";
 import { installGooglePopupShield } from "../utils/googlePopupShield";
 import { Eye, EyeOff } from "lucide-react";
 import OTPModal from "./OTPModal";
@@ -192,6 +192,10 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     // Leaving the page mid-sign-in must not strand the patched window.open.
     useEffect(() => releasePopupShield, []);
 
+    // Wake the Render backend while the user is still on the form, so the
+    // OTP request doesn't pay the cold-start delay.
+    useEffect(() => { warmUpBackend(); }, []);
+
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             releasePopupShield();
@@ -215,45 +219,12 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                 setOtpEmail(userInfo.email);
                 setShowOTPModal(true);
 
-                // Get location
-                let loginLocation = "India";
-                try {
-                    const pos = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-                    });
-                    const { latitude, longitude } = pos.coords;
-                    try {
-                        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
-                            headers: { 'User-Agent': 'QuickfixAI/1.0' }
-                        });
-                        const geoData = await geoResponse.json();
-                        if (geoData && geoData.address) {
-                            const addr = geoData.address;
-                            const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.district || "";
-                            const state = addr.state || "";
-                            const country = addr.country || "";
-                            loginLocation = [city, state, country].filter(Boolean).join(", ");
-                            if (!loginLocation) loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-                        } else {
-                            loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-                        }
-                    } catch {
-                        // Reverse geocoding failed - fall back to raw coordinates
-                        loginLocation = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-                    }
-                } catch {
-                    // Location is optional - keep the "India" default
-                }
-
                 // Keep the details around so "Resend OTP" can ask for a fresh code
-                otpContextRef.current = {
-                    email: userInfo.email,
-                    name: userInfo.name,
-                    location: loginLocation,
-                };
+                otpContextRef.current = { email: userInfo.email, name: userInfo.name };
 
-                // Trigger backend OTP in background
-                googleAuth(userInfo.email, userInfo.name, loginLocation).catch(err => {
+                // Request the OTP right away. Location is only recorded at verify
+                // time, so waiting on the geolocation prompt here just delayed the email.
+                googleAuth(userInfo.email, userInfo.name).catch(err => {
                     setError(err.response?.data?.detail || "Failed to trigger OTP email");
                     setShowOTPModal(false);
                 });
@@ -328,7 +299,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const handleOTPResend = async () => {
         const ctx = otpContextRef.current;
         // Hitting /auth/google again regenerates the OTP and re-sends the email
-        await googleAuth(ctx?.email || otpEmail, ctx?.name, ctx?.location);
+        await googleAuth(ctx?.email || otpEmail, ctx?.name);
     };
 
     const handleOTPVerified = () => {

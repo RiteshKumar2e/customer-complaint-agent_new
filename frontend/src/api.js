@@ -17,6 +17,11 @@ const api = axios.create({
 // is merely waking up.
 const AUTH_TIMEOUT = 90000;
 
+// Fire-and-forget ping so the auth pages can wake the backend early.
+export const warmUpBackend = () => {
+  api.get("/health", { timeout: AUTH_TIMEOUT }).catch(() => {});
+};
+
 export const submitComplaint = async (name, email, subject, description) => {
   const response = await api.post("/complaint", {
     name,

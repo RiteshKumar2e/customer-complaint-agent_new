@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 import traceback
 import requests
 from datetime import datetime
@@ -304,31 +305,40 @@ class EmailService:
             "htmlContent": html_body
         }
         
-        # 🚀 PRIORITY: Ultra-fast timeout for OTP emails (1s vs 10s)
-        timeout_duration = 1 if priority else 5
-        
-        try:
-            priority_label = "[PRIORITY OTP]" if priority else ""
-            print(f"🚀 {priority_label} Dispatching via Brevo... To: {to_email}")
-            
-            response = self.session.post(url, headers=headers, json=data, timeout=timeout_duration)
-            
-            if response.status_code in [200, 201, 202]:
-                msg_id = response.json().get('messageId', 'N/A')
-                print(f"✅ {priority_label} Email delivered to {to_email} (ID: {msg_id})")
-            else:
+        # (connect, read) timeouts. This runs in a background thread, so a longer
+        # timeout costs the user nothing - the old 1s OTP timeout regularly
+        # expired during the TLS handshake and the code was never sent.
+        timeout_duration = (5, 15)
+        # OTPs get retries: a dropped code means a stuck login.
+        attempts = 3 if priority else 1
+        priority_label = "[PRIORITY OTP]" if priority else ""
+
+        for attempt in range(1, attempts + 1):
+            try:
+                print(f"🚀 {priority_label} Dispatching via Brevo... To: {to_email} (attempt {attempt})")
+                response = self.session.post(url, headers=headers, json=data, timeout=timeout_duration)
+
+                if response.status_code in [200, 201, 202]:
+                    msg_id = response.json().get('messageId', 'N/A')
+                    print(f"✅ {priority_label} Email delivered to {to_email} (ID: {msg_id})")
+                    return
                 print(f"⚠️ Brevo API Failure - Status: {response.status_code}")
                 print(f"   Response: {response.text}")
-                
-        except requests.exceptions.Timeout:
-            print(f"⏱️ TIMEOUT: Email to {to_email} took longer than {timeout_duration}s")
-            print(f"   This may indicate network issues or Brevo API slowness")
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Network Error: {str(e)}")
-        except Exception as e:
-            print(f"❌ Unexpected error in _dispatch_api: {str(e)}")
-            traceback.print_exc()
-    
+                # 4xx (bad key, unverified sender, ...) won't fix itself on retry
+                if response.status_code < 500 and response.status_code != 429:
+                    return
+            except requests.exceptions.Timeout:
+                print(f"⏱️ TIMEOUT: Email to {to_email} exceeded {timeout_duration}s")
+            except requests.exceptions.RequestException as e:
+                print(f"❌ Network Error: {str(e)}")
+            except Exception as e:
+                print(f"❌ Unexpected error in _dispatch_api: {str(e)}")
+                traceback.print_exc()
+                return
+
+            if attempt < attempts:
+                time.sleep(attempt)  # 1s, then 2s
+
     # ------------------------------------------------------------------
     # ADVANCED PROFESSIONAL HTML TEMPLATES
     # ------------------------------------------------------------------
