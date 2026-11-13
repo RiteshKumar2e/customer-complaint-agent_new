@@ -27,6 +27,8 @@ import "./styles/Profile.css";
 // Sabse last import — sabhi buttons ke hover/ripple/glow effects hata kar
 // unhe normal button banata hai.
 import "./styles/ButtonReset.css";
+// Mobile layout fixes - must stay the last stylesheet.
+import "./styles/Mobile.css";
 import Logo from "./components/Logo";
 import AdminConsole from "./components/Admin/AdminConsole";
 
@@ -411,7 +413,7 @@ export default function App() {
               </div>
             </div>
           </header>
-          <AdminConsole user={user || session.user} />
+          <div className="qf-under-header"><AdminConsole user={user || session.user} /></div>
         </div>
       );
     }

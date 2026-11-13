@@ -50,9 +50,9 @@ export default function AgentResolutions({ user, onNavigate }) {
                     <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
                         <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
-                        <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            📊 Back to Dashboard
-                        </button>
+                        {user?.role === "admin" && (
+                            <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📊 Admin Dashboard</button>
+                        )}
                         <button className="nav-btn" onClick={() => onNavigate("agent-queue")}>
                             📥 Agent Queue
                         </button>

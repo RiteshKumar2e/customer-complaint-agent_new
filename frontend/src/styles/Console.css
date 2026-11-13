@@ -20,7 +20,9 @@ body.light-theme .qf-console, body.light-theme .qf-bell-panel {
 .qf-card { background: var(--qf-card); border: 1px solid var(--qf-border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; min-width: 0; }
 .qf-card h3 { margin: 0 0 0.75rem; font-size: 1rem; }
 .qf-counts { list-style: none; margin: 0; padding: 0; }
-.qf-counts li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--qf-border); text-transform: capitalize; overflow-wrap: anywhere; }
+.qf-counts li { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--qf-border); }
+.qf-counts li > span { flex-shrink: 0; text-transform: capitalize; }
+.qf-counts li > strong { min-width: 0; text-align: right; overflow-wrap: anywhere; }
 .qf-counts li:last-child { border-bottom: 0; }
 .qf-bars { list-style: none; margin: 0; padding: 0; }
 .qf-bars li { display: grid; grid-template-columns: 3.5rem 1fr 2rem; align-items: center; gap: 0.5rem; padding: 0.2rem 0; }

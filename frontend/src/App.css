@@ -375,7 +375,7 @@ body.light-theme .chat-fab {
 
 @media (max-width: 420px) {
   /* Icon-only logo so the action buttons fit on one row. */
-  .app-container > .profile-header .logo span {
+  .app-container > .profile-header .logo > span:not(.qf-logo) {
     display: none;
   }
 }

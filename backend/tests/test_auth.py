@@ -414,3 +414,25 @@ def test_logout_is_idempotent_for_ended_sessions(client, db):
     assert client.post("/auth/logout", json=body, headers=headers).status_code == 200
     assert client.post("/auth/logout").status_code == 200
     assert client.get("/auth/me", headers=headers).status_code == 401
+
+
+def test_repeated_google_click_within_cooldown_reuses_the_code(client, db, monkeypatch):
+    from app.services import auth_service
+
+    make_user(db, "again-g@x.com")
+
+    class Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"aud": "test-google-client-id", "email": "again-g@x.com", "email_verified": "true"}
+
+    monkeypatch.setattr(auth_service.requests, "get", lambda *a, **k: Resp())
+    first = client.post("/auth/google", json={"access_token": "ya29.fake-token-value"})
+    code = client.outbox.last_code("again-g@x.com")
+    second = client.post("/auth/google", json={"access_token": "ya29.fake-token-value"})
+    assert first.status_code == 200 and second.status_code == 200
+    assert second.json()["already_sent"] is True
+    assert len(client.outbox.to("again-g@x.com")) == 1          # no second email
+    assert client.post("/auth/google-verify-otp", json={"email": "again-g@x.com", "otp": code}).status_code == 200

@@ -130,11 +130,11 @@ export default function ComplaintForm({ onResult, user }) {
         <div className="form-section-wrapper">
           <div className="form-group">
             <label htmlFor="cf-name">Name (from your account)</label>
-            <input id="cf-name" type="text" name="name" value={formData.name} className="form-input" readOnly />
+            <input id="cf-name" type="text" name="name" value={user?.full_name || ""} className="form-input" readOnly />
           </div>
           <div className="form-group">
             <label htmlFor="cf-email">Email (from your account)</label>
-            <input id="cf-email" type="email" name="email" value={formData.email} className="form-input" readOnly />
+            <input id="cf-email" type="email" name="email" value={user?.email || ""} className="form-input" readOnly />
           </div>
         </div>
 

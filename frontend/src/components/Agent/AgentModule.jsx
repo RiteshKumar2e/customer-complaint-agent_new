@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getAgentQueue, getComplaintDetail, validateSolution, sendResolution, logoutUser } from "../../api";
+import { getComplaintStats, getAgentQueue, getComplaintDetail, validateSolution, sendResolution, logoutUser } from "../../api";
 import ThemeToggle from "../ThemeToggle";
 import "../../styles/AgentModule.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,7 +26,7 @@ export default function AgentModule({ user, onNavigate }) {
         total: 0,
         pending: 0,
         critical: 0,
-        avg_confidence: 0
+        needs_review: 0
     });
 
 
@@ -41,15 +41,19 @@ export default function AgentModule({ user, onNavigate }) {
             });
             setQueue(data.complaints || []);
 
-            // Calculate stats for demonstration
-            const total = data.total || 0;
-            const critical = (data.complaints || []).filter(c => c.sentiment === 'Critical' || c.priority === 'High').length;
-            setStats({
-                total,
-                pending: filters.status === 'pending' ? total : 0, // Simplified
-                critical,
-                avg_confidence: 94.2 // Mocked for UI
-            });
+            // Real numbers for this agent's scope (assigned tickets; admins see all).
+            try {
+                const s = await getComplaintStats();
+                const st = s.by_status || {};
+                setStats({
+                    total: s.total || 0,
+                    pending: (st.open || 0) + (st.in_progress || 0) + (st.awaiting_approval || 0),
+                    critical: (s.by_priority || {}).High || 0,
+                    needs_review: s.needs_review || 0,
+                });
+            } catch {
+                // Stats are secondary; the queue itself already loaded.
+            }
         } catch (error) {
             console.error("Failed to fetch queue", error);
         } finally {
@@ -166,9 +170,9 @@ export default function AgentModule({ user, onNavigate }) {
                     <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
                         <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
-                        <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            📊 Back to Dashboard
-                        </button>
+                        {user?.role === "admin" && (
+                            <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📊 Admin Dashboard</button>
+                        )}
                         <button className="nav-btn active" onClick={() => onNavigate("agent-queue")}>
                             📥 Agent Queue
                         </button>
@@ -200,20 +204,20 @@ export default function AgentModule({ user, onNavigate }) {
             <div className="agent-content">
                 <div className="agent-stats">
                     <motion.div className="stat-glow-card" whileHover={{ y: -5 }}>
-                        <span className="stat-label">Queue Size</span>
+                        <span className="stat-label">Total Assigned</span>
                         <span className="stat-value">{stats.total}</span>
                     </motion.div>
                     <motion.div className="stat-glow-card" whileHover={{ y: -5 }}>
-                        <span className="stat-label">Pending Review</span>
+                        <span className="stat-label">Open Tickets</span>
                         <span className="stat-value">{stats.pending}</span>
                     </motion.div>
                     <motion.div className="stat-glow-card" whileHover={{ y: -5 }}>
-                        <span className="stat-label">Critical Issues</span>
+                        <span className="stat-label">High Priority</span>
                         <span className="stat-value" style={{ color: 'var(--agent-error)' }}>{stats.critical}</span>
                     </motion.div>
                     <motion.div className="stat-glow-card" whileHover={{ y: -5 }}>
-                        <span className="stat-label">AI Consensus Score</span>
-                        <span className="stat-value" style={{ color: 'var(--agent-accent)' }}>{stats.avg_confidence}%</span>
+                        <span className="stat-label">Needs Human Approval</span>
+                        <span className="stat-value" style={{ color: 'var(--agent-accent)' }}>{stats.needs_review}</span>
                     </motion.div>
                 </div>
 

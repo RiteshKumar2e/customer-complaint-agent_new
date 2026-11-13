@@ -485,9 +485,9 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
                             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                             <span>
                                 I have read and agree to the
-                                <span className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("terms"); setShowTerms(true); }}>Terms of Service</span>
+                                <button type="button" className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("terms"); setShowTerms(true); }}>Terms of Service</button>
                                 and
-                                <span className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("privacy"); setShowTerms(true); }}>Privacy Policy</span>.
+                                <button type="button" className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("privacy"); setShowTerms(true); }}>Privacy Policy</button>.
                             </span>
                         </label>
 
@@ -495,7 +495,7 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
                             {loading ? "Establishing..." : "Create Account →"}
                         </motion.button>
                     </form>
-                    <div className="auth-footer">Already have an account? <span className="auth-link" onClick={() => onNavigate("login")}>Sign in</span></div>
+                    <div className="auth-footer">Already have an account? <button type="button" className="auth-link" onClick={() => onNavigate("login")}>Sign in</button></div>
                 </motion.div>
             </div>
             <AnimatePresence>

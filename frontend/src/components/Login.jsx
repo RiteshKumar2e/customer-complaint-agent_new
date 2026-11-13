@@ -487,7 +487,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <label>Enter Password</label>
-                                <span className="auth-link" style={{ fontSize: '0.85rem' }} onClick={() => onNavigate("forgot-password")}>Forgot Access?</span>
+                                <button type="button" className="auth-link" style={{ fontSize: '0.85rem' }} onClick={() => onNavigate("forgot-password")}>Forgot Access?</button>
                             </div>
                             <div className="input-wrapper login-password-wrapper">
                                 <motion.svg
@@ -570,7 +570,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
 
                     {!isAdminMode && (
                         <div className="auth-footer">
-                            Don't have an account? <span className="auth-link" onClick={() => onNavigate("signup")}>Signup</span>
+                            Don't have an account? <button type="button" className="auth-link" onClick={() => onNavigate("signup")}>Sign up</button>
                         </div>
                     )}
                 </motion.div>

@@ -1,0 +1,67 @@
+/* Mobile fixes found by the Playwright audit at 360/375 px. Loaded last (App.jsx). */
+
+/* Never let a stray wide element create sideways scrolling. */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, video, canvas, svg { max-width: 100%; }
+p, li, td, h1, h2, h3, h4, .detail-value, .complaint-description { overflow-wrap: anywhere; }
+
+/* Pages that sit under the fixed .profile-header (e.g. the admin console). */
+.qf-under-header { padding-top: 84px; }
+
+/* Headers: logo must never be squeezed or overlapped. */
+.qf-logo { flex-shrink: 0; }
+.qf-logo-img { max-width: none; }
+.admin-header-left, .header-left { flex-shrink: 0; min-width: 0; display: flex; align-items: center; }
+.admin-header-right, .header-right { min-width: 0; }
+
+@media (max-width: 640px) {
+  /* The page title already says which area you are in. */
+  .qf-area-badge { display: none; }
+
+  .profile-header, .admin-header { padding: 0.6rem 0.75rem !important; }
+  .header-content, .admin-header-content { gap: 0.5rem !important; }
+  .admin-header-right, .header-right { gap: 0.4rem !important; }
+  .admin-header-right .nav-btn, .header-right .nav-btn {
+    padding: 0.4rem 0.65rem !important; font-size: 0.78rem !important; white-space: nowrap;
+  }
+  .qf-under-header { padding-top: 70px; }
+  .qf-console { padding: 1rem 0.75rem 2rem; }
+
+  /* Agent area: actions in a compact two-column grid instead of four full-width rows. */
+  .agent-header .header-content { padding: 0.6rem 0.75rem !important; }
+  .agent-header-actions {
+    display: grid !important;
+    grid-template-columns: auto auto 1fr 1fr;
+    gap: 0.4rem !important;
+    width: 100%;
+  }
+  .agent-header-actions .nav-btn {
+    padding: 0.45rem 0.5rem !important; font-size: 0.75rem !important; justify-content: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .agent-header-actions > .nav-btn:last-child { grid-column: 1 / -1; }
+
+  /* Cookie banner: don't cover half the screen. */
+  .cookie-consent, .cookie-banner { max-height: 45vh; overflow-y: auto; }
+}
+
+@media (max-width: 380px) {
+  .qf-logo-img { max-height: 22px; }
+}
+
+/* Narrow phones: let header actions drop to a second row instead of covering the logo. */
+@media (max-width: 420px) {
+  .app-container > .profile-header .header-content,
+  .profile-header .header-content { flex-wrap: wrap; row-gap: 0.4rem !important; }
+  .app-container > .profile-header .header-right,
+  .profile-header .header-right { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+}
+
+/* On narrow phones these headers wrap to two rows; a fixed header would then cover
+   the page top, so make it sticky (it keeps its own space) and drop the offsets. */
+@media (max-width: 640px) {
+  .app-container > .profile-header { position: sticky; }
+  .app-container > .qf-under-header,
+  .app-container > .form-content-wrapper,
+  .app-container > .admin-login-history { padding-top: 1rem !important; }
+}

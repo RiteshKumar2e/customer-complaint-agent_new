@@ -438,10 +438,20 @@ def start_google_login(db: Session, access_token: str, request: Optional[Request
     # Even with Google's assertion, the account is unlocked only by an OTP sent to
     # the address on file — the same verification every other path requires.
     purpose = OTP_LOGIN if user.email_verified else OTP_VERIFY_EMAIL
-    if purpose == OTP_LOGIN:
-        otp_service.enforce_limits(*limits)
-    otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=client_ip(request),
-                      check_limits=purpose != OTP_LOGIN)
+    try:
+        if purpose == OTP_LOGIN:
+            otp_service.enforce_limits(*limits)
+        otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=client_ip(request),
+                          check_limits=purpose != OTP_LOGIN)
+    except AppError as exc:
+        if exc.code != "OTP_COOLDOWN":
+            raise
+        # Clicked again within the cooldown: the code sent moments ago is still
+        # valid, so reopen the popup instead of failing with 429.
+        result = otp_sent(email, "We already sent you a code a moment ago. Please use that code.")
+        result["purpose"] = purpose
+        result["already_sent"] = True
+        return result
     result = otp_sent(email, "We sent a 6-digit code to your Google email address.")
     result["purpose"] = purpose
     return result

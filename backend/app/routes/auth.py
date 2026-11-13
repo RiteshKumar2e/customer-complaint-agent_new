@@ -39,6 +39,8 @@ _otp_send_limit = rate_limit("auth:otp-send", 10, 600)
 _otp_verify_limit = rate_limit("auth:otp-verify", 30, 600)
 _login_limit = rate_limit("auth:login", 20, 600)
 _refresh_limit = rate_limit("auth:refresh", 60, 600)
+# Google sign-in is a button people click repeatedly; per-email OTP caps still apply.
+_google_limit = rate_limit("auth:google", 30, 600)
 
 
 @router.post("/register", response_model=OTPSentResponse, status_code=202,
@@ -83,7 +85,7 @@ def verify_login_otp(data: OTPVerifyRequest, request: Request, db: Session = Dep
     return auth_service.login_with_otp(db, data.email, data.otp, request, "otp", data.location)
 
 
-@router.post("/google", dependencies=[Depends(_otp_send_limit)])
+@router.post("/google", dependencies=[Depends(_google_limit)])
 def google_login(data: GoogleAuthRequest, request: Request, db: Session = Depends(get_db)):
     """Verify the Google access token with Google, then email an OTP to the account address."""
     return auth_service.start_google_login(db, data.access_token, request)
