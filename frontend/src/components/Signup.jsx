@@ -165,6 +165,8 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const [step, setStep] = useState(1);
+    const [usage, setUsage] = useState("customer");
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [targetPos, setTargetPos] = useState(null);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -216,23 +218,44 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
         setTargetPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     };
 
-    const handleSignup = async (e) => {
-        e.preventDefault();
-        const name = formData.fullName.trim();
-        const problem =
-            (name.length < 2 && "Enter your full name") ||
-            validateEmail(formData.email) ||
-            validateMobile(formData.phone) ||
-            validatePassword(formData.password) ||
+    const STEP_FIELDS = { 1: ["fullName", "email", "phone"], 2: ["organization"], 3: ["password", "confirmPassword"] };
+
+    const stepError = (n) => {
+        if (n === 1) {
+            return (formData.fullName.trim().length < 2 && "Enter your full name") ||
+                validateEmail(formData.email) || validateMobile(formData.phone);
+        }
+        if (n === 2) return formData.organization.trim().length > 100 ? "Organisation name must be 100 characters or fewer" : "";
+        return validatePassword(formData.password) ||
             (formData.password !== formData.confirmPassword && "Passwords do not match") ||
             (!agree && "Agree to Terms first");
-        if (problem) return setError(problem);
+    };
+
+    const goToStep = (n) => {
+        setError("");
+        setStep(n);
+    };
+
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        if (step < 3) {
+            const problem = stepError(step);
+            if (problem) return setError(problem);
+            return goToStep(step + 1);
+        }
+        for (const n of [1, 2, 3]) {
+            const problem = stepError(n);
+            if (problem) {
+                setStep(n);
+                return setError(problem);
+            }
+        }
 
         setLoading(true);
         setError("");
         try {
             const data = await registerUser({
-                fullName: name,
+                fullName: formData.fullName.trim(),
                 email: formData.email.trim().toLowerCase(),
                 phone: formData.phone,
                 password: formData.password,
@@ -241,6 +264,12 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
             setPendingEmail(data.email);
             setOtpOpen(true);
         } catch (err) {
+            const code = err.response?.data?.code;
+            const fields = (err.response?.data?.errors || []).map((x) => x.field);
+            // Send the user back to the step that has the problem.
+            if (code === "EMAIL_TAKEN" || code === "PHONE_TAKEN" || fields.some((f) => STEP_FIELDS[1].includes(f) || f === "full_name")) {
+                setStep(1);
+            }
             setError(errorMessage(err, "Registration failed. Please try again."));
         } finally {
             setLoading(false);
@@ -341,13 +370,32 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
                         <div className="auth-logo"><Logo height={40} /></div>
                         <div className="auth-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg></div>
                         <h2 className="auth-title">Create Your Account</h2>
-                        <p className="auth-subtitle">Join us in the decentralized AI grid</p>
+                        <p className="auth-subtitle">It takes about a minute. We will email you a code to confirm your address.</p>
                     </div>
 
-                    {error && <div style={{ color: "#ef4444", textAlign: 'center', marginBottom: "1rem" }}>{error}</div>}
-                    {success && <div style={{ color: "#22c55e", textAlign: 'center', marginBottom: "1rem" }}>Account Established! Syncing...</div>}
+                    <div className="su-steps" aria-label="Registration progress">
+                        <div className="su-progress" aria-hidden="true"><span style={{ width: `${(step / 3) * 100}%` }} /></div>
+                        <ol>
+                            {["About you", "Your needs", "Password"].map((label, i) => {
+                                const n = i + 1;
+                                const state = n < step ? "done" : n === step ? "current" : "todo";
+                                return (
+                                    <li key={label} className={`su-step su-${state}`}>
+                                        <button type="button" disabled={n >= step} onClick={() => goToStep(n)}
+                                            aria-current={n === step ? "step" : undefined}
+                                            aria-label={`Step ${n} of 3: ${label}${n < step ? " (completed, go back)" : ""}`}>
+                                            <span className="su-num">{n < step ? "\u2713" : n}</span>
+                                            <span className="su-label">{label}</span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    </div>
 
-                    <form className="auth-form" onSubmit={handleSignup}>
+                    <form className="auth-form" onSubmit={handleSignup} noValidate>
+                        {step === 1 && (
+                            <>
                         {/* Profile Image Upload */}
                         <motion.div
                             className="profile-upload-section"
@@ -429,58 +477,87 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
                                 textAlign: 'center',
                                 marginTop: '-0.25rem'
                             }}>
-                                {imagePreview ? 'Click to change' : 'Upload Identity Photo'}
+                                {imagePreview ? 'Click to change photo' : 'Add a profile photo (optional)'}
                             </p>
                         </motion.div>
 
-                        <div className="form-grid">
-                            <div className="form-group">
-                                <label>Full Name</label>
+                                <div className="form-grid">
+                            <div className="form-group full-width">
+                                <label htmlFor="su-name">Full name</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                    <input name="fullName" placeholder="Enter your name" required value={formData.fullName} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label>Phone Number</label>
-                                <div className="input-wrapper">
-                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                                    <input name="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} pattern="[6-9][0-9]{9}" aria-label="10-digit mobile number" placeholder="10-digit mobile (e.g. 9876543210)" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                    <input id="su-name" name="fullName" autoComplete="name" placeholder="Enter your full name" required value={formData.fullName} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
                             <div className="form-group full-width">
-                                <label>Email Address</label>
+                                <label htmlFor="su-email">Email address</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                                    <input name="email" type="email" placeholder="email@domain.com" required value={formData.email} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                    <input id="su-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required value={formData.email} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
                             <div className="form-group full-width">
-                                <label>Organization</label>
+                                <label htmlFor="su-phone">Mobile number</label>
                                 <div className="input-wrapper">
-                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
-                                    <input name="organization" placeholder="Org/Company" required value={formData.organization} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                                    <input id="su-phone" name="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} pattern="[6-9][0-9]{9}" aria-label="10-digit mobile number" placeholder="10-digit mobile (e.g. 9876543210)" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
+                                </div>
+                            </>
+                        )}
+
+                        {step === 2 && (
+                            <div className="form-grid">
+                            <div className="form-group full-width">
+                                <label htmlFor="su-org">Organisation <span className="su-optional">(optional)</span></label>
+                                <div className="input-wrapper">
+                                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
+                                    <input id="su-org" name="organization" placeholder="Company, school or business name" maxLength={100} value={formData.organization} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                </div>
+                            </div>
+                                <fieldset className="form-group full-width su-usage">
+                                    <legend>What will you use Quickfix AI for?</legend>
+                                    <label className={`su-choice ${usage === "customer" ? "selected" : ""}`}>
+                                        <input type="radio" name="usage" value="customer" checked={usage === "customer"} onChange={() => setUsage("customer")} />
+                                        <span><strong>Report a problem</strong><small>Submit complaints and track their progress.</small></span>
+                                    </label>
+                                    <label className={`su-choice ${usage === "business" ? "selected" : ""}`}>
+                                        <input type="radio" name="usage" value="business" checked={usage === "business"} onChange={() => setUsage("business")} />
+                                        <span><strong>Handle complaints for my business</strong><small>Work on tickets as a support agent or admin.</small></span>
+                                    </label>
+                                    {usage === "business" && (
+                                        <p className="su-note" role="note">
+                                            Every new account starts as a customer account. Once you have signed up, your administrator can give
+                                            you support agent or admin access.
+                                        </p>
+                                    )}
+                                </fieldset>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <>
+                                <div className="form-grid">
                             <div className="form-group">
-                                <label>Password</label>
+                                <label htmlFor="su-pass">Password</label>
                                 <div className="input-wrapper login-password-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                    <input name="password" type={showPassword ? "text" : "password"} placeholder="••••••" required onFocus={(e) => { setIsPasswordFocused(true); updateTargetPos(e); }} onBlur={() => { setIsPasswordFocused(false); setTargetPos(null); }} value={formData.password} onChange={handleChange} />
+                                    <input id="su-pass" name="password" autoComplete="new-password" type={showPassword ? "text" : "password"} placeholder="••••••" required onFocus={(e) => { setIsPasswordFocused(true); updateTargetPos(e); }} onBlur={() => { setIsPasswordFocused(false); setTargetPos(null); }} value={formData.password} onChange={handleChange} />
                                     <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>Confirm Password</label>
+                                <label htmlFor="su-confirm">Confirm password</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                    <input name="confirmPassword" type={showPassword ? "text" : "password"} placeholder="••••••" required onFocus={(e) => { setIsPasswordFocused(true); updateTargetPos(e); }} onBlur={() => { setIsPasswordFocused(false); setTargetPos(null); }} value={formData.confirmPassword} onChange={handleChange} />
+                                    <input id="su-confirm" name="confirmPassword" autoComplete="new-password" type={showPassword ? "text" : "password"} placeholder="••••••" required onFocus={(e) => { setIsPasswordFocused(true); updateTargetPos(e); }} onBlur={() => { setIsPasswordFocused(false); setTargetPos(null); }} value={formData.confirmPassword} onChange={handleChange} />
                                 </div>
                             </div>
-                        </div>
-
+                                </div>
+                                <p className="su-hint">At least 8 characters, with at least one letter and one number.</p>
                         <label className="terms-row">
                             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                             <span>
@@ -490,10 +567,22 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
                                 <button type="button" className="auth-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTermsTab("privacy"); setShowTerms(true); }}>Privacy Policy</button>.
                             </span>
                         </label>
+                            </>
+                        )}
 
-                        <motion.button type="submit" className="auth-submit" disabled={loading || success} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            {loading ? "Establishing..." : "Create Account →"}
-                        </motion.button>
+                        {error && <div className="su-error" role="alert">{error}</div>}
+                        {success && <div className="su-success" role="status">Account created. Signing you in…</div>}
+
+                        <div className="su-actions">
+                            {step > 1 && (
+                                <button type="button" className="su-back" onClick={() => goToStep(step - 1)} disabled={loading}>
+                                    ← Back
+                                </button>
+                            )}
+                            <motion.button type="submit" className="auth-submit" disabled={loading || success}>
+                                {step < 3 ? "Continue →" : loading ? "Creating account…" : "Create account"}
+                            </motion.button>
+                        </div>
                     </form>
                     <div className="auth-footer">Already have an account? <button type="button" className="auth-link" onClick={() => onNavigate("login")}>Sign in</button></div>
                 </motion.div>

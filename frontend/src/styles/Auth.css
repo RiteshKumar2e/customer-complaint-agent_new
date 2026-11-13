@@ -934,3 +934,48 @@ body.light-theme .terms-modal-content {
 
 button.auth-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--accent-primary); cursor: pointer; }
 button.auth-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- Registration: 3-step wizard ---------- */
+.su-steps { margin: 0 0 1.5rem; }
+.su-progress { height: 6px; border-radius: 999px; background: rgba(148, 163, 184, 0.25); overflow: hidden; margin-bottom: 1rem; }
+.su-progress span { display: block; height: 100%; border-radius: inherit; background: var(--text-primary, #334155); transition: width 0.25s ease; }
+.su-steps ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 0.5rem; }
+.su-step button { display: inline-flex; align-items: center; gap: 0.5rem; background: none; border: 0; padding: 0; font: inherit; color: var(--text-tertiary, #64748b); cursor: default; }
+.su-step.su-done button { cursor: pointer; color: var(--text-secondary, #475569); }
+.su-num { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(148, 163, 184, 0.6); font-size: 0.85rem; font-weight: 600; background: transparent; }
+.su-label { font-size: 0.95rem; font-weight: 500; white-space: nowrap; }
+.su-current .su-num { border-color: var(--text-primary, #0f172a); color: var(--text-primary, #0f172a); box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25); }
+.su-current .su-label { color: var(--text-primary, #0f172a); font-weight: 700; }
+.su-done .su-num { background: #e2e8f0; border-color: #e2e8f0; color: #0f172a; }
+body.light-theme .su-done .su-num { background: #0f172a; border-color: #0f172a; color: #ffffff; }
+.su-step button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; border-radius: 6px; }
+
+.su-optional { font-weight: 400; color: var(--text-tertiary, #64748b); }
+.su-usage { border: 0; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.su-usage legend { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.6rem; padding: 0; color: var(--text-secondary, #334155); }
+.su-choice { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 10px; cursor: pointer; }
+.su-choice.selected { border-color: var(--text-primary, #0f172a); }
+.su-choice input { margin-top: 0.2rem; accent-color: #2563eb; }
+.su-choice span { display: grid; gap: 0.15rem; }
+.su-choice strong { font-size: 0.95rem; color: var(--text-primary, #0f172a); }
+.su-choice small { font-size: 0.82rem; color: var(--text-tertiary, #64748b); }
+.su-note { margin: 0.25rem 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary, #334155); background: rgba(37, 99, 235, 0.08); border-radius: 8px; padding: 0.6rem 0.8rem; }
+.su-hint { font-size: 0.82rem; color: var(--text-tertiary, #64748b); margin: 0.25rem 0 0.75rem; }
+.su-error { color: #ef4444; text-align: center; margin: 0.5rem 0 0.75rem; font-size: 0.9rem; }
+.su-success { color: #16a34a; text-align: center; margin: 0.5rem 0 0.75rem; }
+.su-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+.su-actions .auth-submit { flex: 1; margin-top: 0; }
+.su-back { min-height: 44px; padding: 0 1.1rem; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.5); background: transparent; color: var(--text-primary, #0f172a); font: inherit; font-weight: 600; cursor: pointer; }
+
+@media (max-width: 480px) {
+  .su-label { font-size: 0.8rem; }
+  .su-num { width: 26px; height: 26px; font-size: 0.78rem; }
+  .su-steps ol { gap: 0.25rem; }
+}
+@media (max-width: 360px) {
+  .su-step:not(.su-current) .su-label { display: none; }
+}
+
+/* The wizard shows the terms on step 3 only; the old delayed entrance animation made it look missing. */
+.auth-form .terms-row { animation: none; opacity: 1; }
