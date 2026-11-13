@@ -41,6 +41,19 @@ def _env_list(name: str) -> List[str]:
     return [item.strip().rstrip("/") for item in _env(name).split(",") if item.strip()]
 
 
+def _origins_from_app_url(app_url: str) -> List[str]:
+    """CORS fallback when FRONTEND_URL is unset: APP_URL's origin plus its www/apex twin."""
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(app_url) if app_url else None
+    if not parts or not parts.scheme or not parts.netloc:
+        return []
+    host = parts.netloc
+    twin = host[4:] if host.startswith("www.") else f"www.{host}"
+    hosts = [host] if host.startswith(("localhost", "127.")) else [host, twin]
+    return [f"{parts.scheme}://{h}" for h in hosts]
+
+
 class ConfigError(RuntimeError):
     """Raised when the environment cannot support a safe startup."""
 
@@ -192,7 +205,7 @@ def get_settings() -> Settings:
         brevo_api_key=_env("BREVO_API_KEY"),
         email_transport=_detect_transport(),
         admin_notification_email=_env("ADMIN_NOTIFICATION_EMAIL") or _env("ADMIN_EMAIL"),
-        frontend_urls=_env_list("FRONTEND_URL"),
+        frontend_urls=_env_list("FRONTEND_URL") or _origins_from_app_url(_env("APP_URL")),
         cors_origin_regex=_env("CORS_ORIGIN_REGEX") or None,
         max_request_bytes=_env_int("MAX_REQUEST_BYTES", 1_000_000),
         max_upload_bytes=_env_int("MAX_UPLOAD_BYTES", 2_000_000),
@@ -228,16 +241,24 @@ def validate_for_startup(settings: Optional[Settings] = None) -> List[str]:
             problems.append("JWT_SECRET_KEY is not set.")
         elif len(s.jwt_secret_key) < 32:
             problems.append("JWT_SECRET_KEY must be at least 32 characters.")
-        if not s.email_configured:
-            problems.append(
-                "Email delivery is not configured (set SMTP_HOST/SMTP_PORT/SMTP_USERNAME/"
-                "SMTP_PASSWORD/SMTP_FROM_EMAIL). Registration requires email OTP."
-            )
-        if not s.frontend_urls:
-            problems.append("FRONTEND_URL is not set; CORS would block the web app.")
         if problems:
+            # Only missing secrets / database are fatal: running without them is unsafe.
             raise ConfigError("Refusing to start in production:\n  - " + "\n  - ".join(problems))
-        return []
+        # Missing non-secret config degrades safely instead of taking the whole API
+        # (and its health check) down: signup/OTP answer 503 until email works, and
+        # CORS falls back to APP_URL.
+        warnings: List[str] = []
+        if not s.email_configured:
+            warnings.append(
+                "CRITICAL: email delivery is not configured (set SMTP_HOST/SMTP_PORT/SMTP_USERNAME/"
+                "SMTP_PASSWORD/SMTP_FROM_EMAIL, or EMAIL_TRANSPORT=brevo with BREVO_API_KEY and "
+                "SMTP_FROM_EMAIL). Registration, OTP login and password reset return 503 until fixed."
+            )
+        if not _env("FRONTEND_URL"):
+            warnings.append(
+                f"FRONTEND_URL is not set; CORS falls back to APP_URL-derived origins: {', '.join(s.frontend_urls) or 'none'}."
+            )
+        return warnings
 
     if problems and not s.is_test:
         raise ConfigError("Cannot start:\n  - " + "\n  - ".join(problems))
