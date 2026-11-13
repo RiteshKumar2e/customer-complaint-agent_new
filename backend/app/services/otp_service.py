@@ -113,12 +113,12 @@ def issue(db: Session, email: str, purpose: str, name: str = "", ip_address: Opt
 
     try:
         sending.result()
-    except EmailDeliveryError:
+    except EmailDeliveryError as exc:
         # The code never reached the user: discard it so it cannot be used and
         # does not count against their hourly allowance.
         db.delete(record)
         db.commit()
-        log_event(logger, 40, "otp email failed", purpose=purpose)
+        log_event(logger, 40, "otp email failed", purpose=purpose, reason=str(exc)[:300])
         raise unavailable("We could not send the verification email right now. Please try again in a few minutes.",
                           code="EMAIL_DELIVERY_FAILED")
     log_event(logger, 20, "otp issued", purpose=purpose, otp_id=record.id)

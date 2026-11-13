@@ -102,10 +102,12 @@ def health():
 
 @app.api_route("/health/ready", methods=["GET", "HEAD"], tags=["health"])
 def ready():
-    """Readiness: Turso is reachable."""
+    """Readiness: Turso is reachable. Also reports whether OTP email can be sent (no email is sent)."""
     try:
         check_database()
     except Exception:
         logger.exception("Readiness check failed")
         return JSONResponse(status_code=503, content={"status": "unavailable", "database": "unreachable"})
-    return {"status": "ok", "database": "ok"}
+    from app.services.email_transport import email_health
+
+    return {"status": "ok", "database": "ok", "email": email_health()}

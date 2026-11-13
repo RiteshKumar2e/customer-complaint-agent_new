@@ -219,3 +219,27 @@ def test_explicit_sender_skips_lookup(monkeypatch):
     monkeypatch.setattr(email_transport._brevo, "post", lambda url, **kw: posts.append(kw["json"]) or Sent())
     email_transport.send("a@x.com", "s", "<p>h</p>", "h")
     assert posts[0]["sender"]["email"] == "set@x.com"
+
+
+def test_brevo_error_reason_is_reported(monkeypatch):
+    _brevo_env(monkeypatch, sender="set@x.com")
+
+    class Rejected:
+        status_code = 401
+        text = ""
+
+        @staticmethod
+        def json():
+            return {"code": "unauthorized", "message": "We have detected you are using an unrecognised IP address"}
+
+    monkeypatch.setattr(email_transport._brevo, "post", lambda *a, **k: Rejected())
+    with pytest.raises(email_transport.EmailDeliveryError) as err:
+        email_transport.send("a@x.com", "s", "<p>h</p>", "h")
+    assert "unrecognised IP address" in str(err.value) and "key-" not in str(err.value)
+    monkeypatch.setattr(email_transport._brevo, "get", lambda *a, **k: Rejected())
+    assert email_transport.email_health().startswith("error: brevo HTTP 401")
+
+
+def test_ready_reports_email_status(client):
+    body = client.get("/health/ready").json()
+    assert body["database"] == "ok" and body["email"] in ("ok", "not_configured")

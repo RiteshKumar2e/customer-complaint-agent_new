@@ -127,7 +127,35 @@ def _send_brevo(msg: EmailMessage, to: str, subject: str, html: str, text: str, 
         payload["tags"] = [category.split(":")[0]]
     response = _brevo.post(f"{BREVO_API}/smtp/email", headers=_brevo_headers(), json=payload, timeout=(3.05, 10))
     if response.status_code not in (200, 201, 202):
-        raise EmailDeliveryError(f"Brevo API returned HTTP {response.status_code}")
+        raise EmailDeliveryError(f"Brevo API returned HTTP {response.status_code}: {_brevo_error(response)}")
+
+
+def _brevo_error(response) -> str:
+    """Brevo's own error code/message (e.g. 'unauthorized: Key not found'). Never contains the key."""
+    try:
+        body = response.json()
+        return f"{body.get('code', '')}: {body.get('message', '')}"[:200]
+    except Exception:
+        return (getattr(response, "text", "") or "")[:200]
+
+
+def email_health() -> str:
+    """'ok', 'not_configured' or 'error: <reason>' for the readiness endpoint. Sends no email."""
+    s = get_settings()
+    if not s.email_configured:
+        return "not_configured"
+    if s.email_transport != "brevo":
+        return "ok"
+    try:
+        response = _brevo.get(f"{BREVO_API}/account", headers=_brevo_headers(), timeout=(3.05, 5))
+        if response.status_code != 200:
+            return f"error: brevo HTTP {response.status_code} {_brevo_error(response)}"[:200]
+        brevo_sender()
+        return "ok"
+    except EmailDeliveryError as exc:
+        return f"error: {exc}"[:200]
+    except requests.RequestException as exc:
+        return f"error: {type(exc).__name__}"
 
 
 def warm_brevo_connection() -> bool:
@@ -187,9 +215,9 @@ def send(to: str, subject: str, html: str, text: str, category: str = "notificat
         except (smtplib.SMTPException, OSError, requests.RequestException, EmailDeliveryError) as exc:
             last_error = exc
             log_event(logger, 30, "email delivery failed", category=category, to=_mask(to),
-                      transport=s.email_transport, attempt=attempt + 1, error=type(exc).__name__)
+                      transport=s.email_transport, attempt=attempt + 1, error=f"{type(exc).__name__}: {exc}"[:300])
             if isinstance(exc, smtplib.SMTPAuthenticationError):
                 break  # bad credentials will not fix themselves
             if attempt < retries:
                 time.sleep(min(2 ** attempt, 4))
-    raise EmailDeliveryError("Email could not be delivered") from last_error
+    raise EmailDeliveryError(f"Email could not be delivered: {last_error}"[:300]) from last_error
