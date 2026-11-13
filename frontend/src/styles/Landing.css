@@ -419,6 +419,14 @@ body.light-theme .navbar-theme-toggle {
   transition: width 0.3s ease;
 }
 
+.nav-links button:hover {
+  color: var(--accent-primary);
+}
+
+body.light-theme .nav-links button:hover {
+  color: var(--accent-primary);
+}
+
 body.light-theme .nav-links button::after {
   background: var(--accent-primary);
 }
@@ -2478,8 +2486,14 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   }
 
   .nav-links button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #667eea;
     padding-left: 1.5rem;
-}
+  }
+
+  body.light-theme .nav-links button:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
 
   /* Overlay when menu is open */
   .landing-header.menu-open::before {
