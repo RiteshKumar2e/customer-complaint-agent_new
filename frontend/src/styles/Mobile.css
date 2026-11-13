@@ -27,20 +27,6 @@ p, li, td, h1, h2, h3, h4, .detail-value, .complaint-description { overflow-wrap
   .qf-under-header { padding-top: 70px; }
   .qf-console { padding: 1rem 0.75rem 2rem; }
 
-  /* Agent area: actions in a compact two-column grid instead of four full-width rows. */
-  .agent-header .header-content { padding: 0.6rem 0.75rem !important; }
-  .agent-header-actions {
-    display: grid !important;
-    grid-template-columns: auto auto 1fr 1fr;
-    gap: 0.4rem !important;
-    width: 100%;
-  }
-  .agent-header-actions .nav-btn {
-    padding: 0.45rem 0.5rem !important; font-size: 0.75rem !important; justify-content: center;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-  }
-  .agent-header-actions > .nav-btn:last-child { grid-column: 1 / -1; }
-
   /* Cookie banner: don't cover half the screen. */
   .cookie-consent, .cookie-banner { max-height: 45vh; overflow-y: auto; }
 }
@@ -75,3 +61,26 @@ p, li, td, h1, h2, h3, h4, .detail-value, .complaint-description { overflow-wrap
 .qf-notfound .qf-button { margin-top: 1rem; background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 0.7rem 1.2rem; font-weight: 600; cursor: pointer; }
 
 .qf-page-loading { min-height: 60vh; display: flex; align-items: center; justify-content: center; color: #94a3b8; }
+
+/* ---- Agent / admin workspace header ---- */
+.agent-header-icons { display: flex; align-items: center; gap: 0.75rem; margin-left: auto; margin-right: 1rem; }
+.agent-header-actions { display: flex; align-items: center; gap: 0.75rem; }
+.lbl-short { display: none; }
+
+@media (max-width: 900px) {
+  .agent-header .header-content { display: flex !important; flex-wrap: wrap; align-items: center; row-gap: 0.6rem !important; }
+  .agent-header-icons { margin-right: 0; gap: 0.5rem; }
+  /* Row 2: nav buttons as equal tabs; row 3: logout across the full width. */
+  .agent-header-actions { width: 100%; display: flex !important; flex-wrap: wrap; gap: 0.5rem !important; }
+  .agent-header-actions .nav-btn {
+    flex: 1 1 0; min-width: 0; justify-content: center; white-space: nowrap;
+    padding: 0.5rem 0.4rem !important; font-size: 0.8rem !important;
+  }
+  .agent-header-actions .agent-logout { flex-basis: 100%; }
+}
+
+@media (max-width: 480px) {
+  .lbl-long { display: none; }
+  .lbl-short { display: inline; }
+  .agent-header .header-content { padding: 0.6rem 0.75rem !important; }
+}

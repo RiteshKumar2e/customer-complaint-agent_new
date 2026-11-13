@@ -167,26 +167,29 @@ export default function AgentModule({ user, onNavigate }) {
                     <div className="logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit' }} onClick={() => onNavigate("landing")}>
                         <Logo height={28} /><span className="qf-area-badge">Agent</span>
                     </div>
-                    <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                    <div className="agent-header-icons">
                         <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
+                    </div>
+                    <nav className="agent-header-actions" aria-label="Agent workspace">
                         {user?.role === "admin" && (
-                            <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>📊 Admin Dashboard</button>
+                            <button className="nav-btn" onClick={() => onNavigate("admin")}>
+                                📊 <span className="lbl-long">Admin Dashboard</span><span className="lbl-short">Admin</span>
+                            </button>
                         )}
-                        <button className="nav-btn active" onClick={() => onNavigate("agent-queue")}>
-                            📥 Agent Queue
+                        <button className="nav-btn active" aria-current="page" onClick={() => onNavigate("agent-queue")}>
+                            📥 <span className="lbl-long">Agent Queue</span><span className="lbl-short">Queue</span>
                         </button>
                         <button className="nav-btn" onClick={() => onNavigate("agent-resolutions")}>
-                            📜 Resolution Log
+                            📜 <span className="lbl-long">Resolution Log</span><span className="lbl-short">Log</span>
                         </button>
-                        <button className="nav-btn nav-btn-error" onClick={() => {
-                            logoutUser();
-                            localStorage.removeItem("user");
+                        <button className="nav-btn nav-btn-error agent-logout" onClick={async () => {
+                            await logoutUser().catch(() => {});
                             window.location.reload();
-                        }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        }}>
                             🚪 Logout
                         </button>
-                    </div>
+                    </nav>
                 </div>
             </header>
 
