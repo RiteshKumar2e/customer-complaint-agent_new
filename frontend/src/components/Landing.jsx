@@ -6,6 +6,7 @@ import * as random from "maath/random/dist/maath-random.esm";
 import "./../styles/Landing.css";
 import CookieConsent from "./CookieConsent";
 import ThemeToggle from "./ThemeToggle";
+import Logo from "./Logo";
 
 // --- Internal 3D Components (Conditional Dark Mode) ---
 function ParticleGlobe() {
@@ -439,35 +440,13 @@ export default function Landing({ user, onStart, onNavigate }) {
       {/* Header */}
       <header className={`landing-header ${isMenuOpen ? 'menu-open' : ''}`}>
         <div className="header-left">
-          <div className="navbar-brand ecohealth-logo" onClick={scrollToTop}>
-            <div className="logo-orb">
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="18" cy="18" r="18" fill="url(#orb-grad)" fillOpacity="0.15" />
-                <circle cx="18" cy="18" r="17.5" stroke="url(#orb-grad)" strokeOpacity="0.2" />
-                <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="url(#shield-grad)" />
-                <path d="M18 13V17M18 21H18.01" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                <defs>
-                  <linearGradient id="orb-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#7c9aff" />
-                    <stop offset="1" stopColor="#b69eff" />
-                  </linearGradient>
-                  <linearGradient id="shield-grad" x1="10" y1="8" x2="26" y2="30" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#7c9aff" />
-                    <stop offset="1" stopColor="#3b82f6" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div className="brand-text-stack">
-              <span className="logo-text">Quickfix</span>
-            </div>
-          </div>
+          <Logo height={34} onClick={scrollToTop} className="navbar-brand" />
         </div>
 
         <nav className={`nav-links ${isMenuOpen ? 'is-open' : ''}`}>
           <div className="mobile-auth-buttons">
             <button className="btn-admin" onClick={() => { onStart(); setIsMenuOpen(false); }}>
-              {user?.role === "Admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign In")}
+              {user?.role === "admin" ? "Admin Dash" : (user ? "Dashboard" : "Sign In")}
             </button>
           </div>
           <button onClick={() => { scrollToTop(); setIsMenuOpen(false); }} className="nav-btn-home">Home</button>
@@ -488,7 +467,7 @@ export default function Landing({ user, onStart, onNavigate }) {
           </div>
           <div className="auth-buttons">
             <button className="btn-admin" onClick={onStart}>
-              {user?.role === "Admin" ? `Admin Panel` : (user ? `Dashboard` : "Sign In")}
+              {user?.role === "admin" ? `Admin Panel` : (user ? `Dashboard` : "Sign In")}
             </button>
           </div>
         </div>
@@ -585,7 +564,7 @@ export default function Landing({ user, onStart, onNavigate }) {
       {/* Features Section */}
       <section className="solutions-section" id="features">
         <div className="section-header">
-          <h2 className="section-title">About <span>Quickfix</span></h2>
+          <h2 className="section-title">About <span>Quickfix AI</span></h2>
           <p className="section-subtitle">Six specialized agents working in high-frequency synchronization.</p>
         </div>
 
@@ -851,25 +830,7 @@ export default function Landing({ user, onStart, onNavigate }) {
       <footer className="footer" id="contact">
         <div className="footer-content">
           <div className="footer-section brand-info">
-            <div className="navbar-brand ecohealth-logo" onClick={scrollToTop} style={{ marginBottom: '1.5rem', padding: 0 }}>
-              <div className="logo-orb" style={{ width: '36px', height: '36px' }}>
-                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="18" cy="18" r="18" fill="url(#footer-orb-grad)" fillOpacity="0.15" />
-                  <path d="M18 8L10 12V18C10 23.41 13.41 28.47 18 30C22.59 28.47 26 23.41 26 18V12L18 8Z" fill="url(#footer-shield-grad)" />
-                  <defs>
-                    <linearGradient id="footer-orb-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#6366f1" />
-                      <stop offset="1" stopColor="#818cf8" />
-                    </linearGradient>
-                    <linearGradient id="footer-shield-grad" x1="10" y1="8" x2="26" y2="30" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#6366f1" />
-                      <stop offset="1" stopColor="#4f46e5" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <span className="logo-text">Quickfix</span>
-            </div>
+            <div style={{ marginBottom: "1.5rem" }}><Logo height={36} onClick={scrollToTop} /></div>
             <h3 className="connect-title">Connect With Us</h3>
             <div className="social-links-premium2">
               <a href="https://github.com/RiteshKumar2e" target="_blank" rel="noopener noreferrer"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg></a>

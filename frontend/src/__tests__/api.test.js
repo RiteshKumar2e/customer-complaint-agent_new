@@ -1,84 +1,107 @@
 jest.mock("axios", () => {
-  const instance = {
+  const interceptors = { request: [], response: [] };
+  const instance = jest.fn();
+  Object.assign(instance, {
     get: jest.fn(() => Promise.resolve({ data: {} })),
     post: jest.fn(() => Promise.resolve({ data: { ok: true } })),
     patch: jest.fn(() => Promise.resolve({ data: {} })),
     delete: jest.fn(() => Promise.resolve({ data: {} })),
-  };
-  return { __esModule: true, default: { create: jest.fn(() => instance) }, instance };
+    interceptors: {
+      request: { use: (fn) => interceptors.request.push(fn) },
+      response: { use: (ok, err) => interceptors.response.push({ ok, err }) },
+    },
+  });
+  return { __esModule: true, default: { create: jest.fn(() => instance) }, instance, interceptors };
 });
 
-import { instance as http } from "axios";
+import { instance as http, interceptors } from "axios";
 import * as api from "../api";
 
-const AUTH_TIMEOUT = 90000;
+const AUTH = { timeout: 90000, skipAuth: true, skipRefresh: true };
 
-describe("api client", () => {
-  test("warmUpBackend pings /health with the long cold-start timeout", () => {
-    api.warmUpBackend();
-    expect(http.get).toHaveBeenCalledWith("/health", { timeout: AUTH_TIMEOUT });
-  });
+beforeEach(() => localStorage.clear());
 
-  test("warmUpBackend never throws when the backend is down", async () => {
-    http.get.mockReturnValueOnce(Promise.reject(new Error("offline")));
-    expect(() => api.warmUpBackend()).not.toThrow();
-    await Promise.resolve(); // let the rejection settle without an unhandled error
-  });
+test("warmUpBackend pings /health and never throws", async () => {
+  http.get.mockReturnValueOnce(Promise.reject(new Error("offline")));
+  expect(() => api.warmUpBackend()).not.toThrow();
+  expect(http.get).toHaveBeenCalledWith("/health", { timeout: 90000, skipAuth: true });
+  await Promise.resolve();
+});
 
-  test.each([
-    ["requestOTP", ["a@x.com"], "/auth/request-otp", { email: "a@x.com" }],
-    ["verifyOTP", ["a@x.com", "123456"], "/auth/verify-otp", { email: "a@x.com", otp: "123456", location: null }],
-    ["googleAuth", ["a@x.com", "A"], "/auth/google", { token: "a@x.com", name: "A", location: null }],
-    ["googleVerifyOTP", ["a@x.com", "1"], "/auth/google-verify-otp", { email: "a@x.com", otp: "1", location: null }],
-    ["loginWithPassword", ["a@x.com", "pw"], "/auth/login-password", { email: "a@x.com", password: "pw", location: null }],
-    ["forgotPassword", ["a@x.com"], "/auth/forgot-password", { email: "a@x.com" }],
-  ])("%s posts to %s with the auth timeout", async (fn, args, url, body) => {
-    const data = await api[fn](...args);
-    expect(http.post).toHaveBeenCalledWith(url, body, { timeout: AUTH_TIMEOUT });
-    expect(data).toEqual({ ok: true });
-  });
+test.each([
+  ["registerUser", [{ fullName: "Asha", email: "a@x.com", phone: "9876543210", password: "pw12345678", organization: "" }],
+    "/auth/register", { full_name: "Asha", email: "a@x.com", phone: "9876543210", password: "pw12345678", organization: null }],
+  ["verifyRegistration", ["a@x.com", "123456"], "/auth/verify-registration", { email: "a@x.com", otp: "123456" }],
+  ["resendOTP", ["a@x.com"], "/auth/resend-otp", { email: "a@x.com", purpose: "registration" }],
+  ["verifyEmail", ["a@x.com", "123456"], "/auth/verify-email", { email: "a@x.com", otp: "123456" }],
+  ["loginWithPassword", ["a@x.com", "pw"], "/auth/login", { email: "a@x.com", password: "pw", location: null }],
+  ["googleAuth", ["ya29.token"], "/auth/google", { access_token: "ya29.token", location: null }],
+  ["forgotPassword", ["a@x.com"], "/auth/forgot-password", { email: "a@x.com" }],
+  ["resetPassword", ["a@x.com", "123456", "New-pass-1"], "/auth/reset-password", { email: "a@x.com", otp: "123456", new_password: "New-pass-1" }],
+])("%s posts to %s without sending a bearer token", async (fn, args, url, body) => {
+  await api[fn](...args);
+  expect(http.post).toHaveBeenCalledWith(url, body, AUTH);
+});
 
-  test("registerUser maps fields to the backend's snake_case", async () => {
-    await api.registerUser("a@x.com", "Asha", "pw", "99", "Org", null);
-    expect(http.post).toHaveBeenCalledWith(
-      "/auth/register",
-      { email: "a@x.com", full_name: "Asha", password: "pw", phone: "99", organization: "Org", profile_image: null },
-      { timeout: AUTH_TIMEOUT },
-    );
-  });
+test("complaints are submitted without client-supplied identity", async () => {
+  await api.submitComplaint("Charged twice", "My card was charged twice for one order.");
+  expect(http.post).toHaveBeenCalledWith("/complaint", { subject: "Charged twice", description: "My card was charged twice for one order." }, { timeout: 60000 });
+});
 
-  test("agent queue encodes the agent email and filters", async () => {
-    await api.getAgentQueue("agent+1@x.com", { status: "pending", priority: "High" });
-    const url = http.get.mock.calls[0][0];
-    expect(url).toMatch(/^\/agent\/complaints\/queue\?/);
-    const params = new URLSearchParams(url.split("?")[1]);
-    expect(params.get("agent_email")).toBe("agent+1@x.com");
-    expect(params.get("status")).toBe("pending");
-    expect(params.get("priority")).toBe("High");
-  });
+test("agent calls carry no email parameter", async () => {
+  await api.getAgentQueue({ status: "pending" });
+  expect(http.get).toHaveBeenCalledWith("/agent/complaints/queue", { params: { status: "pending" } });
+  await api.sendResolution("QX-1", "Fixed", ["step"]);
+  expect(http.post).toHaveBeenCalledWith("/agent/send-resolution", { ticket_id: "QX-1", final_solution: "Fixed", steps: ["step"] });
+});
 
-  test("validateSolution and sendResolution send the agent payload", async () => {
-    await api.validateSolution("ag@x.com", "QX-1", "Fix", ["a"]);
-    expect(http.post).toHaveBeenCalledWith("/agent/validate-solution", {
-      agent_email: "ag@x.com", ticket_id: "QX-1", draft_solution: "Fix", steps: ["a"],
-    });
-    await api.sendResolution("ag@x.com", "QX-1", "Fix");
-    expect(http.post).toHaveBeenCalledWith("/agent/send-resolution", {
-      agent_email: "ag@x.com", ticket_id: "QX-1", final_solution: "Fix", steps: null,
-    });
-  });
+test("legacy boolean status updates still work", async () => {
+  await api.updateComplaintStatus("QX-1", true, "Refunded");
+  expect(http.patch).toHaveBeenCalledWith("/complaint/QX-1/status", { is_resolved: true, admin_solution: "Refunded" });
+  await api.updateComplaintStatus("QX-1", "in_progress");
+  expect(http.patch).toHaveBeenCalledWith("/complaint/QX-1/status", { status: "in_progress" });
+});
 
-  test("updateComplaintStatus only sends admin_solution when given", async () => {
-    await api.updateComplaintStatus("QX-1", true);
-    expect(http.patch).toHaveBeenLastCalledWith("/complaint/QX-1/status", { is_resolved: true });
-    await api.updateComplaintStatus("QX-1", true, "Done");
-    expect(http.patch).toHaveBeenLastCalledWith("/complaint/QX-1/status", { is_resolved: true, admin_solution: "Done" });
-  });
+test("request interceptor attaches the access token unless skipAuth", () => {
+  api.session.save({ access_token: "acc", refresh_token: "ref", user: { id: 1 } });
+  const add = interceptors.request[0];
+  expect(add({ headers: {} }).headers.Authorization).toBe("Bearer acc");
+  expect(add({ headers: {}, skipAuth: true }).headers.Authorization).toBeUndefined();
+});
 
-  test("getAllComplaints encodes the email filter", async () => {
-    await api.getAllComplaints("a b@x.com");
-    expect(http.get).toHaveBeenLastCalledWith("/complaints?email=a%20b%40x.com");
-    await api.getAllComplaints();
-    expect(http.get).toHaveBeenLastCalledWith("/complaints");
-  });
+test("an expired access token is refreshed once and the request retried", async () => {
+  api.session.save({ access_token: "old", refresh_token: "ref-1", user: { id: 1 } });
+  http.post.mockResolvedValueOnce({ data: { access_token: "new", refresh_token: "ref-2", user: { id: 1 } } });
+  http.mockResolvedValueOnce({ data: "retried" });
+  const { err } = interceptors.response[0];
+  const result = await err({ config: { url: "/complaints", headers: {} }, response: { status: 401, data: { code: "TOKEN_EXPIRED" } } });
+  expect(http.post).toHaveBeenCalledWith("/auth/refresh", { refresh_token: "ref-1" }, expect.objectContaining({ skipRefresh: true }));
+  expect(result).toEqual({ data: "retried" });
+  expect(api.session.access).toBe("new");
+  expect(api.session.refresh).toBe("ref-2");
+});
+
+test("a failed refresh clears the session and signals expiry", async () => {
+  api.session.save({ access_token: "old", refresh_token: "ref-1", user: { id: 1 } });
+  http.post.mockRejectedValueOnce({ response: { status: 401 } });
+  const expired = jest.fn();
+  window.addEventListener("qf:session-expired", expired);
+  const { err } = interceptors.response[0];
+  await expect(err({ config: { headers: {} }, response: { status: 401, data: { code: "TOKEN_EXPIRED" } } })).rejects.toBeTruthy();
+  expect(api.session.access).toBeNull();
+  expect(expired).toHaveBeenCalled();
+});
+
+test("errorMessage prefers the server's detail and lists multiple field errors", () => {
+  expect(api.errorMessage({ response: { data: { detail: "Mobile number is required" } } })).toBe("Mobile number is required");
+  expect(api.errorMessage({ response: { data: { errors: [{ message: "A" }, { message: "B" }] } } })).toBe("A B");
+  expect(api.errorMessage({ code: "ECONNABORTED", response: undefined })).toMatch(/too long/);
+});
+
+test("logout revokes server-side and always clears local state", async () => {
+  api.session.save({ access_token: "acc", refresh_token: "ref", user: { id: 1 } });
+  http.post.mockRejectedValueOnce(new Error("offline"));
+  await expect(api.logoutUser()).rejects.toThrow();
+  expect(http.post).toHaveBeenCalledWith("/auth/logout", { refresh_token: "ref" }, { skipRefresh: true });
+  expect(api.session.access).toBeNull();
 });

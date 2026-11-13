@@ -19,7 +19,7 @@ export default function AdminLoginHistory() {
             if (filterEmail) params.append('email', filterEmail);
             params.append('limit', limit);
 
-            const response = await api.get(`/auth/admin/login-history?${params}`);
+            const response = await api.get(`/admin/login-history?${params}`);
             setLoginHistory(response.data.records);
         } catch (error) {
             console.error('Error fetching login history:', error);
@@ -30,7 +30,7 @@ export default function AdminLoginHistory() {
 
     const fetchLoginStats = useCallback(async () => {
         try {
-            const response = await api.get('/auth/admin/login-stats');
+            const response = await api.get('/admin/login-stats');
             setStats(response.data);
         } catch (error) {
             console.error('Error fetching login stats:', error);
@@ -46,7 +46,7 @@ export default function AdminLoginHistory() {
         if (!window.confirm('Are you sure you want to delete this login record?')) return;
 
         try {
-            await api.delete(`/auth/admin/login-history/${id}`);
+            await api.delete(`/admin/login-history/${id}`);
             // Refresh list and stats
             fetchLoginHistory();
             fetchLoginStats();

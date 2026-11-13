@@ -1,49 +1,71 @@
 """
-Shared test setup.
+Shared test setup — runs before any `app` module is imported.
 
-Everything here runs before any `app` module is imported:
-  * a throwaway SQLite database instead of Turso / complaints.db
-  * no real API keys, so no test can reach Groq, Gemini or Brevo
-  * the heavy local ML stacks are blocked, which is also what production sees
-    (transformers/torch are not in requirements.txt), so the agents take their
-    lightweight fallback paths instead of downloading 1.6 GB models
+* Database: a throwaway libSQL file opened through the same Turso dialect and
+  migrations the app uses in production (TURSO_DATABASE_URL=file:...). The
+  real-Turso checks live in test_turso_live.py and run only when
+  TURSO_TEST_DATABASE_URL is set.
+* No real API keys: no test can reach Groq, Gemini, Google or an SMTP server.
+* Emails are captured in memory by the `outbox` fixture.
 """
 import os
+import re
 import sys
 import tempfile
 
 _DB_DIR = tempfile.mkdtemp(prefix="quickfix-tests-")
-os.environ["DATABASE_URL"] = f"sqlite:///{os.path.join(_DB_DIR, 'test.db')}"
-os.environ.pop("TURSO_DATABASE_URL", None)
-os.environ.pop("RENDER", None)
-os.environ["ENVIRONMENT"] = "test"
-for key in ("GROQ_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "BREVO_API_KEY", "REDIS_URL"):
+os.environ.update({
+    "TURSO_DATABASE_URL": "file:" + os.path.join(_DB_DIR, "test.db"),
+    "TURSO_AUTH_TOKEN": "",
+    "ENVIRONMENT": "test",
+    "JWT_SECRET_KEY": "test-secret-key-for-automated-tests-only-0123456789",
+    "EMAIL_TRANSPORT": "console",
+    "EMAIL_OUTBOX_DIR": os.path.join(_DB_DIR, "outbox"),
+    "ADMIN_NOTIFICATION_EMAIL": "ops@example.com",
+    "SMTP_FROM_EMAIL": "support@example.com",
+    "AUTO_RESOLVE_DELAY_SECONDS": "0",
+    "GOOGLE_CLIENT_ID": "test-google-client-id",
+    "FRONTEND_URL": "http://testserver-frontend",
+})
+for key in ("GROQ_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "BREVO_API_KEY", "SMTP_HOST", "RENDER",
+            "AGENT_CAN_VIEW_UNASSIGNED", "SENDER_EMAIL", "ADMIN_EMAIL"):
     os.environ[key] = ""
-os.environ["AUTO_RESOLVE_DELAY_SECONDS"] = "0"
 
 for heavy in ("transformers", "torch", "sentence_transformers", "tensorflow"):
-    sys.modules[heavy] = None  # makes `import heavy` raise ImportError
+    sys.modules[heavy] = None
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# load_dotenv() inside the app must not put the developer's real keys back
 import dotenv  # noqa: E402
 
-dotenv.load_dotenv = lambda *a, **k: False
+dotenv.load_dotenv = lambda *a, **k: False  # the developer's real .env must not leak into tests
 
 import types  # noqa: E402
 
 import pytest  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
+from app.core.config import get_settings  # noqa: E402
 from app.db import models  # noqa: E402
 from app.db.database import SessionLocal, engine  # noqa: E402
+from app.db.migrations import run_migrations  # noqa: E402
+
+run_migrations(engine)
+_TABLES = [t.name for t in reversed(models.Base.metadata.sorted_tables) if t.name != "schema_migrations"]
 
 
 @pytest.fixture(autouse=True)
-def fresh_db():
-    models.Base.metadata.drop_all(engine)
-    models.Base.metadata.create_all(engine)
+def clean_state():
+    with engine.begin() as conn:
+        for table in _TABLES:
+            conn.execute(text(f'DELETE FROM "{table}"'))
+    from app.core.rate_limit import limiter
+
+    limiter.reset()
+    get_settings.cache_clear()
     yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture
@@ -55,29 +77,53 @@ def db():
         session.close()
 
 
-@pytest.fixture
-def sent_emails(monkeypatch):
-    """Capture every outgoing email instead of calling Brevo."""
-    from app.services.email_service import email_service
+class Outbox(list):
+    def to(self, address):
+        return [m for m in self if m["to"] == address]
 
-    sent = []
-    monkeypatch.setattr(
-        email_service, "_dispatch_api",
-        lambda to, subject, html, priority=False: sent.append({"to": to, "subject": subject, "html": html}),
-    )
-    # The public senders start threads; run the workers inline so tests can assert
-    for public, worker in (
-        ("send_otp", "_worker_send_otp"),
-        ("send_agent_resolution", "_worker_send_agent_resolution"),
-        ("send_password_reset", "_worker_send_password_reset"),
-    ):
-        monkeypatch.setattr(email_service, public, getattr(email_service, worker))
-    monkeypatch.setattr(email_service, "send_complaint_confirmation", lambda *a, **k: True)
-    return sent
+    def last_code(self, address):
+        for message in reversed(self.to(address)):
+            match = re.search(r"Your code: (\d{6})", message["text"])
+            if match:
+                return match.group(1)
+        raise AssertionError(f"no OTP email for {address}")
+
+
+@pytest.fixture
+def outbox(monkeypatch):
+    """Capture every outgoing email (synchronous auth mail and backgrounded notifications)."""
+    from app.services import email_transport
+
+    box = Outbox()
+
+    def fake_send(to, subject, html, text, category="notification", retries=0):
+        box.append({"to": to, "subject": subject, "html": html, "text": text, "category": category})
+
+    monkeypatch.setattr(email_transport, "send", fake_send)
+    return box
+
+
+@pytest.fixture
+def client(outbox, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.services.auto_resolver import auto_resolver
+
+    queued = []
+
+    async def fake_process(complaint_id, delay=None):
+        queued.append(complaint_id)
+
+    monkeypatch.setattr(auto_resolver, "process_complaint", fake_process)
+    with TestClient(app) as test_client:
+        test_client.queued = queued
+        test_client.outbox = outbox
+        yield test_client
 
 
 class FakeGroqCompletions:
-    """Stands in for AsyncGroq().chat.completions; `scorer(solution_text)` picks the scores."""
+    """Stands in for AsyncGroq().chat.completions; `scorer(prompt, model)` decides the reply."""
 
     def __init__(self, scorer):
         self.scorer = scorer
@@ -98,13 +144,13 @@ class FakeGroqCompletions:
 
 @pytest.fixture
 def fake_groq(monkeypatch):
-    """Install a fake async Groq client; returns a setter for the scoring function."""
     from app.agents.groq_client import groq_client
 
     def install(scorer):
         completions = FakeGroqCompletions(scorer)
         client = types.SimpleNamespace(chat=types.SimpleNamespace(completions=completions))
         monkeypatch.setattr(groq_client, "client", client)
+        monkeypatch.setattr(groq_client, "_models_discovered", True)
         return completions
 
     return install

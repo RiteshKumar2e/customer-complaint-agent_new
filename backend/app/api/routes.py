@@ -1,327 +1,239 @@
-from fastapi import APIRouter, HTTPException, Depends, Body, BackgroundTasks
+"""Complaint API. Every route requires authentication and applies the access policy in complaint_service."""
+from typing import Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import Response
+from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.agents.orchestrator import run_agent_pipeline
+from app.api.deps import get_current_user, require_admin, require_customer, require_staff
+from app.core.errors import bad_request, forbidden, not_found
+from app.core.rate_limit import rate_limit
 from app.db.database import get_db, get_ist_time
-from app.db.models import Complaint
-from app.schemas.complaint import ComplaintRequest, ComplaintResponse, BulkDeleteRequest
-from app.services.email_service import email_service
+from app.db.models import (
+    ROLE_ADMIN,
+    ROLE_CUSTOMER,
+    STATUS_IN_PROGRESS,
+    STATUS_RESOLVED,
+    Complaint,
+    ComplaintAttachment,
+    User,
+)
+from app.schemas.complaint import (
+    AssignRequest,
+    BulkDeleteRequest,
+    ComplaintRequest,
+    ResolutionFeedbackRequest,
+    ReviewRequest,
+    StatusUpdateRequest,
+)
+from app.services import complaint_service as svc
+from app.services.activity import audit, notify, notify_admins, record_event
 from app.services.auto_resolver import auto_resolver
-import datetime
-import random
-import string
-import json
+from app.services.email_service import email_service
 
-router = APIRouter()
+router = APIRouter(tags=["complaints"])
 
-@router.post("/complaint", response_model=ComplaintResponse)
-async def handle_complaint(
-    data: ComplaintRequest, 
-    background_tasks: BackgroundTasks, 
-    db: Session = Depends(get_db)
-):
-    """
-    Handle complaint submission and run AI analysis pipeline (Async version for scaling)
-    """
-    try:
-        print(f"📋 New Complaint: {data.subject}")
 
-        # Combine subject and description for comprehensive AI analysis
-        full_text = f"Subject: {data.subject}\nDescription: {data.description}"
-        
-        # Run AI agents pipeline asynchronously
-        result = await run_agent_pipeline(full_text)
-        
-        category = result.get("category", "Other")
-        priority = result.get("priority", "Low")
-        response = result.get("response", "")
-        action = result.get("action", "")
-        sentiment = result.get("sentiment", "Neutral")
-        solution = result.get("solution", "")
-        satisfaction = result.get("satisfaction", "Medium")
-        similar = result.get("similar_issues", "")
-        steps = result.get("steps", [])
+@router.post("/complaint", status_code=201, dependencies=[Depends(rate_limit("complaint:create", 10, 600))])
+async def submit_complaint(data: ComplaintRequest, background_tasks: BackgroundTasks,
+                           user: User = Depends(require_customer), db: Session = Depends(get_db)):
+    """File a complaint as the signed-in customer. AI triage runs before the ticket is stored."""
+    ai = await run_agent_pipeline(f"Subject: {data.subject}\nDescription: {data.description}")
+    complaint, payload = await run_in_threadpool(svc.create_complaint, db, user, data.subject, data.description, ai)
+    background_tasks.add_task(auto_resolver.process_complaint, complaint.id)
+    email_service.send_complaint_confirmation(user.full_name or "Customer", user.email, {
+        "ticket_id": complaint.ticket_id, "subject": complaint.subject, "description": complaint.description,
+        "category": complaint.category, "priority": complaint.priority, "sentiment": complaint.sentiment,
+        "response": complaint.response, "solution": "" if complaint.requires_human_review else complaint.solution,
+        "action": complaint.action,
+    })
+    if complaint.requires_human_review:
+        # Not reviewed by a human yet: the customer sees the acknowledgement, not the AI's draft fix.
+        payload["solution"] = ""
+    payload.update({"satisfaction": complaint.satisfaction_prediction, "similar_issues": complaint.similar_complaints,
+                    "churn_risk": ai.get("churn_risk"), "urgency_data": ai.get("urgency_data", {}),
+                    "requires_human_review": complaint.requires_human_review})
+    return payload
 
-        # Generate Professional Ticket ID
-        date_str = get_ist_time().strftime("%Y%m%d")
-        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-        ticket_id = f"QX-{date_str}-{random_str}"
-
-        # Save to database
-        complaint = Complaint(
-            ticket_id=ticket_id,
-            name=data.name,
-            email=data.email,
-            subject=data.subject,
-            description=data.description,
-            complaint_text=data.description, # Mirror to legacy field for DB compatibility
-            category=category,
-            priority=priority,
-            response=response,
-            action=action,
-            sentiment=sentiment,
-            solution=solution,
-            satisfaction_prediction=satisfaction,
-            similar_complaints=similar,
-            ai_analysis_steps=json.dumps(steps), # Save orchestrated steps
-            is_resolved=False
-        )
-
-        db.add(complaint)
-        db.commit()
-        db.refresh(complaint)
-
-        # Trigger auto-resolution pipeline in the background
-        # This will validate the solution and mail it if confidence is high
-        background_tasks.add_task(auto_resolver.process_complaint, complaint.id)
-
-        # Send confirmation email
-        email_service.send_complaint_confirmation(data.name, data.email, {
-            "ticket_id": ticket_id,
-            "subject": data.subject,
-            "description": data.description,
-            "category": category,
-            "priority": priority,
-            "sentiment": sentiment,
-            "response": response,
-            "solution": solution,
-            "action": action,
-        })
-
-        return ComplaintResponse(
-            ticket_id=ticket_id,
-            subject=data.subject,
-            description=data.description,
-            category=category,
-            priority=priority,
-            response=response,
-            action=action,
-            sentiment=sentiment,
-            solution=solution,
-            satisfaction=satisfaction,
-            similar_issues=similar,
-            steps=steps
-        )
-
-    except Exception as e:
-        print("❌ BACKEND EXCEPTION:", repr(e))
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/complaint/{ticket_id}/review")
-async def review_complaint(ticket_id: str, rating: int = Body(..., embed=True), feedback: str = Body(None, embed=True), db: Session = Depends(get_db)):
-    """
-    Allow users to review the AI solution
-    """
-    try:
-        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Ticket not found")
-        
-        complaint.user_rating = rating
-        complaint.user_feedback = feedback
-        db.commit()
-        
-        return {"message": "Review submitted successfully", "ticket_id": ticket_id}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/complaints")
-def get_all_complaints(email: str = None, db: Session = Depends(get_db)):
-    try:
-        if not email: return {"total": 0, "complaints": []}
-        from app.db.models import User
-        user = db.query(User).filter(User.email == email).first()
-        if user and user.role == "Admin":
-            complaints = db.query(Complaint).all()
-        else:
-            complaints = db.query(Complaint).filter(Complaint.email == email).all()
-        return {"total": len(complaints), "complaints": complaints}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.delete("/complaints")
-def delete_complaints(email: str = None, db: Session = Depends(get_db)):
-    try:
-        if not email: raise HTTPException(status_code=400, detail="Email required")
-        count = db.query(Complaint).filter(Complaint.email == email).delete(synchronize_session=False)
-        db.commit()
-        return {"message": f"Deleted {count} complaints", "deleted_count": count}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-@router.patch("/complaint/{ticket_id}/status")
-async def update_complaint_status(
-    ticket_id: str, 
-    is_resolved: bool = Body(..., embed=True), 
-    admin_solution: str = Body(None, embed=True),
-    db: Session = Depends(get_db)
+def list_complaints(
+    status: Optional[str] = None, priority: Optional[str] = None, category: Optional[str] = None,
+    sentiment: Optional[str] = None, search: Optional[str] = Query(None, max_length=100),
+    assigned: Optional[str] = None, needs_review: Optional[bool] = None, sort: str = "newest",
+    page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    user: User = Depends(get_current_user), db: Session = Depends(get_db),
 ):
-    """
-    Update complaint resolution status and send resolution email with solution
-    """
-    try:
-        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Ticket not found")
-        
-        complaint.is_resolved = is_resolved
-        complaint.updated_at = get_ist_time()
-        
-        # If admin provides a solution, update it
-        if admin_solution:
-            complaint.solution = admin_solution
-        
-        db.commit()
-        
-        # Send resolution email to user when marked as resolved
-        if is_resolved:
-            email_service.send_resolution_email(
-                name=complaint.name,
-                email=complaint.email,
-                ticket_id=ticket_id,
-                subject=complaint.subject,
-                solution=admin_solution or complaint.solution or "Your issue has been resolved by our team."
-            )
-        
-        return {
-            "message": "Status updated successfully", 
-            "ticket_id": ticket_id, 
-            "is_resolved": is_resolved,
-            "email_sent": is_resolved
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    """Customers get their own complaints, agents their assigned ones, admins everything."""
+    return svc.list_for_user(db, user, status=status, priority=priority, category=category, sentiment=sentiment,
+                             search=search, assigned=assigned, needs_review=needs_review, sort=sort,
+                             page=page, page_size=page_size)
 
-@router.delete("/complaint/{ticket_id}")
-async def delete_complaint(ticket_id: str, db: Session = Depends(get_db)):
-    """
-    Delete a single complaint by ticket_id
-    """
-    try:
-        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Ticket not found")
-            
-        # Delete associated records manually to satisfy foreign key constraints
-        from app.db.models import AgentResolution, ModelValidation
-        
-        # 1. Get complaint ID
-        complaint_id = complaint.id
-        
-        # 2. Find associated resolutions
-        resolutions = db.query(AgentResolution).filter(AgentResolution.complaint_id == complaint_id).all()
-        resolution_ids = [r.id for r in resolutions]
-        
-        if resolution_ids:
-            # 3. Delete model validations for these resolutions
-            db.query(ModelValidation).filter(ModelValidation.resolution_id.in_(resolution_ids)).delete(synchronize_session=False)
-            
-            # 4. Delete resolutions
-            db.query(AgentResolution).filter(AgentResolution.id.in_(resolution_ids)).delete(synchronize_session=False)
 
-        db.delete(complaint)
-        db.commit()
-        
-        return {
-            "message": "Complaint deleted successfully",
-            "ticket_id": ticket_id
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/complaints/stats")
+def complaint_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return svc.stats(db, user)
 
-@router.delete("/complaints/bulk")
-async def bulk_delete_complaints(payload: BulkDeleteRequest, db: Session = Depends(get_db)):
-    """
-    Delete multiple complaints by ids and handle associated records
-    """
-    try:
-        complaint_ids = payload.ids
-        if not complaint_ids:
-            return {"message": "No IDs provided", "deleted_count": 0}
 
-        from app.db.models import AgentResolution, ModelValidation
-        
-        # 1. Find associated resolutions
-        resolutions = db.query(AgentResolution).filter(AgentResolution.complaint_id.in_(complaint_ids)).all()
-        resolution_ids = [r.id for r in resolutions]
-        
-        if resolution_ids:
-            # 2. Delete associated model validations
-            db.query(ModelValidation).filter(ModelValidation.resolution_id.in_(resolution_ids)).delete(synchronize_session=False)
-            
-            # 3. Delete associated resolutions
-            db.query(AgentResolution).filter(AgentResolution.id.in_(resolution_ids)).delete(synchronize_session=False)
+@router.get("/complaints/{ticket_id}")
+def get_complaint(ticket_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    complaint = svc.get_for_user(db, user, ticket_id)
+    data = svc.serialize(db, user, [complaint])[0]
+    if user.role == ROLE_CUSTOMER and complaint.requires_human_review and complaint.status != STATUS_RESOLVED:
+        data["solution"] = ""
+    return data
 
-        # 4. Delete complaints
-        count = db.query(Complaint).filter(Complaint.id.in_(complaint_ids)).delete(synchronize_session=False)
-        db.commit()
-        
-        return {"message": f"Successfully deleted {count} complaints and associated data", "deleted_count": count}
-    except Exception as e:
-        db.rollback()
-        print(f"❌ BULK DELETE ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/complaints/{ticket_id}/history")
+def complaint_history(ticket_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"events": svc.history(db, user, svc.get_for_user(db, user, ticket_id))}
+
+
+@router.post("/complaint/{ticket_id}/review")
+def review_complaint(ticket_id: str, data: ReviewRequest, user: User = Depends(require_customer),
+                     db: Session = Depends(get_db)):
+    complaint = svc.get_for_user(db, user, ticket_id)
+    complaint.user_rating = data.rating
+    complaint.user_feedback = data.feedback
+    record_event(db, complaint, "customer_review", user, note=f"Rated {data.rating}/5")
+    db.commit()
+    return {"message": "Review submitted successfully", "ticket_id": ticket_id}
+
 
 @router.post("/complaint/{ticket_id}/resolution-feedback")
-async def submit_resolution_feedback(
-    ticket_id: str,
-    is_actually_resolved: bool = Body(..., embed=True),
-    user_comment: str = Body("", embed=True),
-    db: Session = Depends(get_db)
-):
-    """
-    Allow users to provide feedback on whether their complaint was actually resolved.
-    Sends notification to admin if user reports it's not resolved.
-    """
-    try:
-        complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Ticket not found")
-        
-        # Store the feedback
-        complaint.user_resolution_feedback = is_actually_resolved
-        complaint.user_resolution_comment = user_comment
-        
-        # If user says it is resolved, mark the ticket as resolved
-        if is_actually_resolved:
-            complaint.is_resolved = True
-        else:
-            # If user says it is NOT resolved, ensure it is marked as open
-            complaint.is_resolved = False
-            
-        complaint.updated_at = get_ist_time()
-        db.commit()
-        
-        # Send email to admin with user's feedback
-        email_service.send_resolution_feedback_to_admin(
-            user_name=complaint.name,
-            user_email=complaint.email,
-            ticket_id=ticket_id,
-            subject=complaint.subject,
-            is_actually_resolved=is_actually_resolved,
-            user_comment=user_comment,
-            original_solution=complaint.solution or "No solution provided"
-        )
-        
-        return {
-            "message": "Feedback submitted successfully",
-            "ticket_id": ticket_id,
-            "is_actually_resolved": is_actually_resolved
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+def resolution_feedback(ticket_id: str, data: ResolutionFeedbackRequest, user: User = Depends(require_customer),
+                        db: Session = Depends(get_db)):
+    """Customer confirms the fix worked, or reopens the complaint."""
+    complaint = svc.get_for_user(db, user, ticket_id)
+    complaint.user_resolution_feedback = data.is_actually_resolved
+    complaint.user_resolution_comment = data.user_comment
+    old = complaint.status
+    now = get_ist_time()
+    if data.is_actually_resolved:
+        complaint.status, complaint.is_resolved = STATUS_RESOLVED, True
+        complaint.resolved_at = complaint.resolved_at or now
+    else:
+        complaint.status, complaint.is_resolved, complaint.resolved_at = STATUS_IN_PROGRESS, False, None
+    complaint.updated_at = now
+    record_event(db, complaint, "customer_feedback", user, from_status=old, to_status=complaint.status,
+                 note=data.user_comment or ("Confirmed resolved" if data.is_actually_resolved else "Not resolved"))
+    if not data.is_actually_resolved:
+        notify(db, complaint.assigned_agent_id, "reopened", f"Complaint {ticket_id} reopened by customer",
+               data.user_comment or "The customer reports the issue is not resolved.", ticket_id)
+        notify_admins(db, "reopened", f"Complaint {ticket_id} reopened", data.user_comment or "", ticket_id)
+    db.commit()
+    email_service.send_resolution_feedback_to_admin(
+        user_name=complaint.name, user_email=complaint.email, ticket_id=ticket_id, subject=complaint.subject,
+        is_actually_resolved=data.is_actually_resolved, user_comment=data.user_comment or "",
+        original_solution=complaint.solution or "No solution provided")
+    return {"message": "Feedback submitted successfully", "ticket_id": ticket_id,
+            "is_actually_resolved": data.is_actually_resolved, "status": complaint.status}
 
+
+@router.patch("/complaint/{ticket_id}/status")
+def update_status(ticket_id: str, data: StatusUpdateRequest, request: Request,
+                  user: User = Depends(require_staff), db: Session = Depends(get_db)):
+    """Staff status change. Assigned agents and admins only."""
+    complaint = svc.get_for_user(db, user, ticket_id)
+    target = data.status or (STATUS_RESOLVED if data.is_resolved else STATUS_IN_PROGRESS if data.is_resolved is False
+                             else None)
+    if target is None:
+        raise bad_request("Provide a status.", "STATUS_REQUIRED")
+    if data.admin_solution:
+        complaint.solution = data.admin_solution
+    old = complaint.status
+    svc.set_status(db, user, complaint, target, data.note)
+    audit(db, user, "update_status", request, complaint, {"from": old, "to": target})
+    db.commit()
+    if target == STATUS_RESOLVED and old != STATUS_RESOLVED:
+        email_service.send_resolution_email(name=complaint.name, email=complaint.email, ticket_id=ticket_id,
+                                            subject=complaint.subject, solution=complaint.solution or "")
+    return {"message": "Status updated", "ticket_id": ticket_id, "status": complaint.status,
+            "is_resolved": complaint.is_resolved}
+
+
+@router.patch("/complaints/{ticket_id}/assign")
+def assign_complaint(ticket_id: str, data: AssignRequest, request: Request, admin: User = Depends(require_admin),
+                     db: Session = Depends(get_db)):
+    complaint = svc.get_for_user(db, admin, ticket_id)
+    svc.assign(db, admin, complaint, data.agent_id)
+    audit(db, admin, "assign_complaint", request, complaint, {"agent_id": data.agent_id})
+    db.commit()
+    return {"message": "Assignment updated", "ticket_id": ticket_id, "assigned_agent_id": complaint.assigned_agent_id}
+
+
+@router.delete("/complaint/{ticket_id}")
+def delete_complaint(ticket_id: str, request: Request, user: User = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    """Customers may delete their own complaints; admins any. Agents cannot delete."""
+    if user.role not in (ROLE_CUSTOMER, ROLE_ADMIN):
+        raise forbidden()
+    complaint = svc.get_for_user(db, user, ticket_id)
+    if user.role == ROLE_ADMIN:
+        audit(db, user, "delete_complaint", request, complaint)
+        db.commit()
+    svc.delete_complaints(db, [complaint.id])
+    return {"message": "Complaint deleted successfully", "ticket_id": ticket_id}
+
+
+@router.delete("/complaints")
+def delete_my_complaints(user: User = Depends(require_customer), db: Session = Depends(get_db)):
+    """Delete all of the signed-in customer's complaints."""
+    ids = [cid for (cid,) in db.execute(select(Complaint.id).where(Complaint.user_id == user.id))]
+    count = svc.delete_complaints(db, ids)
+    return {"message": f"Deleted {count} complaints", "deleted_count": count}
+
+
+@router.delete("/complaints/bulk")
+@router.post("/complaints/bulk-delete")
+def bulk_delete(payload: BulkDeleteRequest, request: Request, admin: User = Depends(require_admin),
+                db: Session = Depends(get_db)):
+    ids = [cid for (cid,) in db.execute(select(Complaint.id).where(Complaint.id.in_(payload.ids)))]
+    audit(db, admin, "bulk_delete_complaints", request, None, {"ids": ids})
+    db.commit()
+    count = svc.delete_complaints(db, ids)
+    return {"message": f"Deleted {count} complaints", "deleted_count": count}
+
+
+# ---------------------------------------------------------------------------
+# Attachments
+# ---------------------------------------------------------------------------
+
+@router.post("/complaints/{ticket_id}/attachments", status_code=201,
+             dependencies=[Depends(rate_limit("complaint:upload", 20, 600))])
+async def upload_attachment(ticket_id: str, file: UploadFile = File(...), user: User = Depends(get_current_user),
+                            db: Session = Depends(get_db)):
+    from app.core.config import get_settings
+
+    limit = get_settings().max_upload_bytes
+    data = await file.read(limit + 1)
+    complaint = await run_in_threadpool(svc.get_for_user, db, user, ticket_id)
+    if user.role != ROLE_CUSTOMER and user.role != ROLE_ADMIN and complaint.assigned_agent_id != user.id:
+        raise forbidden()
+    attachment = await run_in_threadpool(svc.add_attachment, db, user, complaint, file.filename or "",
+                                         file.content_type or "", data)
+    return {"id": attachment.id, "filename": attachment.filename, "content_type": attachment.content_type,
+            "size_bytes": attachment.size_bytes}
+
+
+@router.get("/complaints/{ticket_id}/attachments")
+def list_attachments(ticket_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"attachments": svc.list_attachments(db, svc.get_for_user(db, user, ticket_id))}
+
+
+@router.get("/complaints/{ticket_id}/attachments/{attachment_id}")
+def download_attachment(ticket_id: str, attachment_id: int, user: User = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
+    complaint = svc.get_for_user(db, user, ticket_id)
+    attachment = db.execute(select(ComplaintAttachment).where(
+        ComplaintAttachment.id == attachment_id, ComplaintAttachment.complaint_id == complaint.id)).scalar_one_or_none()
+    if attachment is None:
+        raise not_found("Attachment not found")
+    return Response(content=attachment.data, media_type=attachment.content_type, headers={
+        "Content-Disposition": f'attachment; filename="{attachment.filename}"',
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+    })

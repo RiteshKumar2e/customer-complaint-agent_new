@@ -88,3 +88,4 @@ Thumbs.db
 # ===============================
 .vercel/
 .render/
+!.env.example

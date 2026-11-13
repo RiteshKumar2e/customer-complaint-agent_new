@@ -3,6 +3,8 @@ import { getAgentQueue, getComplaintDetail, validateSolution, sendResolution, lo
 import ThemeToggle from "../ThemeToggle";
 import "../../styles/AgentModule.css";
 import { motion, AnimatePresence } from "framer-motion";
+import Logo from "../Logo";
+import NotificationBell from "../NotificationBell";
 
 export default function AgentModule({ user, onNavigate }) {
     const [queue, setQueue] = useState([]);
@@ -31,7 +33,7 @@ export default function AgentModule({ user, onNavigate }) {
     const fetchQueue = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getAgentQueue(user.email, {
+            const data = await getAgentQueue({
                 status: filters.status,
                 priority: filters.priority,
                 category: filters.category,
@@ -53,7 +55,7 @@ export default function AgentModule({ user, onNavigate }) {
         } finally {
             setLoading(false);
         }
-    }, [user, filters]);
+    }, [filters]);
 
     useEffect(() => {
         if (user) {
@@ -81,7 +83,7 @@ export default function AgentModule({ user, onNavigate }) {
     const handleOpenComplaint = async (complaint) => {
         setDetailLoading(true);
         try {
-            const data = await getComplaintDetail(complaint.ticket_id, user.email);
+            const data = await getComplaintDetail(complaint.ticket_id);
             setSelectedComplaint(data.complaint);
             setDraftSolution(data.agent_resolution?.draft_solution || data.complaint.ai_solution || "");
             setDraftSteps(normalizeSteps(data.agent_resolution?.steps || data.complaint.ai_steps));
@@ -107,7 +109,7 @@ export default function AgentModule({ user, onNavigate }) {
         setIsValidating(true);
         setValidationResult(null);
         try {
-            const result = await validateSolution(user.email, selectedComplaint.ticket_id, draftSolution, draftSteps);
+            const result = await validateSolution(selectedComplaint.ticket_id, draftSolution, draftSteps);
             setValidationResult(result);
         } catch (error) {
             console.error("Validation failed", error);
@@ -121,7 +123,7 @@ export default function AgentModule({ user, onNavigate }) {
         if (!draftSolution.trim()) return;
         setIsSending(true);
         try {
-            await sendResolution(user.email, selectedComplaint.ticket_id, draftSolution, draftSteps);
+            await sendResolution(selectedComplaint.ticket_id, draftSolution, draftSteps);
             setSelectedComplaint(null);
             fetchQueue();
             alert("Resolution sent successfully!");
@@ -159,12 +161,10 @@ export default function AgentModule({ user, onNavigate }) {
                     padding: '1rem 2rem'
                 }}>
                     <div className="logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit' }} onClick={() => onNavigate("landing")}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--agent-primary)" strokeWidth="3">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                        </svg>
-                        <span style={{ fontWeight: 800 }}>Quickfix Agent</span>
+                        <Logo height={28} /><span className="qf-area-badge">Agent</span>
                     </div>
                     <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                        <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
                         <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             📊 Back to Dashboard
@@ -176,7 +176,7 @@ export default function AgentModule({ user, onNavigate }) {
                             📜 Resolution Log
                         </button>
                         <button className="nav-btn nav-btn-error" onClick={() => {
-                            logoutUser(user.email);
+                            logoutUser();
                             localStorage.removeItem("user");
                             window.location.reload();
                         }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -230,6 +230,8 @@ export default function AgentModule({ user, onNavigate }) {
                     <div className="filter-group">
                         <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
                             <option value="pending">Pending Review</option>
+                            <option value="awaiting_approval">Needs human approval</option>
+                            <option value="in_progress">In progress</option>
                             <option value="resolved">Resolved</option>
                             <option value="">All Status</option>
                         </select>

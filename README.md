@@ -1,1145 +1,201 @@
-<div align="center">
-
-<!-- 3D Animated Header -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=300&section=header&text=Quickfix%20AI&fontSize=90&fontAlignY=35&animation=twinkling&fontColor=fff&desc=Enterprise%20AI%20Complaint%20Resolution%20Platform&descSize=25&descAlignY=55" width="100%"/>
-
-<br/>
-
-<br/>
-<!-- Premium Badges -->
 <p align="center">
-  <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a1a" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=1a1a1a" alt="React"/>
-  <img src="https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white&labelColor=1a1a1a" alt="Gemini"/>
-  <img src="https://img.shields.io/badge/Groq-LLaMA_3.3-FF6B6B?style=for-the-badge&logo=ai&logoColor=white&labelColor=1a1a1a" alt="Groq"/>
-  <img src="https://img.shields.io/badge/MariaDB-10.11+-003545?style=for-the-badge&logo=mariadb&logoColor=white&labelColor=1a1a1a" alt="MariaDB"/>
+  <img src="frontend/public/logo.png" alt="Quickfix AI" height="72">
 </p>
 
-
 <p align="center">
-  <img src="https://img.shields.io/github/stars/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a1a" alt="Stars"/>
-  <img src="https://img.shields.io/github/forks/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&logo=github&color=00D9FF&labelColor=1a1a1a" alt="Forks"/>
-  <img src="https://img.shields.io/github/license/RiteshKumar2e/customer-complaint-agent_new?style=for-the-badge&color=FF6B6B&labelColor=1a1a1a" alt="License"/>
-  <img src="https://img.shields.io/badge/Status-Production_Ready-00C853?style=for-the-badge&labelColor=1a1a1a" alt="Status"/>
+  Complaint management with AI triage and human-reviewed resolutions.<br>
+  FastAPI · React · Turso (libSQL) · Groq / Gemini
 </p>
 
-<!-- Action Buttons -->
-<p align="center">
-  <a href="https://riteshkr.online">
-    <img src="https://img.shields.io/badge/🚀_LIVE_DEMO-Launch_Platform-6366F1?style=for-the-badge&labelColor=1a1a1a" alt="Live"/>
-  </a>
-  <a href="#-quick-start">
-    <img src="https://img.shields.io/badge/⚡_QUICK_START-5_Minutes-10B981?style=for-the-badge&labelColor=1a1a1a" alt="Quick Start"/>
-  </a>
-  <a href="http://localhost:8000/docs">
-    <img src="https://img.shields.io/badge/📚_API_DOCS-Interactive-F59E0B?style=for-the-badge&labelColor=1a1a1a" alt="API Docs"/>
-  </a>
-</p>
-
-<br/>
-
 ---
 
-### 🎯 **Next-Generation Customer Support Platform**
+## What it does
 
-**Quickfix AI** is a production-ready, enterprise-grade intelligent complaint resolution system powered by **30+ specialized AI agents**, featuring multi-tier LLM fallback (Groq → Gemini → Local), RAG-enhanced knowledge retrieval, real-time analytics, and comprehensive admin controls. Built with cutting-edge technologies: FastAPI, React 19, Google Gemini 2.0, Groq LLaMA 3.3, and MariaDB/MySQL.
+Customers register (verified email + Indian mobile number), file complaints and track them. Each complaint is triaged by an LLM: category, priority, sentiment, an acknowledgement and a draft resolution grounded in a small policy knowledge base. It is then routed to a support agent. Low-risk complaints with a high-confidence draft can be resolved automatically. Anything sensitive waits for a human to approve it.
 
-</div>
+| Area | Implemented |
+|---|---|
+| Accounts | Signup with mandatory email OTP, password login, passwordless OTP login, Google sign-in (token verified server-side, then email OTP), password reset by OTP, logout / logout-all, refresh-token rotation |
+| Roles | `customer`, `agent`, `admin`. Enforced on every API route; role changes take effect immediately |
+| Complaints | Ticket IDs, AI triage, department routing to the least-loaded agent, statuses (`open → in_progress → awaiting_approval → resolved → closed`), history timeline, internal notes, public replies, attachments (PNG/JPEG/PDF/TXT), ratings, "not resolved" reopening, in-app notifications, CSV export |
+| AI | One structured LLM call (Groq, then Gemini) under a timeout, strict schema validation with one repair retry, deterministic offline fallback, prompt-injection screening, human-approval gate, multi-model validation of drafts, per-call execution log |
+| Dashboards | Customer (overview, submit, my complaints, profile, feedback, notifications), agent (queue, ticket detail, AI validation, send resolution, resolution log), admin (complaints, users and roles, categories, AI monitoring, audit log, login history, system status) |
 
----
+### What it does **not** do (yet)
 
-## 📑 **Table of Contents**
+Multi-tenant workspaces, Gmail/Outlook mailbox integration, an embeddable widget, SLA timers, subscriptions and payments are **not implemented**. See [Roadmap](#roadmap).
 
-<table>
-<tr>
-<td width="50%">
-
-- [🌟 Overview](#-overview)
-- [✨ Key Features](#-key-features)
-- [🏗️ Architecture](#️-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [🔧 Installation](#-installation)
-- [🌐 Deployment](#-deployment)
-
-</td>
-<td width="50%">
-
-- [🤖 AI Agent System](#-ai-agent-system)
-- [📡 API Documentation](#-api-documentation)
-- [🔐 Security](#-security)
-- [📊 Performance](#-performance)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-
-</td>
-</tr>
-</table>
-
----
-
-## 🌟 **Overview**
-
-<div align="center">
-
-```ascii
-╔══════════════════════════════════════════════════════════════════╗
-║                    QUICKFIX AI PLATFORM                          ║
-║                                                                  ║
-║  🎯 30+ AI Agents         │  ⚡ Multi-Tier LLM Fallback         ║
-║  🧠 RAG Knowledge Base    │  🔒 OAuth 2.0 + OTP Security        ║
-║  📊 Real-time Dashboard   │  🌐 Multi-Language Support          ║
-║  🔄 Groq → Gemini → Local │  📧 Automated Email Notifications   ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-</div>
-
-### 🎬 **What It Does**
-
-<table>
-<tr>
-<td width="33%" align="center">
-<img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="64"/>
-<h4>🧠 Multi-Agent Intelligence</h4>
-<p>30+ specialized AI agents working in parallel: Orchestrator, Classifier, Sentiment Analyzer, Priority Detector, RAG Engine, Churn Predictor, Urgency Analyzer, and more</p>
-</td>
-<td width="33%" align="center">
-<img src="https://img.icons8.com/fluency/96/speed.png" width="64"/>
-<h4>⚡ Intelligent Fallback</h4>
-<p>3-tier LLM system: Groq (ultra-fast) → Gemini 2.0 (multi-key rotation) → Local models for 99.9% uptime</p>
-</td>
-<td width="33%" align="center">
-<img src="https://img.icons8.com/fluency/96/mission.png" width="64"/>
-<h4>� Language Adaptive</h4>
-<p>Automatic language detection supporting English, Hindi, Hinglish with context-aware responses</p>
-</td>
-</tr>
-</table>
-
-### 🎯 **Core Capabilities**
+## Architecture
 
 ```mermaid
-mindmap
-  root((Quickfix AI))
-    Analysis
-      Category Classification
-      Sentiment Analysis
-      Priority Scoring
-      Pattern Matching
-    Resolution
-      Empathetic Responses
-      Solution Suggestions
-      Action Recommendations
-      Satisfaction Prediction
-    Management
-      Admin Dashboard
-      Real-time Analytics
-      Bulk Operations
-      Status Tracking
-    Security
-      OAuth 2.0
-      JWT Tokens
-      OTP Verification
-      Role-based Access
+flowchart LR
+  subgraph Browser
+    W[React SPA<br/>Vite]
+  end
+  subgraph API[FastAPI service]
+    R[Routes] --> D[Auth deps<br/>JWT + RBAC]
+    R --> S[Services<br/>auth · otp · complaints · activity]
+    S --> AI[AI pipeline<br/>guardrails → LLM → schema → fallback]
+    S --> E[Email transport<br/>SMTP / Brevo API]
+    AR[Auto-resolver<br/>background task] --> AI
+  end
+  W -- HTTPS + Bearer token --> R
+  S --> T[(Turso / libSQL)]
+  AR --> T
+  AI --> G[Groq] & GM[Gemini]
+  E --> M[SMTP server]
 ```
 
----
-
-## ✨ **Key Features**
-
-### 🤖 **The Multi-Tier AI Architecture**
-
-Quickfix implements a sophisticated **3-tier LLM fallback system** with intelligent agent orchestration for maximum reliability and performance.
-
-| Tier | Provider | Models | Purpose | Fallback Trigger |
-|---|---|---|---|---|
-| **Tier 1: Ultra-Fast** | Groq | LLaMA 3.3 70B, Mixtral 8x7B, Gemma 2 9B | Primary inference with sub-second latency | API failure or timeout |
-| **Tier 2: Reliable** | Google Gemini | 2.0 Flash, Exp-1206, Flash-Lite, Pro-Latest | Multi-key rotation for high availability | All Groq models exhausted |
-| **Tier 3: Local** | Offline Models | TextBlob, TF-IDF, Heuristics | Zero-latency fallback for critical operations | All cloud APIs unavailable |
-
-#### **AI Agent Ecosystem**
-1. **Orchestrator Agent:** Master coordinator managing parallel agent execution with async/await for optimal performance
-2. **Classification Agents:** TF-IDF semantic analysis + Gemini for category detection (Billing, Technical, Delivery, Service, Security)
-3. **Sentiment Analysis:** TextBlob polarity scoring + NLP emotion detection (Positive, Neutral, Negative, Angry)
-4. **Priority Detection:** Context-aware urgency scoring with keyword analysis
-5. **RAG Engine:** Policy-based knowledge retrieval from `policies.json` to ground AI responses in company guidelines
-6. **Churn Predictor:** ML-based customer retention risk assessment
-7. **Urgency Analyzer:** NLP-powered emotional distress quantification
-8. **Anomaly Detector:** Isolation Forest for spam/bot detection
-9. **Language Detector:** Automatic detection of English, Hindi, Hinglish with adaptive response generation
-10. **Response Validator:** Quality assurance and re-evaluation layer
-
----
-
-### 🎨 **The 30+ Agent Intelligence Grid**
-
-<div align="center">
-
-```mermaid
-graph TB
-    subgraph "🎯 Control Layer"
-        A[Orchestrator<br/>Async Coordinator]
-        Z[Anomaly Detector<br/>Isolation Forest]
-        L1[Language Detector<br/>Multi-lingual NLP]
-    end
-    
-    subgraph "🔍 Analysis Layer"
-        B[Classifier<br/>TF-IDF + Gemini]
-        C[Sentiment Analyzer<br/>TextBlob + NLP]
-        D[Priority Agent<br/>Urgency Scoring]
-        E[RAG Engine<br/>Policy Retrieval]
-        U[Urgency Analyzer<br/>Emotional Distress]
-        CH[Churn Predictor<br/>ML Risk Model]
-    end
-    
-    subgraph "💡 Resolution Layer"
-        F[Responder<br/>Context-Aware Generation]
-        G[Solution Suggester<br/>Action Crafting]
-        H[Action Recommender<br/>Workflow Planning]
-        S[Semantic Search<br/>Similar Complaints]
-    end
-  
-    subgraph "🛡️ Quality & Validation"
-        I[Response Validator<br/>Quality Assurance]
-        J[Re-evaluator<br/>Critic Agent]
-        K[Satisfaction Predictor<br/>Success Forecasting]
-    end
-    
-    subgraph "⚡ Infrastructure Layer"
-        M[Groq Client<br/>30+ Models]
-        N[Gemini Client<br/>Multi-Key Rotation]
-        O[Local LLM<br/>Offline Fallback]
-        P[Cache Layer<br/>In-Memory]
-        Q[Chat Agent<br/>24/7 Support]
-    end
-   
-    Z --> A
-    L1 --> A
-    A --> B & C & D
-    B & C & D --> E
-    E --> U & CH
-    U & CH --> F
-    F --> G & H & S
-    G & H --> I
-    I --> J
-    J --> K
-    K --> P
-    
-    A -.-> M & N & O
-    Q -.-> A
-    
-    style A fill:#6366f1,stroke:#4f46e5,stroke-width:3px,color:#fff
-    style I fill:#10b981,stroke:#059669,stroke-width:3px,color:#fff
-    style M fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff
+```
+backend/app/
+  core/        config (fail-fast), security (Argon2, JWT, HMAC), errors, logging, rate limit, middleware
+  db/          Turso dialect (official libsql SDK), engine/session, models, versioned migrations
+  api/         deps (auth/RBAC), complaint routes, public chatbot
+  routes/      auth, agent workspace, admin, notifications, feedback
+  services/    auth, OTP, complaints, notifications/audit, email, auto-resolver, multi-model validator
+  agents/      llm client, guardrails, orchestrator, offline analyser, churn/urgency heuristics, chat
+backend/scripts/  turso_snapshot.py (backup / migration rehearsal), evaluate_classifier.py
 ```
 
-</div>
+## Registration and OTP flow
 
-### 🎨 **Advanced Features Matrix**
+1. `POST /auth/register` validates name, email (trimmed, lower-cased), mobile (`^[6-9]\d{9}$`, digits only) and password (8+ characters, a letter and a digit). It checks uniqueness against existing accounts.
+2. The signup is stored in `pending_registrations`. **No account exists yet.** A 6-digit code (from `secrets`) is emailed; only its HMAC-SHA256 is stored.
+3. `POST /auth/verify-registration` checks the code. Only then is the `customer` account created and signed in.
 
-<table>
-<tr>
-<th width="25%">🔐 Authentication</th>
-<th width="25%">👔 Admin Suite</th>
-<th width="25%">🤖 AI Features</th>
-<th width="25%">📧 Notifications</th>
-</tr>
-<tr>
-<td>
+Rules: the code expires after 5 minutes and is single-use. A new code invalidates the previous one. Resends have a 60-second cooldown and are capped at 5 per email per hour. Each code allows 5 wrong attempts, and each email 10 failures per 15 minutes. If the email can't be delivered, the code is discarded and the API returns 503: nothing is activated, and codes never appear in responses or logs.
 
-- ✅ Google OAuth 2.0
-- ✅ Email OTP (6-digit)
-- ✅ JWT Tokens (7-day)
-- ✅ Password Reset Flow
-- ✅ Session Management
-- ✅ Role-Based Access
+Accounts created before this version have `email_verified = false`. They confirm their address with an OTP on their next login (`EMAIL_NOT_VERIFIED` → `/auth/resend-otp` with `purpose=verify_email` → `/auth/verify-email`). Unverified accounts cannot call protected APIs.
 
-</td>
-<td>
+## AI pipeline (as implemented)
 
-- 📊 Real-time Analytics
-- 🗑️ Bulk Operations
-- 🔍 Global Search
-- 📈 NPS Tracking
-- 👥 User Management
-- 📋 Complaint Dashboard
+| Step | How |
+|---|---|
+| Input screening | Control characters stripped, `<complaint>` delimiters neutralised, injection phrasing detected on the raw text |
+| Retrieval | TF-IDF over `app/knowledge_base/policies.json` (8 policy documents) |
+| Analysis | One LLM call: Groq first, Gemini second, `AI_TIMEOUT_SECONDS` budget, JSON mode |
+| Validation | Pydantic schema (enums + length limits), leak checks for secrets / prompt text; one repair retry; otherwise offline analysis. Invalid output is never stored |
+| Heuristics | Churn risk (small logistic regression), urgency (keywords + TextBlob polarity), recommended action from priority |
+| Review gate | Human approval required for security, high-priority, angry, suspected-injection or offline-analysed complaints |
+| Auto-resolution | After `AUTO_RESOLVE_DELAY_SECONDS`, the multi-model validator scores the draft. It is emailed only if not flagged **and** confidence ≥ `AUTO_RESOLVE_MIN_CONFIDENCE`; otherwise it waits for an agent |
 
-</td>
-<td>
+**Measured accuracy** (`python scripts/evaluate_classifier.py [--llm]`, 29 labelled examples in `Training_data/`, run on 2026-11-13):
 
-- � Multi-Language (EN/HI/Hinglish)
-- 🧠 RAG Knowledge Base
-- 📊 Churn Risk Prediction
-- ⚡ Urgency Analysis
-- 🔄 3-Tier LLM Fallback
-- 💬 24/7 AI Chatbot
+| Analyser | Category | Priority |
+|---|---|---|
+| LLM pipeline (configured providers) | 29/29 (100%) | 23/29 (79%) |
+| Offline fallback (keywords + TF-IDF) | 20/29 (69%) | 11/29 (38%) |
 
-</td>
-<td>
+These examples are few and were written by the project authors, so the numbers are a sanity check, not a benchmark. The weak fallback is why its results always go to a human.
 
-- 📧 Complaint Confirmation
-- 🚨 Resolution Alerts
-- 🔑 OTP Emails
-- 🔄 Status Updates
-- 📊 HTML Templates
-- 👨‍💼 Admin Notifications
+## Setup
 
-</td>
-</tr>
-</table>
-
----
-
-## 🏗️ **Architecture**
-
-### 🎯 **System Architecture**
-
-```mermaid
-graph LR
-    subgraph "Frontend Layer"
-        A[React 19.2<br/>Vite + Framer Motion]
-    end
-    
-    subgraph "API Layer"
-        B[FastAPI 0.110<br/>Python 3.10+]
-    end
-    
-    subgraph "AI Layer"
-        C1[Groq<br/>30+ Models]
-        C2[Gemini 2.0<br/>Multi-Key Rotation]
-        C3[Local Models<br/>Offline Fallback]
-    end
-    
-    subgraph "Agent Orchestration"
-        D[30+ AI Agents<br/>Async Pipeline]
-    end
-    
-    subgraph "Data Layer"
-        E[(MariaDB/MySQL<br/>SQLAlchemy ORM)]
-        F[RAG Engine<br/>Policy KB]
-    end
-    
-    subgraph "Services"
-        G[Brevo Email<br/>SMTP Service]
-        H[In-Memory Cache<br/>Performance]
-    end
-    
-    A -->|HTTPS/REST| B
-    B -->|Orchestration| D
-    D -->|Tier 1| C1
-    D -->|Tier 2| C2
-    D -->|Tier 3| C3
-    B -->|ORM| E
-    D -->|Retrieval| F
-    B -->|SMTP| G
-    B -->|Caching| H
-    
-    style A fill:#61dafb,stroke:#000,stroke-width:2px,color:#000
-    style B fill:#009688,stroke:#fff,stroke-width:2px,color:#fff
-    style D fill:#6366f1,stroke:#fff,stroke-width:3px,color:#fff
-    style C1 fill:#ef4444,stroke:#fff,stroke-width:2px,color:#fff
-    style E fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
-```
-
-### 📁 **Project Structure**
-
-```
-customer-complaint-agent_new/
-│
-├── 📂 frontend/                    # React 19.2 + Vite
-│   ├── 📂 src/
-│   │   ├── 📂 components/          # 19 React Components
-│   │   │   ├── Landing.jsx         # Hero landing page with voice intro
-│   │   │   ├── Login.jsx           # OAuth + OTP login
-│   │   │   ├── Signup.jsx          # User registration
-│   │   │   ├── Dashboard.jsx       # User dashboard
-│   │   │   ├── Profile.jsx         # User profile & complaints
-│   │   │   ├── AdminDashboard.jsx  # Admin control panel
-│   │   │   ├── ComplaintForm.jsx   # AI-powered form
-│   │   │   ├── SideChatBot.jsx     # 24/7 AI assistant
-│   │   │   ├── Feedback.jsx        # User feedback system
-│   │   │   ├── ThemeToggle.jsx     # Dark/Light mode
-│   │   │   └── ...
-│   │   ├── 📂 styles/              # 15+ Modular CSS files
-│   │   ├── api.js                  # Axios API client
-│   │   ├── App.jsx                 # Main application
-│   │   └── main.jsx                # Entry point
-│   ├── package.json                # Dependencies
-│   └── vite.config.js              # Vite configuration
-│
-├── 📂 backend/                     # FastAPI + Python
-│   ├── 📂 app/
-│   │   ├── 📂 agents/              # 30+ AI Agents
-│   │   │   ├── orchestrator.py    # Master async coordinator
-│   │   │   ├── gemini_client.py   # Gemini multi-key rotation
-│   │   │   ├── groq_client.py     # Groq 30+ models
-│   │   │   ├── classifier.py      # TF-IDF + AI classification
-│   │   │   ├── sentiment_analyzer.py  # TextBlob + NLP
-│   │   │   ├── priority.py        # Urgency scoring
-│   │   │   ├── responder.py       # Context-aware responses
-│   │   │   ├── solution_suggester.py  # Action planning
-│   │   │   ├── chat_agent.py      # 24/7 conversational AI
-│   │   │   ├── language_detector.py   # Multi-language support
-│   │   │   ├── churn_predictor.py     # ML churn risk
-│   │   │   ├── urgency_model.py       # Emotional analysis
-│   │   │   ├── anomaly_detector.py    # Isolation Forest
-│   │   │   ├── kb_retrieval.py        # RAG engine
-│   │   │   ├── cache_layer.py         # In-memory caching
-│   │   │   ├── semantic_search.py     # Similar complaints
-│   │   │   ├── response_validation.py # Quality assurance
-│   │   │   └── ...
-│   │   ├── 📂 routes/              # API Endpoints
-│   │   │   ├── auth.py            # Authentication routes
-│   │   │   └── feedback.py        # Feedback routes
-│   │   ├── 📂 api/                 # Core API
-│   │   │   ├── routes.py          # Complaint endpoints
-│   │   │   └── chat.py            # Chat endpoints
-│   │   ├── 📂 db/                  # Database layer
-│   │   │   ├── database.py        # SQLAlchemy setup
-│   │   │   └── models.py          # User & Complaint models
-│   │   ├── 📂 services/            # Business logic
-│   │   │   ├── email_service.py   # Brevo email integration
-│   │   │   └── rag_engine.py      # RAG implementation
-│   │   ├── 📂 knowledge_base/      # Policy documents
-│   │   │   └── policies.json      # Company policies
-│   │   ├── 📂 schemas/             # Pydantic schemas
-│   │   └── main.py                 # FastAPI app
-│   ├── requirements.txt            # Python dependencies
-│   ├── init_db.py                  # Database initialization
-│   └── start_backend.py            # Backend launcher
-│
-├── docker-compose.yml              # Container orchestration
-├── LICENSE                         # MIT License
-└── README.md                       # This file
-```
-
----
-
-## 🚀 **Quick Start**
-
-### ⚡ **5-Minute Setup**
+### 1. Turso
 
 ```bash
-# 1️⃣ Clone the repository
-git clone https://github.com/RiteshKumar2e/customer-complaint-agent_new.git
-cd customer-complaint-agent_new
+turso db create quickfix-prod            # and quickfix-staging for testing
+turso db show quickfix-prod --url        # -> TURSO_DATABASE_URL
+turso db tokens create quickfix-prod     # -> TURSO_AUTH_TOKEN
+```
 
-# 2️⃣ Backend Setup
+Turso is the only supported database. There is no PostgreSQL, MySQL or SQLite fallback. For offline development or tests you can opt in explicitly to a local libSQL file with `TURSO_DATABASE_URL=file:local-dev.db`. It uses the same driver and is refused in production.
+
+### 2. Email (SMTP)
+
+Set `SMTP_HOST`, `SMTP_PORT` (587 STARTTLS / 465 TLS), `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` and `SMTP_FROM_NAME`. Some hosts block outbound SMTP ports; there, use `EMAIL_TRANSPORT=brevo` with `BREVO_API_KEY`. For local development, `docker compose --profile mail up` starts Mailpit (UI on :8025; use `SMTP_HOST=mailpit SMTP_PORT=1025 SMTP_STARTTLS=false`).
+
+### 3. Environment
+
+Copy `backend/.env.example` → `backend/.env` and `frontend/.env.example` → `frontend/.env`. Every variable is documented there. In production the API **refuses to start** if any of these is missing: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET_KEY` (32+ chars), SMTP settings or `FRONTEND_URL`.
+
+### 4. Run locally
+
+```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate  # Windows | source venv/bin/activate (Mac/Linux)
-pip install -r requirements.txt
+python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+python -m app.db.migrate                           # also runs automatically on startup
+uvicorn app.main:app --reload                      # http://localhost:8000/docs
 
-# 3️⃣ Configure Environment
-cat > .env << EOL
-GEMINI_API_KEY=your_gemini_api_key
-DATABASE_URL=mysql://root@127.0.0.1:3306/quickfix_db
-BREVO_API_KEY=your_brevo_api_key
-SENDER_EMAIL=your-email@domain.com
-ADMIN_EMAIL=admin@domain.com
-SECRET_KEY=your-super-secret-jwt-key-min-32-chars
-EOL
-
-# 4️⃣ Initialize Database
-python init_db.py
-
-# 5️⃣ Start Backend
-python start_backend.py
-
-# 6️⃣ Frontend Setup (new terminal)
 cd ../frontend
-npm install
-npm run dev
+npm ci && npm run dev                              # http://localhost:5173
 ```
 
-<div align="center">
+### 5. Create the first admin
 
-🎉 **Done!** Open [http://localhost:5174](http://localhost:5174)
-
-<img src="https://img.shields.io/badge/Backend-http://localhost:8000-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Backend"/>
-<img src="https://img.shields.io/badge/Frontend-http://localhost:5174-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="Frontend"/>
-<img src="https://img.shields.io/badge/API_Docs-http://localhost:8000/docs-4285F4?style=for-the-badge&logo=swagger&logoColor=white" alt="API Docs"/>
-
-</div>
-
-### 📋 **Prerequisites**
-
-<table>
-<tr>
-<td width="25%" align="center">
-<img src="https://img.icons8.com/color/96/npm.png" width="48"/>
-<br/><b>npm (Frontend)</b>
-</td>
-<td width="25%" align="center">
-<img src="https://img.icons8.com/fluency/96/python.png" width="48"/>
-<br/><b>Python 3.10+</b>
-</td>
-<td width="25%" align="center">
-<img src="https://img.icons8.com/color/96/mysql-logo.png" width="48"/>
-<br/><b>MariaDB / MySQL</b>
-</td>
-<td width="25%" align="center">
-<img src="https://img.icons8.com/color/96/google-logo.png" width="48"/>
-<br/><b>Gemini API Key</b>
-</td>
-</tr>
-</table>
-
----
-
-## 🤖 **AI Agent System**
-
-### 🔄 **Neural Processing Pipeline**
-
-<div align="center">
-
-```mermaid
-sequenceDiagram
-    participant U as 👤 User
-    participant O as 🎯 Orchestrator
-    participant A as 🔍 Analysis Layer
-    participant R as 💡 Resolution Layer
-    participant Q as ✅ Quality Layer
-    participant D as 🗄️ Database
-    participant E as 📧 Email Service
-    
-    U->>O: Submit Complaint
-    activate O
-    O->>A: Analyze (Classify, Sentiment, Priority)
-    activate A
-    A-->>O: Analysis Results
-    deactivate A
-    
-    O->>R: Generate (Response, Solution, Action)
-    activate R
-    R-->>O: Resolution Package
-    deactivate R
-    
-    O->>Q: Validate & Re-evaluate
-    activate Q
-    Q-->>O: Quality Assured Output
-    deactivate Q
-    
-    O->>D: Store Results
-    O->>E: Send Notifications
-    O-->>U: ✅ Resolution Delivered
-    deactivate O
-    
-    Note over U,E: Average Processing Time: 2-3 seconds
-    Note over U,E: With Caching: <500ms
-```
-
-</div>
-
-### 📊 **Agent Performance Metrics**
-
-<table>
-<tr>
-<th>Agent/System</th>
-<th>Function</th>
-<th>Speed</th>
-<th>Accuracy</th>
-<th>Technology</th>
-</tr>
-<tr>
-<td>🚀 Groq (Tier 1)</td>
-<td>Ultra-Fast Inference</td>
-<td><code>&lt;500ms</code></td>
-<td><code>96%</code></td>
-<td>LLaMA 3.3 70B, Mixtral 8x7B</td>
-</tr>
-<tr>
-<td>🎯 Gemini (Tier 2)</td>
-<td>Reliable Fallback</td>
-<td><code>&lt;1.2s</code></td>
-<td><code>98%</code></td>
-<td>Gemini 2.0 Flash, Exp-1206</td>
-</tr>
-<tr>
-<td>💻 Local (Tier 3)</td>
-<td>Offline Fallback</td>
-<td><code>&lt;200ms</code></td>
-<td><code>85%</code></td>
-<td>TextBlob, TF-IDF, Heuristics</td>
-</tr>
-<tr>
-<td>🔍 Classifier</td>
-<td>Category Detection</td>
-<td><code>&lt;800ms</code></td>
-<td><code>98%</code></td>
-<td>TF-IDF + Gemini Hybrid</td>
-</tr>
-<tr>
-<td>😊 Sentiment</td>
-<td>Emotion Analysis</td>
-<td><code>&lt;300ms</code></td>
-<td><code>95%</code></td>
-<td>TextBlob + NLP Engine</td>
-</tr>
-<tr>
-<td>⚡ Priority</td>
-<td>Urgency Scoring</td>
-<td><code>&lt;200ms</code></td>
-<td><code>92%</code></td>
-<td>Keyword + Context Analysis</td>
-</tr>
-<tr>
-<td>🧠 RAG Engine</td>
-<td>Policy Retrieval</td>
-<td><code>&lt;100ms</code></td>
-<td><code>100%</code></td>
-<td>Semantic Search + JSON KB</td>
-</tr>
-<tr>
-<td>💬 Chat Agent</td>
-<td>Conversational AI</td>
-<td><code>&lt;1.5s</code></td>
-<td><code>94%</code></td>
-<td>Multi-tier LLM + FAQ Cache</td>
-</tr>
-<tr>
-<td>⚡ Cache Layer</td>
-<td>Speed Optimization</td>
-<td><code>&lt;50ms</code></td>
-<td><code>100%</code></td>
-<td>In-Memory Dictionary</td>
-</tr>
-</table>
-
-**Overall System Performance:**
-- **Average Response Time:** 2-3 seconds (full analysis)
-- **With Caching:** <500ms (repeated queries)
-- **Uptime:** 99.9% (multi-tier fallback)
-- **Concurrent Users:** 100+ (async architecture)
-
----
-
-## 📡 **API Documentation**
-
-### 🔐 **Authentication Endpoints**
-
-<details>
-<summary><b>POST</b> <code>/auth/register</code> - Register New User</summary>
-
-```json
-// Request
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!",
-  "full_name": "John Doe"
-}
-
-// Response (201 Created)
-{
-  "id": 1,
-  "email": "user@example.com",
-  "full_name": "John Doe",
-  "is_active": true,
-  "created_at": "2025-12-27T00:00:00"
-}
-```
-</details>
-
-<details>
-<summary><b>POST</b> <code>/auth/google</code> - Google OAuth Login</summary>
-
-```json
-// Request
-{
-  "token": "user@gmail.com",
-  "name": "John Doe"
-}
-
-// Response (200 OK)
-{
-  "message": "OTP sent to your Google email",
-  "email": "user@gmail.com",
-  "requires_otp": true
-}
-```
-</details>
-
-<details>
-<summary><b>POST</b> <code>/auth/google-verify-otp</code> - Verify OTP</summary>
-
-```json
-// Request
-{
-  "email": "user@gmail.com",
-  "otp": "123456"
-}
-
-// Response (200 OK)
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "bearer",
-  "user": { ... }
-}
-```
-</details>
-
-### 🎯 **Complaint Endpoints**
-
-<details>
-<summary><b>POST</b> <code>/complaint</code> - Submit Complaint (AI Analysis)</summary>
-
-```json
-// Request
-{
-  "subject": "Refund Delay",
-  "description": "My refund has been delayed for over 2 weeks",
-  "user_id": 1
-}
-
-// Response (200 OK)
-{
-  "id": 1,
-  "ticket_id": "QF-2025-001",
-  "category": "Billing",
-  "priority": "High",
-  "sentiment": "Negative",
-  "satisfaction_score": 0.35,
-  "response": "We sincerely apologize for the delay...",
-  "action": "Escalate to finance team within 24 hours",
-  "solution": "Initiate immediate refund processing",
-  "similar_complaints": [...],
-  "processing_time_ms": 2347
-}
-```
-</details>
-
-<details>
-<summary><b>GET</b> <code>/complaints/user/{user_id}</code> - Get User Complaints</summary>
-
-```json
-// Response (200 OK)
-[
-  {
-    "id": 1,
-    "ticket_id": "QF-2025-001",
-    "subject": "Refund Delay",
-    "category": "Billing",
-    "priority": "High",
-    "status": "resolved",
-    "created_at": "2025-12-25T10:00:00",
-    "updated_at": "2025-12-26T14:30:00"
-  }
-]
-```
-</details>
-
-### 💬 **Chat Endpoint**
-
-<details>
-<summary><b>POST</b> <code>/agent/chat</code> - AI Chat Assistant</summary>
-
-```json
-// Request
-{
-  "message": "What does this system do?"
-}
-
-// Response (200 OK)
-{
-  "response": "Quickfix is an AI-powered customer complaint management system with 14 specialized agents that analyze, categorize, and resolve complaints with 98% accuracy in under 3 seconds.",
-  "confidence": 0.98
-}
-```
-</details>
-
-<div align="center">
-
-### 📚 **Interactive API Documentation**
-
-<a href="http://localhost:8000/docs">
-  <img src="https://img.shields.io/badge/Swagger_UI-Interactive_Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger"/>
-</a>
-<a href="http://localhost:8000/redoc">
-  <img src="https://img.shields.io/badge/ReDoc-Alternative_Docs-8B5CF6?style=for-the-badge&logo=readthedocs&logoColor=white" alt="ReDoc"/>
-</a>
-
-</div>
-
----
-
-## 🌐 **Deployment**
-
-### 🚀 **Production Deployment Guide**
-
-<table>
-<tr>
-<th width="50%">Frontend (Vercel)</th>
-<th width="50%">Backend (Render)</th>
-</tr>
-<tr>
-<td>
+Public signup only creates customers, and no role can be self-assigned. After the person has signed up and verified their email:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-cd frontend
-vercel --prod
+python -m app.cli promote --email you@example.com --role admin
+python -m app.cli promote --email agent@example.com --role agent --department Billing
+python -m app.cli list-staff
 ```
 
-**Environment Variables:**
-```env
-VITE_API_URL=https://your-backend.onrender.com
-VITE_GOOGLE_CLIENT_ID=your_client_id
-```
+Admins can then manage roles from **Admin console → Users & roles**.
 
-</td>
-<td>
+### Docker
 
 ```bash
-# Build Command
-pip install -r requirements.txt
-
-# Start Command
-python start_backend.py
+docker compose up --build        # API :8000, web :5173 (Turso is external)
 ```
 
-**Environment Variables:**
-```env
-GEMINI_API_KEY=your_key
-DATABASE_URL=postgresql://...
-BREVO_API_KEY=your_key
-SECRET_KEY=your_secret
-```
+Both images include health checks. The API image runs as a non-root user, and `.env` files are excluded from images by `.dockerignore`.
 
-</td>
-</tr>
-</table>
+## API
 
-### 💰 **Cost Estimation**
+Interactive docs live at `/docs` in non-production environments. Summary:
 
-<table>
-<tr>
-<th>Tier</th>
-<th>Vercel</th>
-<th>Render</th>
-<th>PostgreSQL</th>
-<th>Total</th>
-</tr>
-<tr>
-<td><b>Free (Testing)</b></td>
-<td>$0</td>
-<td>$0</td>
-<td>$0</td>
-<td><b>$0/month</b></td>
-</tr>
-<tr>
-<td><b>Production</b></td>
-<td>$20</td>
-<td>$7</td>
-<td>$7</td>
-<td><b>$34/month</b></td>
-</tr>
-</table>
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `/auth/verify-registration`, `/auth/resend-otp`, `/auth/verify-email`, `/auth/login`, `/auth/request-otp`, `/auth/verify-otp`, `/auth/google`, `/auth/google-verify-otp`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`; `GET/PATCH /auth/me` |
+| Complaints | `POST /complaint`; `GET /complaints` (scoped, filters, pagination); `GET /complaints/{ticket}`, `/history`, `/attachments`; `POST /complaints/{ticket}/attachments`; `PATCH /complaint/{ticket}/status`; `PATCH /complaints/{ticket}/assign`; review, resolution-feedback and delete |
+| Agent | `GET /agent/complaints/queue`, `/agent/complaints/{ticket}`; `POST /agent/complaints/{ticket}/claim`, `/notes`; `POST /agent/validate-solution`, `/agent/send-resolution`; `GET /agent/resolutions`, `/agent/audit-logs` |
+| Admin | `GET /admin/overview`, `/users`, `/agents`, `/categories`, `/ai/logs`, `/ai/summary`, `/audit-logs`, `/login-history`, `/login-stats`, `/reports/complaints.csv`, `/system`; `PATCH /admin/users/{id}` |
+| Other | `GET /notifications`, `POST /notifications/{id}/read`, `/read-all`; `POST /feedback`; `POST /agent/chat`; `GET|HEAD /health`, `/health/ready` |
 
----
+Errors always have the shape `{"detail": "...", "code": "MACHINE_CODE", "request_id": "..."}`. Stack traces, SQL and request bodies are never returned.
 
-## 🔐 **Security**
-
-### 🛡️ **Multi-Layer Security Architecture**
-
-```mermaid
-graph TD
-    A[User Request] --> B{HTTPS/TLS}
-    B --> C{CORS Validation}
-    C --> D{JWT Verification}
-    D --> E{Role-Based Access}
-    E --> F{Input Sanitization}
-    F --> G{SQL Injection Protection}
-    G --> H{XSS Prevention}
-    H --> I[Secure Response]
-    
-    style A fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
-    style I fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
-    style D fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#fff
-```
-
-### ✅ **Security Features**
-
-- 🔒 **OAuth 2.0** - Google authentication
-- 🔑 **JWT Tokens** - Secure session management (7-day expiry)
-- 📧 **OTP Verification** - 6-digit codes (10-min expiry)
-- 🔐 **bcrypt Hashing** - Password encryption
-- 🌐 **HTTPS Only** - TLS 1.3 in production
-- 🛡️ **CORS Protection** - Whitelist-based
-- 🚫 **XSS Prevention** - Content sanitization
-- 💉 **SQL Injection Protection** - Parameterized queries
-- 🎭 **CSRF Protection** - Token-based validation
-
----
-
-## 📊 **Performance**
-
-### ⚡ **Benchmark Results**
-
-<div align="center">
-
-| Metric | Without Cache | With Cache | Target |
-|--------|--------------|------------|--------|
-| **Classification** | 850ms | 120ms | <1s |
-| **Full Analysis** | 2.3s | 480ms | <3s |
-| **Database Query** | 45ms | 15ms | <100ms |
-| **API Response** | 2.5s | 520ms | <3s |
-| **Accuracy** | 98% | 98% | >95% |
-
-</div>
-
-### 📈 **Scalability**
-
-```mermaid
-graph LR
-    A[Load Balancer] --> B[FastAPI Instance 1]
-    A --> C[FastAPI Instance 2]
-    A --> D[FastAPI Instance N]
-    
-    B & C & D --> E[(PostgreSQL Primary)]
-    E --> F[(Read Replica 1)]
-    E --> G[(Read Replica 2)]
-    
-    B & C & D --> H[Redis Cache Cluster]
-    
-    style A fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
-    style E fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
-    style H fill:#dc2626,stroke:#fff,stroke-width:2px,color:#fff
-```
-
----
-
-## 🤝 **Contributing**
-
-We welcome contributions! Here's how to get started:
-
-### 🔄 **Contribution Workflow**
+## Testing
 
 ```bash
-# 1️⃣ Fork & Clone
-git clone https://github.com/YOUR_USERNAME/customer-complaint-agent_new.git
-cd customer-complaint-agent_new
-
-# 2️⃣ Create Feature Branch
-git checkout -b feature/amazing-feature
-
-# 3️⃣ Make Changes & Test
-# ... your code changes ...
-
-# 4️⃣ Commit with Conventional Commits
-git commit -m "✨ feat: add amazing feature"
-
-# 5️⃣ Push & Create PR
-git push origin feature/amazing-feature
+cd backend && python -m pytest                       # 170 tests (+3 live Turso tests, skipped by default)
+TURSO_TEST_DATABASE_URL=libsql://staging... TURSO_TEST_AUTH_TOKEN=... python -m pytest tests/test_turso_live.py
+cd frontend && npm test && npm run lint && npm run build   # 86 tests
 ```
 
-### 📝 **Commit Convention**
+Backend tests run against a real libSQL database file through the same dialect and migrations as production. They cover registration validation, every OTP rule, login lockout, refresh rotation and reuse detection, IDOR and role-escalation attempts, the complaint workflow, attachments, AI schema validation, provider failure and fallback, prompt injection, transactions and database-failure handling. The live tests only create, use and drop a uniquely named scratch table.
 
-| Emoji | Type | Description |
-|-------|------|-------------|
-| ✨ | `feat:` | New feature |
-| 🐛 | `fix:` | Bug fix |
-| 📝 | `docs:` | Documentation |
-| 💄 | `style:` | Formatting |
-| ♻️ | `refactor:` | Code refactoring |
-| ⚡ | `perf:` | Performance |
-| ✅ | `test:` | Tests |
+## Security notes
 
----
+- Passwords are hashed with Argon2id. Legacy bcrypt hashes still verify and are upgraded on login.
+- Access JWTs (15 min) carry `jti` and a token version. Refresh tokens are opaque, stored hashed, rotated on use, and revoke their whole family if reused. Logout revokes both.
+- Every route resolves the user from the token and reads the role from the database. Customers see only their complaints, agents only their assigned ones, admins everything. Out-of-scope tickets return 404.
+- Requests are rate-limited per IP; OTP and login limits are enforced from the database. Request bodies are capped (1 MB, uploads 2 MB). Uploads are checked against magic bytes.
+- User text is escaped in all emails, CSV export guards against formula injection, and CORS is restricted to `FRONTEND_URL`.
+- Admin access cannot come from signup or profile data. It is granted only through the CLI or by an existing admin.
+- The access and refresh tokens are kept in `localStorage` (the API and web app are on different sites), so XSS protection matters. Keep the CSP in `vercel.json` / `nginx.conf` strict.
 
-## 📄 **License**
+## Deployment and rollback
 
-<div align="center">
+1. Back up production: `python scripts/turso_snapshot.py --out backup-YYYYMMDD.db` (read-only on the source).
+2. Create a staging database from that copy (`turso db create quickfix-staging --from-file backup-YYYYMMDD.db`) and deploy this branch to a **separate** staging service, with its own secrets and `RUN_MIGRATIONS_ON_STARTUP=true`.
+3. Verify on staging: signup with OTP email, login of an existing account (it will ask for email verification), complaint flow, admin console, `GET /health/ready`.
+4. Deploy to production. Migration `0002` runs once on startup. It is forward-only: it renames `users.role` to `job_title` and drops the plaintext OTP columns.
+5. **Rollback:** redeploy the previous release *and* restore the database from the snapshot (`turso db create quickfix-restore --from-file backup-YYYYMMDD.db`, then point `TURSO_DATABASE_URL` at it). The old code does not work with the migrated schema.
+6. Promote the first admin with `python -m app.cli promote ...` (see above).
 
-**MIT License** © 2025 Ritesh Kumar
+Uptime monitors can probe `HEAD /health` (liveness) or `GET /health/ready` (database reachable).
 
-```
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, subject to the following conditions:
+## Roadmap
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
+Not implemented in this release. Each needs product decisions and/or external accounts:
 
-[📄 Full License](LICENSE)
+- Multi-tenant organisations (workspaces, per-tenant roles, tenant isolation on every query)
+- Email-to-ticket through Gmail / Microsoft Graph OAuth (needs Google Cloud and Azure app registrations)
+- Embeddable complaint widget with domain restrictions
+- SLA policies with persistent background jobs (the current auto-resolver schedules in memory and re-queues on startup)
+- Subscriptions and payments (Razorpay test mode first)
 
-</div>
+## License
 
----
-
-## 👨‍💻 **Author**
-
-<div align="center">
-
-<img src="https://github.com/RiteshKumar2e.png" width="150" style="border-radius: 50%; border: 4px solid #6366f1;"/>
-
-### **Ritesh Kumar**
-
-*Full-Stack Developer | AI Enthusiast | Open Source Contributor*
-
-<br/>
-
-[![GitHub](https://img.shields.io/badge/GitHub-RiteshKumar2e-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RiteshKumar2e)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Ritesh_Kumar-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ritesh-kumar-b3a654253)
-[![Email](https://img.shields.io/badge/Email-riteshkumar90359@gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:riteshkumar90359@gmail.com)
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Site-6366F1?style=for-the-badge&logo=google-chrome&logoColor=white)](https://riteshkumar2e.github.io/Portfolio/)
-
-</div>
-
----
-
-## 🌟 **Show Your Support**
-
-<div align="center">
-
-If this project helped you, please consider:
-
-<br/>
-
-<a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new">
-  <img src="https://img.shields.io/badge/⭐_Star-This_Repo-FFD700?style=for-the-badge&labelColor=1a1a1a" alt="Star"/>
-</a>
-<a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new/fork">
-  <img src="https://img.shields.io/badge/🍴_Fork-For_Your_Project-00D9FF?style=for-the-badge&labelColor=1a1a1a" alt="Fork"/>
-</a>
-<a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new/issues">
-  <img src="https://img.shields.io/badge/🐛_Report-Issues-FF6B6B?style=for-the-badge&labelColor=1a1a1a" alt="Issues"/>
-</a>
-
-<br/><br/>
-
-[![GitHub stars](https://img.shields.io/github/stars/RiteshKumar2e/customer-complaint-agent_new?style=social)](https://github.com/RiteshKumar2e/customer-complaint-agent_new)
-[![GitHub forks](https://img.shields.io/github/forks/RiteshKumar2e/customer-complaint-agent_new?style=social)](https://github.com/RiteshKumar2e/customer-complaint-agent_new/fork)
-[![GitHub watchers](https://img.shields.io/github/watchers/RiteshKumar2e/customer-complaint-agent_new?style=social)](https://github.com/RiteshKumar2e/customer-complaint-agent_new)
-
-</div>
-
----
-
-## 🙏 **Acknowledgments**
-
-<table>
-<tr>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/google-logo.png" width="64"/>
-<br/><b>Google Gemini</b>
-<br/>AI Powerhouse
-</td>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="64"/>
-<br/><b>Groq</b>
-<br/>Ultra-Fast LLM
-</td>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/python.png" width="64"/>
-<br/><b>FastAPI</b>
-<br/>Modern Framework
-</td>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/react-native.png" width="64"/>
-<br/><b>React 19</b>
-<br/>UI Library
-</td>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/vercel.png" width="64"/>
-<br/><b>Vercel</b>
-<br/>Hosting Platform
-</td>
-<td align="center" width="16.66%">
-<img src="https://img.icons8.com/color/96/mysql-logo.png" width="64"/>
-<br/><b>MariaDB</b>
-<br/>Database
-</td>
-</tr>
-</table>
-
----
-
-## 🔮 **Roadmap**
-
-### 📅 **Version 2.1.0** (Q1 2026)
-
-- [ ] 🌍 Multi-language support (10+ languages)
-- [ ] 🎤 Voice complaint submission
-- [ ] 📊 Advanced analytics dashboard
-- [ ] 📄 Export reports (PDF/Excel/CSV)
-- [ ] 🔗 Webhook integration
-- [ ] 📱 Progressive Web App (PWA)
-
-### 📅 **Version 3.0.0** (Q3 2026)
-
-- [ ] 📱 Mobile app (React Native)
-- [ ] 💬 Slack/Teams integration
-- [ ] 🧠 Custom AI model training
-- [ ] 🏗️ Microservices architecture
-- [ ] 🤝 Real-time collaboration
-- [ ] 🔐 SSO (Single Sign-On)
-
----
-
-## 📞 **Support**
-
-<div align="center">
-
-Need help? We're here for you!
-
-<br/>
-
-<table>
-<tr>
-<td align="center" width="33%">
-<img src="https://img.icons8.com/fluency/96/email-open.png" width="48"/>
-<br/><b>Email</b>
-<br/><a href="mailto:riteshkumar90359@gmail.com">riteshkumar90359@gmail.com</a>
-</td>
-<td align="center" width="33%">
-<img src="https://img.icons8.com/fluency/96/github.png" width="48"/>
-<br/><b>GitHub Issues</b>
-<br/><a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new/issues">Create Issue</a>
-</td>
-</tr>
-</table>
-
-</div>
-
----
-
-<div align="center">
-
-<!-- 3D Animated Footer -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=150&section=footer" width="100%"/>
-
-<br/>
-
-### ⚡ **Built with ❤️**
-
-**Transforming Customer Service, One Complaint at a Time**
-
-<br/>
-
-<a href="https://customer-complaint-agent-new.vercel.app">
-  <img src="https://img.shields.io/badge/🚀_Launch-Live_Platform-6366F1?style=for-the-badge&labelColor=1a1a1a" alt="Launch"/>
-</a>
-<a href="https://github.com/RiteshKumar2e/customer-complaint-agent_new">
-  <img src="https://img.shields.io/badge/💻_View-Source_Code-00D9FF?style=for-the-badge&labelColor=1a1a1a" alt="Source"/>
-</a>
-<a href="mailto:riteshkumar90359@gmail.com">
-  <img src="https://img.shields.io/badge/📧_Contact-Developer-10B981?style=for-the-badge&labelColor=1a1a1a" alt="Contact"/>
-</a>
-
-<br/><br/>
-
-**© 2025 Quickfix AI. All rights reserved.**
-
-<br/>
-
-<img src="https://komarev.com/ghpvc/?username=RiteshKumar2e&label=Profile%20Views&color=6366f1&style=for-the-badge" alt="Profile Views"/>
-
-</div>
-
----
+See [LICENSE](LICENSE).

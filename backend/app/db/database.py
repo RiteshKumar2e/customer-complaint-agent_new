@@ -1,224 +1,141 @@
-import os
-from datetime import datetime, timedelta
+"""
+Database engine and session management — Turso (libSQL) only.
+
+TURSO_DATABASE_URL must be a Turso URL (libsql://<db>.turso.io). The auth token
+comes from TURSO_AUTH_TOKEN. There is deliberately no PostgreSQL, MySQL or
+"fall back to a local SQLite file" path: if Turso is not configured the app
+refuses to start rather than writing data somewhere it will be lost.
+
+For automated tests and offline development an explicit `file:` URL is
+accepted (e.g. TURSO_DATABASE_URL=file:local-dev.db). It uses the same libSQL
+driver and the same code path, never a silent substitute; production rejects it.
+"""
+from __future__ import annotations
+
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+from typing import Iterator, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-load_dotenv()
+from app.core.config import ConfigError, get_settings
+from app.core.logging import get_logger
+from app.db import libsql_dialect  # noqa: F401  (registers sqlite+turso)
 
-def get_ist_time():
-    """Helper to get current time in IST (UTC+5:30)"""
-    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+logger = get_logger(__name__)
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
-# ✅ Read the database URL from environment.
-# TURSO_DATABASE_URL is accepted as an alias so a Turso-only deployment works
-# without duplicating the same value under two names.
-DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("TURSO_DATABASE_URL") or ""
+def get_ist_time() -> datetime:
+    """Current time in IST as a naive datetime (the existing data uses this convention)."""
+    return datetime.now(IST).replace(tzinfo=None)
 
-# A local SQLite file is fine for development, but on a host with an ephemeral
-# filesystem (Render, Docker without a volume) it is silently wiped on every
-# restart, so every complaint written to it is lost. Refuse to start that way
-# instead of pretending the writes succeeded.
-IS_HOSTED = bool(os.getenv("RENDER") or os.getenv("ENVIRONMENT") == "production")
-TURSO_AUTH_TOKEN = None
-if not DATABASE_URL:
-    if IS_HOSTED:
-        raise RuntimeError(
-            "No DATABASE_URL (or TURSO_DATABASE_URL) is set. Refusing to fall back to "
-            "local SQLite: this host's filesystem is ephemeral and all data would be "
-            "lost on the next restart. Set DATABASE_URL to your Turso libsql:// URL."
+
+now = get_ist_time
+
+
+def resolve_turso_target(url: str, token: str) -> Tuple[str, str]:
+    """
+    Split TURSO_DATABASE_URL into (database, auth_token) for libsql.connect().
+
+    Older deployments embedded the token as `?authToken=...`; that still works,
+    but TURSO_AUTH_TOKEN takes precedence and is the documented way.
+    """
+    if not url:
+        raise ConfigError(
+            "TURSO_DATABASE_URL is not set. This application stores all data in Turso; "
+            "create a database with `turso db create` and set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN."
         )
-    DATABASE_URL = "sqlite:///complaints.db"
-    print("[db] WARNING: No DATABASE_URL set. Using local SQLite file 'complaints.db' (development only).")
+    scheme = url.split(":", 1)[0].lower()
+    if scheme in ("postgres", "postgresql", "mysql", "mariadb", "sqlite"):
+        raise ConfigError(f"TURSO_DATABASE_URL uses unsupported scheme '{scheme}'. Only Turso (libsql://) is supported.")
 
-# ✅ Handle Render/Postgres URL conversion
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    if scheme == "file":
+        return url[len("file:"):], ""
 
-# ✅ Handle MariaDB/MySQL (Aiven) URL conversion
-elif DATABASE_URL.startswith("mysql://"):
-    # Fix driver
-    if "pymysql" not in DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+    if scheme not in ("libsql", "https", "http", "wss", "ws"):
+        raise ConfigError("TURSO_DATABASE_URL must look like libsql://<database>-<org>.turso.io")
 
-    # Strip 'ssl-mode=REQUIRED' if present to avoid TypeError
-    if "ssl-mode=" in DATABASE_URL:
-        import re
-        DATABASE_URL = re.sub(r'[?&]ssl-mode=[^&]+', '', DATABASE_URL)
+    parts = urlsplit(url)
+    params = dict(parse_qsl(parts.query))
+    url_token = params.pop("authToken", "") or params.pop("auth_token", "")
+    database = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), ""))
+    auth_token = token or url_token
+    if url_token and not token:
+        logger.warning("Turso auth token found in TURSO_DATABASE_URL; move it to TURSO_AUTH_TOKEN.")
+    return database, auth_token
 
-# ✅ Handle Turso (libsql) URL conversion
-elif DATABASE_URL.startswith("libsql://"):
-    _parts = urlsplit(DATABASE_URL)
-    _params = dict(parse_qsl(_parts.query))
 
-    # The underlying libsql-experimental driver ignores an authToken carried in
-    # the query string and connects with an empty JWT (Turso answers 401). Pull
-    # it out here and hand it to the driver through connect_args instead.
-    TURSO_AUTH_TOKEN = _params.pop("authToken", None)
+def describe_target(database: str) -> str:
+    if "://" in database:
+        return urlsplit(database).netloc
+    return f"local libSQL file ({database})"
 
-    # sqlalchemy-libsql reads this flag to choose its transport: secure=true is
-    # https, anything else is plain http, which a TLS-only Turso host rejects.
-    _params["secure"] = "true"
 
-    DATABASE_URL = urlunsplit(
-        ("sqlite+libsql", _parts.netloc, _parts.path, urlencode(_params), "")
+def build_engine():
+    settings = get_settings()
+    database, auth_token = resolve_turso_target(settings.turso_database_url, settings.turso_auth_token)
+    if settings.is_production and "://" not in database:
+        raise ConfigError("Production requires a remote Turso database, not a local libSQL file.")
+
+    def creator():
+        return libsql_dialect.connect(database, auth_token=auth_token, timeout=settings.db_connect_timeout)
+
+    engine = create_engine(
+        "sqlite+turso://",
+        creator=creator,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=15,
+        # Hrana streams expire server-side when idle; recycle before that and
+        # ping on checkout so a stale connection is replaced, not surfaced.
+        pool_recycle=240,
+        pool_pre_ping=True,
     )
+    logger.info("Database engine ready: Turso/libSQL @ %s", describe_target(database))
+    return engine
 
-    if not TURSO_AUTH_TOKEN:
-        print("[db] WARNING: Turso URL has no authToken — expect 401 Unauthorized.")
 
-    # sqlalchemy-libsql ships no Windows wheel, so a dev machine can't talk to
-    # Turso at all. Fall back to SQLite there rather than refusing to boot, but
-    # never on the deployed host, where that would silently lose every write.
-    try:
-        import sqlalchemy_libsql  # noqa: F401
-    except ImportError:
-        if IS_HOSTED:
-            raise RuntimeError(
-                "DATABASE_URL points at Turso but sqlalchemy-libsql is not installed. "
-                "Install it (>=0.2.0) so writes reach Turso instead of a disposable file."
-            )
-        DATABASE_URL = "sqlite:///complaints.db"
-        TURSO_AUTH_TOKEN = None
-        print(
-            "[db] WARNING: sqlalchemy-libsql is unavailable (no Windows wheel). "
-            "Falling back to local SQLite 'complaints.db'. This machine is NOT "
-            "reading or writing Turso."
-        )
+engine = build_engine()
 
-# Covers plain sqlite:// and Turso's sqlite+libsql://, which share the pysqlite
-# dialect's connect arguments and pooling behaviour.
-IS_SQLITE_FAMILY = DATABASE_URL.startswith("sqlite")
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 
-# ✅ Create engine with SSL support for Aiven if needed
-connect_args = {}
-if IS_SQLITE_FAMILY:
-    connect_args = {"check_same_thread": False}
-    if TURSO_AUTH_TOKEN:
-        # SQLAlchemy merges connect_args into the kwargs handed to the driver's
-        # connect(), which is the only place libsql-experimental reads the token.
-        connect_args["auth_token"] = TURSO_AUTH_TOKEN
-elif "aivencloud.com" in DATABASE_URL:
-    # Aiven requires SSL, but we must pass it via connect_args for pymysql
-    connect_args = {"ssl": {"ca": None}} # This triggers standard SSL check for Aiven
-
-# QueuePool sizing applies to the server-based backends; the sqlite dialects use
-# their own pool class and reject these arguments.
-pool_kwargs = {} if IS_SQLITE_FAMILY else {"pool_size": 10, "max_overflow": 20}
-
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    connect_args=connect_args,
-    **pool_kwargs
-)
-
-print(f"[db] Backend: {DATABASE_URL.split('://')[0]} @ {DATABASE_URL.split('@')[-1].split('?')[0]}")
-
-# ✅ Session
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
-
-# ✅ Base
 Base = declarative_base()
 
-# ✅ Dependency
-def get_db():
+
+def get_db() -> Iterator[Session]:
+    """FastAPI dependency: one session per request, rolled back on error."""
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
-def run_migrations():
-    """Add missing columns to existing tables if they don't exist"""
+
+@contextmanager
+def session_scope() -> Iterator[Session]:
+    """Transactional scope for background jobs and scripts."""
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def check_database() -> dict:
+    """Lightweight connectivity check used by /health/ready."""
     from sqlalchemy import text
-    
+
     with engine.connect() as conn:
-        # Migration for 'users' table
-        user_columns = [
-            ("bio", "TEXT"),
-            ("role", "VARCHAR(100) DEFAULT 'Strategic Member'"),
-            ("location", "VARCHAR(100) DEFAULT 'India'"),
-            ("is_agent", "BOOLEAN DEFAULT FALSE")
-        ]
-        for col_name, col_type in user_columns:
-            try:
-                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # Migration for 'complaints' table
-        complaint_columns = [
-            ("ai_analysis_steps", "TEXT"),
-            ("user_rating", "INTEGER"),
-            ("user_feedback", "TEXT"),
-            ("subject", "VARCHAR(255)"),
-            ("description", "TEXT"),
-            ("user_resolution_feedback", "BOOLEAN"),
-            ("user_resolution_comment", "TEXT"),
-            ("sentiment_score", "FLOAT DEFAULT 0")
-        ]
-        for col_name, col_type in complaint_columns:
-            try:
-                conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # Migration for 'login_history' table
-        history_columns = [
-            ("user_name", "VARCHAR(100)"),
-            ("logout_time", "DATETIME"),
-            ("device_type", "VARCHAR(100)"),
-            ("status", "VARCHAR(50)"),
-            ("login_location", "VARCHAR(255)"),
-            ("created_at", "DATETIME"),
-            ("phone", "VARCHAR(20)")
-        ]
-        for col_name, col_type in history_columns:
-            try:
-                conn.execute(text(f"ALTER TABLE login_history ADD COLUMN {col_name} {col_type}"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # Migration for 'agent_resolutions' table
-        agent_res_columns = [
-            ("steps", "TEXT")
-        ]
-        for col_name, col_type in agent_res_columns:
-            try:
-                conn.execute(text(f"ALTER TABLE agent_resolutions ADD COLUMN {col_name} {col_type}"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # ✅ Ensure complaint_text is nullable for legacy compatibility
-        try:
-            conn.execute(text("ALTER TABLE complaints ALTER COLUMN complaint_text DROP NOT NULL"))
-            conn.commit()
-        except Exception:
-            try:
-                # SQLite doesn't support ALTER COLUMN DROP NOT NULL, skip it there
-                conn.rollback()
-            except: pass
-        
-        # ✅ Manual fallback if Postgres/MySQL fails
-        admin_email = "riteshkumar90359@gmail.com"
-        try:
-            conn.execute(
-                text("UPDATE users SET role = 'Admin', full_name = 'Ritesh Kumar' WHERE email = :email"),
-                {"email": admin_email}
-            )
-            conn.commit()
-            print(f"👑 Admin role verified for: {admin_email}")
-        except Exception as e:
-            conn.rollback() # 🔄 Rollback here too
-            print(f"⚠️ Could not set auto-admin: {e}")
+        conn.execute(text("SELECT 1")).scalar()
+    return {"database": "ok"}

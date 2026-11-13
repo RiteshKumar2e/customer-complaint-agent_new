@@ -5,24 +5,19 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from typing import List, Optional
 
-# Import Groq client
-try:
-    from app.agents.groq_client import groq_client
-    GROQ_AVAILABLE = True
-except ImportError:
-    GROQ_AVAILABLE = False
-    print("⚠️ Groq client not available")
+from app.core.logging import get_logger
 
 load_dotenv()
+logger = get_logger("app.ai.gemini")
 
 # ✅ Multi-API-Key Support with Automatic Rotation (Gemini)
 API_KEYS_STRING = os.getenv("GEMINI_API_KEY", "")
 if not API_KEYS_STRING:
-    print("⚠️ GEMINI_API_KEY not set - will rely on Groq only")
+    logger.info("⚠️ GEMINI_API_KEY not set - will rely on Groq only")
     API_KEYS = []
 else:
     API_KEYS: List[str] = [key.strip() for key in API_KEYS_STRING.split(",") if key.strip()]
-    print(f"✅ Loaded {len(API_KEYS)} Gemini API key(s)")
+    logger.info(f"✅ Loaded {len(API_KEYS)} Gemini API key(s)")
 
 # Track current key index and failed keys
 current_key_index = 0
@@ -72,7 +67,7 @@ def _list_gemini_models() -> List[str]:
             and "gemini" in m.name
         ]
     except Exception as e:
-        print(f"⚠️ Could not list Gemini models, using defaults: {e}")
+        logger.info(f"⚠️ Could not list Gemini models, using defaults: {e}")
         return []
 
 
@@ -91,7 +86,7 @@ async def gemini_models() -> List[str]:
             + FALLBACK_MODELS
         )
         _gemini_models = list(dict.fromkeys(ordered))
-        print(f"✅ Gemini model order: {', '.join(_gemini_models[:4])}")
+        logger.info(f"✅ Gemini model order: {', '.join(_gemini_models[:4])}")
     return [m for m in _gemini_models if m not in _dead_models]
 
 def get_next_available_key() -> Optional[str]:
@@ -106,13 +101,13 @@ def get_next_available_key() -> Optional[str]:
         key = API_KEYS[current_key_index]
         
         if current_key_index not in failed_keys:
-            print(f"🔑 Using Gemini API key #{current_key_index + 1}/{len(API_KEYS)}")
+            
             return key
         
         current_key_index = (current_key_index + 1) % len(API_KEYS)
         attempts += 1
     
-    print("⚠️ All Gemini API keys exhausted. Resetting...")
+    logger.info("⚠️ All Gemini API keys exhausted. Resetting...")
     failed_keys.clear()
     return API_KEYS[0] if API_KEYS else None
 
@@ -121,7 +116,7 @@ def mark_key_as_failed():
     global current_key_index
     
     failed_keys.add(current_key_index)
-    print(f"❌ Gemini API key #{current_key_index + 1} failed")
+    logger.info(f"❌ Gemini API key #{current_key_index + 1} failed")
     current_key_index = (current_key_index + 1) % len(API_KEYS) if API_KEYS else 0
 
 def configure_current_key():
@@ -136,18 +131,18 @@ def _is_model_gone(error_msg: str) -> bool:
     return any(s in error_msg for s in ("404", "not found", "no longer available", "not supported", "deprecated"))
 
 
-async def _generate_with_any_model(prompt: str) -> Optional[str]:
-    """Try the discovered models in order; retired ones are skipped for good."""
+async def _generate_with_any_model(prompt: str):
+    """Try the discovered models in order; retired ones are skipped for good. Returns (text, model)."""
     for model_name in (await gemini_models())[:3]:
         try:
             response = await genai.GenerativeModel(model_name).generate_content_async(prompt)
             if response and response.text:
-                print(f"✅ Gemini success with model: {model_name}")
-                return response.text.strip()
+                logger.info("Gemini success with model %s", model_name)
+                return response.text.strip(), model_name
         except Exception as e:
             msg = str(e).lower()
             if _is_model_gone(msg):
-                print(f"⚠️ Gemini model {model_name} unavailable, trying next: {e}")
+                logger.warning("Gemini model %s unavailable, trying next", model_name)
                 _dead_models.add(model_name)
                 continue
             raise  # quota / auth errors are handled per key by the caller
@@ -158,78 +153,37 @@ async def _generate_with_any_model(prompt: str) -> Optional[str]:
 if API_KEYS:
     configure_current_key()
 
-async def async_ask_ai(prompt: str) -> str:
-    """
-    Multi-tier AI request with automatic fallback:
-    1. Try Groq (fastest, free tier)
-    2. Try Gemini with key rotation
-    3. Raise exception to trigger local LLM fallback
-    """
-    
-    # ========================================
-    # TIER 1: GROQ API (Primary - Ultra Fast)
-    # ========================================
-    if GROQ_AVAILABLE:
-        try:
-            print("🚀 Trying Groq API (Primary)...")
-            groq_response = await groq_client.generate(prompt)
-            if groq_response:
-                print("✅ Groq API success!")
-                return groq_response
-            print("⚠️ Groq returned empty response, trying Gemini...")
-        except Exception as e:
-            print(f"⚠️ Groq API failed: {e}, falling back to Gemini...")
-    
-    # ========================================
-    # TIER 2: GEMINI API (Fallback)
-    # ========================================
+async def gemini_generate(prompt: str):
+    """Gemini with key rotation. Returns (text, model) or raises GeminiUnavailable."""
     if not API_KEYS:
-        print("❌ No Gemini keys available - triggering local fallback")
-        raise Exception("Both Groq and Gemini unavailable - triggering fallback")
-    
-    max_key_attempts = len(API_KEYS)
-    
-    for attempt in range(max_key_attempts):
+        raise GeminiUnavailable("No Gemini API key configured")
+    for attempt in range(len(API_KEYS)):
         try:
-            print(f"🔄 Trying Gemini API (attempt {attempt + 1}/{max_key_attempts})...")
-            
             if not configure_current_key():
-                raise Exception("All Gemini keys exhausted - triggering fallback")
-            
-            text = await _generate_with_any_model(prompt)
-            if text:
-                return text
-
-            if attempt < max_key_attempts - 1:
-                continue
-            else:
-                raise Exception("No valid Gemini response - triggering fallback")
-
+                break
+            result = await _generate_with_any_model(prompt)
+            if result:
+                return result
         except Exception as e:
             error_msg = str(e).lower()
-            
-            # Check if it's a quota/rate limit error
-            if "quota" in error_msg or "rate limit" in error_msg or "resource exhausted" in error_msg or "429" in error_msg:
-                print(f"⚠️ Gemini quota exceeded on attempt {attempt + 1}/{max_key_attempts}")
+            if any(k in error_msg for k in ("quota", "rate limit", "resource exhausted", "429")):
                 mark_key_as_failed()
-                
-                if attempt < max_key_attempts - 1:
-                    print(f"🔄 Rotating to next Gemini key...")
-                    continue
-            else:
-                print(f"⚠️ Gemini error: {e}")
-            
-            # Last attempt - trigger local fallback
-            if attempt == max_key_attempts - 1:
-                print("❌ All Gemini attempts failed - triggering local LLM fallback")
-                raise Exception("Gemini API unavailable - triggering fallback system")
-    
-    raise Exception("All AI APIs exhausted - triggering fallback system")
+                continue
+            logger.warning("Gemini error: %s", type(e).__name__)
+    raise GeminiUnavailable("All Gemini attempts failed")
+
+
+class GeminiUnavailable(Exception):
+    pass
+
+
+async def async_ask_ai(prompt: str) -> str:
+    """Backward-compatible text-only call: Groq first, then Gemini (see app.agents.llm)."""
+    from app.agents.llm import complete
+
+    return (await complete(prompt)).text
+
 
 # Backward compatibility alias
 async_ask_gemini = async_ask_ai
 
-# Test
-if __name__ == "__main__":
-    import asyncio
-    print(asyncio.run(async_ask_ai("Hello, are you working?")))

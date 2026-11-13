@@ -3,7 +3,9 @@ import os
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from typing import List, Dict
+from app.core.logging import get_logger
+
+logger = get_logger("app.rag")
 
 class RAGEngine:
     """
@@ -20,7 +22,7 @@ class RAGEngine:
     def load_kb(self):
         """Load and index the knowledge base"""
         if not os.path.exists(self.kb_path):
-            print(f"⚠️ KB path {self.kb_path} not found.")
+            logger.info(f"⚠️ KB path {self.kb_path} not found.")
             return
 
         try:
@@ -35,9 +37,9 @@ class RAGEngine:
             
             if documents:
                 self.tfidf_matrix = self.vectorizer.fit_transform(documents)
-                print(f"✅ RAG Engine: Indexed {len(documents)} documents.")
+                logger.info(f"✅ RAG Engine: Indexed {len(documents)} documents.")
         except Exception as e:
-            print(f"❌ RAG Initialization Error: {e}")
+            logger.info(f"❌ RAG Initialization Error: {e}")
 
     def retrieve(self, query: str, top_k: int = 2) -> str:
         """Retrieve most relevant policy snippets"""
@@ -62,7 +64,7 @@ class RAGEngine:
                 
             return "\n\n".join(results)
         except Exception as e:
-            print(f"❌ RAG Retrieval Error: {e}")
+            logger.info(f"❌ RAG Retrieval Error: {e}")
             return "General company support guidelines apply."
 
 # Initialize the global RAG instance

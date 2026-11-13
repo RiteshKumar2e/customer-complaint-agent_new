@@ -27,7 +27,7 @@ const BLUR_IN = {
     }),
 };
 
-const RESEND_COOLDOWN = 30;
+const RESEND_COOLDOWN = 60; // matches the server's resend cooldown
 
 export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, onResend, loading }) {
     const [otp, setOtp] = useState(EMPTY_OTP);

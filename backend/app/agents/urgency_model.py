@@ -1,5 +1,4 @@
 from textblob import TextBlob
-import re
 from typing import Dict
 
 class UrgencyModel:

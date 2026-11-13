@@ -75,11 +75,11 @@ test("verify button is disabled until the code is complete", () => {
   expect(verify).toBeDisabled();
 });
 
-test("resend is locked for 30s, then requests a new code", async () => {
+test("resend is locked for 60s, then requests a new code", async () => {
   const { onResend } = setup();
-  expect(screen.getByRole("button", { name: /resend in 30s/i })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /resend in 60s/i })).toBeDisabled();
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     await act(async () => { jest.advanceTimersByTime(1000); });
   }
   const resend = screen.getByRole("button", { name: /resend otp/i });
@@ -88,13 +88,13 @@ test("resend is locked for 30s, then requests a new code", async () => {
   await act(async () => { fireEvent.click(resend); });
   expect(onResend).toHaveBeenCalledTimes(1);
   expect(screen.getByText(/new code is on its way/i)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /resend in 30s/i })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /resend in 60s/i })).toBeDisabled();
 });
 
 test("a failed resend shows an error", async () => {
   const onResend = jest.fn(() => Promise.reject({ response: { data: { detail: "Too many requests" } } }));
   setup({ onResend });
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     await act(async () => { jest.advanceTimersByTime(1000); });
   }
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: /resend otp/i })); });

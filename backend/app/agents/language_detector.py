@@ -1,5 +1,8 @@
 import re
 from typing import Literal
+from app.core.logging import get_logger
+
+logger = get_logger("app.ai.language")
 
 # Expanded to 20 languages for comprehensive multilingual support
 LanguageType = Literal[
@@ -380,9 +383,9 @@ if __name__ == "__main__":
         ("我的账单错了", "chinese"),
     ]
     
-    print("🌐 Language Detection Tests:\n")
-    print(f"{'Input':<45} {'Detected':<12} {'Expected':<12} {'Match'}")
-    print("-" * 80)
+    logger.info("🌐 Language Detection Tests:\n")
+    logger.info(f"{'Input':<45} {'Detected':<12} {'Expected':<12} {'Match'}")
+    logger.info("-" * 80)
     
     correct = 0
     for text, expected in test_cases:
@@ -390,7 +393,7 @@ if __name__ == "__main__":
         match = "✅" if detected == expected else "❌"
         if detected == expected:
             correct += 1
-        print(f"{text:<45} {detected:<12} {expected:<12} {match}")
+        logger.info(f"{text:<45} {detected:<12} {expected:<12} {match}")
     
-    print("-" * 80)
-    print(f"\nAccuracy: {correct}/{len(test_cases)} ({100*correct//len(test_cases)}%)")
+    logger.info("-" * 80)
+    logger.info(f"\nAccuracy: {correct}/{len(test_cases)} ({100*correct//len(test_cases)}%)")

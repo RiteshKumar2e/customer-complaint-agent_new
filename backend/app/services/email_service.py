@@ -1,343 +1,154 @@
-import os
-import threading
-import time
-import traceback
-import requests
-from datetime import datetime
-from dotenv import load_dotenv
-from app.db.database import get_ist_time
+"""
+Customer and staff notification emails (complaint received, resolved, agent
+resolution, feedback). Authentication emails (OTP) live in auth_emails.py.
 
-load_dotenv()
+Delivery goes through app.services.email_transport (SMTP by default). These
+notifications are not security-critical, so they are sent on a small background
+worker pool and failures are logged instead of failing the request.
+
+Every user-supplied value is HTML-escaped before it reaches a template.
+"""
+import html
+import re
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from app.core.config import get_settings
+from app.core.logging import get_logger
+from app.db.database import get_ist_time
+from app.services import email_transport
+
+logger = get_logger("app.email.notifications")
+
+_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="email")
+
+
+def _esc(value: Any) -> str:
+    if value is None:
+        return ""
+    return html.escape(str(value))
+
+
+def _esc_dict(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    return {k: (_esc(v) if isinstance(v, str) else v) for k, v in (data or {}).items()}
+
+
+def _esc_list(items: Optional[List[Any]]) -> Optional[List[str]]:
+    return [_esc(i) for i in items] if items else items
+
+
+def html_to_text(markup: str) -> str:
+    """Plain-text fallback derived from the HTML body."""
+    text = re.sub(r"(?is)<(script|style|head).*?</\1>", "", markup)
+    text = re.sub(r"(?i)<br\s*/?>|</p>|</tr>|</h[1-6]>|</li>|</div>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html.unescape(text)
+    text = re.sub(r"[ \t\r\f\v]+", " ", text)
+    text = re.sub(r"\n\s*\n+", "\n\n", text)
+    return text.strip()
+
 
 class EmailService:
-    """
-    State-of-the-Art Email Service using Brevo API.
-    Handles high-performance background sending to both User and Admin.
-    """
-    
+    """Notification emails. Public methods return immediately; delivery is backgrounded."""
+
     def __init__(self):
-        # 🟢 Configuration (Uses Brevo for reliability)
-        load_dotenv()
-        self.api_key = os.getenv("BREVO_API_KEY")
-        self.sender_email = os.getenv("SENDER_EMAIL")
-        self.admin_email = os.getenv("ADMIN_EMAIL", "riteshkumar90359@gmail.com")
-        self.company_name = os.getenv("COMPANY_NAME", "Quickfix")
-        self.app_url = os.getenv("APP_URL", "https://riteshkr.online")
-        
-        # 🛡️ Safety Validation: Force valid email format if .env is wrong
-        if not self.sender_email or "@" not in self.sender_email:
-            # If no sender email, use the admin email as a fallback sender (more likely to be verified)
-            self.sender_email = self.admin_email if self.admin_email else "noreply@quickfix.com"
-        
-        if not self.api_key:
-            print("\n⚠️ CRITICAL: BREVO_API_KEY not set in .env!")
-            print("❌ Emails will be MOCKED (printed to console) instead of sending.\n")
-        
-        # 🚀 HIGH SPEED: Use persistent session for connection pooling
-        self.session = requests.Session()
-    
+        s = get_settings()
+        self.company_name = s.company_name
+        self.app_url = s.app_url
+        # Address staff notifications go to; nothing is sent to staff if unset.
+        self.admin_email = s.admin_notification_email or s.smtp_from_email
+        self.notify_admin = bool(s.admin_notification_email)
+
     # ------------------------------------------------------------------
-    # PUBLIC METHODS (Threaded for Speed)
+    # PUBLIC METHODS
     # ------------------------------------------------------------------
-    
+
     def send_complaint_confirmation(self, user_name: str, user_email: str, complaint_data: dict):
-        """Send confirmation email to BOTH User and Admin in background"""
-        thread = threading.Thread(
-            target=self._worker_send_notification,
-            args=("complaint", user_name, user_email, complaint_data)
-        )
-        thread.daemon = True
-        thread.start()
+        _executor.submit(self._worker_send_notification, "complaint", _esc(user_name), user_email,
+                         _esc_dict(complaint_data))
         return True
-    
+
     def send_resolution_email(self, name: str, email: str, ticket_id: str, subject: str, solution: str):
-        """Send resolution email to BOTH User and Admin in background"""
-        complaint_data = {
-            'ticket_id': ticket_id,
-            'subject': subject,
-            'solution': solution,
-            'category': 'Resolved'
-        }
-        thread = threading.Thread(
-            target=self._worker_send_notification,
-            args=("resolution", name, email, complaint_data)
-        )
-        thread.daemon = True
-        thread.start()
+        complaint_data = {"ticket_id": ticket_id, "subject": subject, "solution": solution, "category": "Resolved"}
+        _executor.submit(self._worker_send_notification, "resolution", _esc(name), email, _esc_dict(complaint_data))
         return True
 
-    def send_otp(self, user_email: str, otp: str):
-        """Send OTP to user with INSTANT priority - Non-blocking for speed"""
-        # 🚀 INSTANT SEND: Fire-and-forget for maximum speed
-        thread = threading.Thread(
-            target=self._worker_send_otp,
-            args=(user_email, otp),
-            name="OTP-Instant-Delivery"  # Named thread for debugging
-        )
-        thread.daemon = False  # Non-daemon ensures completion even if main thread exits
-        thread.start()
-        # No blocking - return immediately for fastest API response
-        return True
-    
-    def send_password_reset(self, user_email: str, user_name: str, reset_token: str):
-        """Send password reset link to user in background"""
-        thread = threading.Thread(
-            target=self._worker_send_password_reset,
-            args=(user_email, user_name, reset_token)
-        )
-        thread.daemon = True
-        thread.start()
-        return True
-    
-    def send_resolution_feedback_to_admin(self, user_name: str, user_email: str, ticket_id: str, 
-                                         subject: str, is_actually_resolved: bool, 
-                                         user_comment: str, original_solution: str):
-        """Send user's resolution feedback to admin"""
-        thread = threading.Thread(
-            target=self._worker_send_resolution_feedback,
-            args=(user_name, user_email, ticket_id, subject, is_actually_resolved, user_comment, original_solution)
-        )
-        thread.daemon = True
-        thread.start()
+    def send_resolution_feedback_to_admin(self, user_name: str, user_email: str, ticket_id: str,
+                                          subject: str, is_actually_resolved: bool,
+                                          user_comment: str, original_solution: str):
+        _executor.submit(self._worker_send_resolution_feedback, _esc(user_name), _esc(user_email), _esc(ticket_id),
+                         _esc(subject), is_actually_resolved, _esc(user_comment), _esc(original_solution))
         return True
 
-    
+    def send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str,
+                              complaint_subject: str, agent_solution: str, agent_name: str,
+                              agent_steps: list = None):
+        _executor.submit(self._worker_send_agent_resolution, user_email, _esc(user_name), _esc(ticket_id),
+                         _esc(complaint_subject), _esc(agent_solution), _esc(agent_name), _esc_list(agent_steps))
+        return True
+
+    def send_raw_to_admin(self, subject: str, html_body: str) -> bool:
+        """For callers that build their own (already escaped) HTML, e.g. feedback."""
+        if not self.notify_admin:
+            logger.info("Admin notification skipped: ADMIN_NOTIFICATION_EMAIL not set")
+            return False
+        _executor.submit(self._deliver, self.admin_email, subject, html_body, "admin")
+        return True
+
     # ------------------------------------------------------------------
-    # BACKGROUND WORKER
+    # WORKERS
     # ------------------------------------------------------------------
-    
+
+    def _deliver(self, to_email: str, subject: str, html_body: str, category: str = "notification") -> bool:
+        try:
+            email_transport.send(to_email, subject, html_body, html_to_text(html_body), category=category, retries=1)
+            return True
+        except email_transport.EmailDeliveryError:
+            logger.warning("Notification email not delivered (category=%s)", category)
+            return False
+        except Exception:
+            logger.exception("Unexpected error while sending %s email", category)
+            return False
+
+    def _to_admin(self, subject: str, html_body: str) -> None:
+        if self.notify_admin:
+            self._deliver(self.admin_email, subject, html_body, "admin")
+
     def _worker_send_notification(self, type: str, user_name: str, user_email: str, complaint_data: dict):
-        """Background logic to dispatch both emails"""
-        try:
-            if type == "complaint":
-                # 1. Send to User
-                subject = f"✅ Complaint Received - Ticket #{complaint_data.get('ticket_id', 'N/A')}"
-                html_body = self._generate_confirmation_html(user_name, complaint_data, user_email)
-                print(f"📧 Sending confirmation to USER: {user_email}...")
-                self._dispatch_api(user_email, subject, html_body)
-                
-                # 2. Send to Admin
-                admin_subject = f"🚨 NEW TICKET #{complaint_data.get('ticket_id', 'N/A')} - {complaint_data.get('category', 'General')}"
-                admin_html = self._generate_admin_notification_html(user_name, user_email, complaint_data)
-                print(f"📧 Sending notification to ADMIN...")
-                self._dispatch_api(self.admin_email, admin_subject, admin_html)
-                
-            elif type == "resolution":
-                # 1. Send to User
-                subject = f"✅ Ticket #{complaint_data.get('ticket_id', 'N/A')} Resolved - Quickfix"
-                html_body = self._generate_resolution_html(user_name, complaint_data, user_email)
-                print(f"📧 Sending resolution to USER: {user_email}...")
-                self._dispatch_api(user_email, subject, html_body)
-                
-                # 2. Send to Admin
-                admin_subject = f"✅ RESOLVED: Ticket #{complaint_data.get('ticket_id', 'N/A')} - {user_name}"
-                admin_html = self._generate_admin_resolution_html(user_name, user_email, complaint_data)
-                print(f"📧 Sending resolution alert to ADMIN...")
-                self._dispatch_api(self.admin_email, admin_subject, admin_html)
-                
-        except Exception as e:
-            print(f"❌ Background Email Error: {str(e)}")
-            traceback.print_exc()
+        ticket = complaint_data.get("ticket_id", "N/A")
+        if type == "complaint":
+            self._deliver(user_email, f"Complaint received - Ticket #{ticket}",
+                          self._generate_confirmation_html(user_name, complaint_data, user_email), "complaint")
+            self._to_admin(f"New ticket #{ticket} - {complaint_data.get('category', 'General')}",
+                           self._generate_admin_notification_html(user_name, user_email, complaint_data))
+        elif type == "resolution":
+            self._deliver(user_email, f"Ticket #{ticket} resolved - {self.company_name}",
+                          self._generate_resolution_html(user_name, complaint_data, user_email), "resolution")
+            self._to_admin(f"Resolved: ticket #{ticket} - {user_name}",
+                           self._generate_admin_resolution_html(user_name, user_email, complaint_data))
 
-    def _worker_send_otp(self, user_email: str, otp: str):
-        """INSTANT OTP delivery with priority handling"""
-        try:
-            subject = f"🔐 {otp} is your Quickfix Verification Code"
-            html_body = self._generate_otp_html(otp)
-            print(f"⚡ [PRIORITY] Sending OTP to: {user_email}...")
-            # Use priority dispatch for OTP (faster timeout)
-            self._dispatch_api(user_email, subject, html_body, priority=True)
-            print(f"✅ OTP sent successfully to {user_email}")
-        except Exception as e:
-            print(f"❌ CRITICAL: OTP Email Failed for {user_email}")
-            print(f"   Error: {str(e)}")
-            traceback.print_exc()
-    
-    def _worker_send_password_reset(self, user_email: str, user_name: str, reset_token: str):
-        """Background logic to send password reset link"""
-        try:
-            subject = "🔑 Reset Your Quickfix Password"
-            html_body = self._generate_password_reset_html(user_name, reset_token, user_email)
-            print(f"📧 Sending password reset link to: {user_email}...")
-            self._dispatch_api(user_email, subject, html_body)
-        except Exception as e:
-            print(f"❌ Password Reset Email Error: {str(e)}")
-            traceback.print_exc()
-    
     def _worker_send_resolution_feedback(self, user_name: str, user_email: str, ticket_id: str,
-                                        subject: str, is_actually_resolved: bool, 
-                                        user_comment: str, original_solution: str):
-        """Background logic to send resolution feedback to admin"""
-        try:
-            status_text = "RESOLVED ✅" if is_actually_resolved else "NOT RESOLVED ❌"
-            email_subject = f"📊 User Feedback: Ticket #{ticket_id} - {status_text}"
-            html_body = self._generate_resolution_feedback_html(
-                user_name, user_email, ticket_id, subject, 
-                is_actually_resolved, user_comment, original_solution
-            )
-            print(f"📧 Sending resolution feedback to ADMIN for ticket {ticket_id}...")
-            self._dispatch_api(self.admin_email, email_subject, html_body)
-        except Exception as e:
-            print(f"❌ Resolution Feedback Email Error: {str(e)}")
-            traceback.print_exc()
+                                         subject: str, is_actually_resolved: bool,
+                                         user_comment: str, original_solution: str):
+        status_text = "RESOLVED" if is_actually_resolved else "NOT RESOLVED"
+        self._to_admin(
+            f"Customer feedback: ticket #{ticket_id} - {status_text}",
+            self._generate_resolution_feedback_html(user_name, user_email, ticket_id, subject,
+                                                    is_actually_resolved, user_comment, original_solution),
+        )
 
-    
-    def _generate_otp_html(self, otp: str) -> str:
-        return f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Code</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
-        <tr>
-            <td align="center">
-                <table width="400" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Quickfix Auth</h1>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 40px 30px; text-align: center;">
-                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px;">
-                                Use the code below to sign in to your account. This code will expire in 10 minutes.
-                            </p>
-                            <div style="background-color: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                                <h2 style="margin: 0; color: #1f2937; font-size: 36px; font-weight: 700; letter-spacing: 5px;">
-                                    {otp}
-                                </h2>
-                            </div>
-                            <p style="margin: 0; color: #9ca3af; font-size: 13px;">
-                                If you didn't request this code, you can safely ignore this email.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                                © {get_ist_time().year} Quickfix. Secure Multi-Agent Intelligence.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-"""
-
-    def _generate_password_reset_html(self, user_name: str, reset_token: str, user_email: str) -> str:
-        reset_link = f"{self.app_url}/reset-password?token={reset_token}&email={user_email}"
-        return f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Your Password</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
-        <tr>
-            <td align="center">
-                <table width="500" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Reset Your Password</h1>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 40px 30px; text-align: center;">
-                            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 16px;">
-                                Hello {user_name},
-                            </p>
-                            <p style="margin: 0 0 30px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                                We received a request to reset your password for your Quickfix account. Click the button below to create a new password.
-                            </p>
-                            <a href="{reset_link}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
-                                Reset Password
-                            </a>
-                            <p style="margin: 30px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.6;">
-                                This link will expire in 1 hour for security reasons.
-                            </p>
-                            <p style="margin: 20px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.6;">
-                                If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                                © {get_ist_time().year} Quickfix. Secure Multi-Agent Intelligence.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-"""
-
-    def _dispatch_api(self, to_email: str, subject: str, html_body: str, priority: bool = False):
-        """Internal dispatcher using Brevo HTTPS API with priority support"""
-        if not self.api_key:
-            print(f"\n📢 [MOCKED EMAIL] To: {to_email} | Subject: {subject}")
-            print(f"   (Brevo API Key missing. Set BREVO_API_KEY in .env)\n")
-            return
-        
-        url = "https://api.brevo.com/v3/smtp/email"
-        headers = {
-            "api-key": self.api_key,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
-        data = {
-            "sender": {"name": self.company_name, "email": self.sender_email},
-            "to": [{"email": to_email}],
-            "subject": subject,
-            "htmlContent": html_body
-        }
-        
-        # (connect, read) timeouts. This runs in a background thread, so a longer
-        # timeout costs the user nothing - the old 1s OTP timeout regularly
-        # expired during the TLS handshake and the code was never sent.
-        timeout_duration = (5, 15)
-        # OTPs get retries: a dropped code means a stuck login.
-        attempts = 3 if priority else 1
-        priority_label = "[PRIORITY OTP]" if priority else ""
-
-        for attempt in range(1, attempts + 1):
-            try:
-                print(f"🚀 {priority_label} Dispatching via Brevo... To: {to_email} (attempt {attempt})")
-                response = self.session.post(url, headers=headers, json=data, timeout=timeout_duration)
-
-                if response.status_code in [200, 201, 202]:
-                    msg_id = response.json().get('messageId', 'N/A')
-                    print(f"✅ {priority_label} Email delivered to {to_email} (ID: {msg_id})")
-                    return
-                print(f"⚠️ Brevo API Failure - Status: {response.status_code}")
-                print(f"   Response: {response.text}")
-                # 4xx (bad key, unverified sender, ...) won't fix itself on retry
-                if response.status_code < 500 and response.status_code != 429:
-                    return
-            except requests.exceptions.Timeout:
-                print(f"⏱️ TIMEOUT: Email to {to_email} exceeded {timeout_duration}s")
-            except requests.exceptions.RequestException as e:
-                print(f"❌ Network Error: {str(e)}")
-            except Exception as e:
-                print(f"❌ Unexpected error in _dispatch_api: {str(e)}")
-                traceback.print_exc()
-                return
-
-            if attempt < attempts:
-                time.sleep(attempt)  # 1s, then 2s
+    def _worker_send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str,
+                                      complaint_subject: str, agent_solution: str, agent_name: str,
+                                      agent_steps: list = None):
+        self._deliver(user_email, f"Resolution for ticket #{ticket_id} - {self.company_name}",
+                      self._generate_agent_resolution_html(user_name, ticket_id, complaint_subject,
+                                                           agent_solution, agent_name, agent_steps),
+                      "agent_resolution")
+        self._to_admin(f"Resolution sent: ticket #{ticket_id} - {agent_name}",
+                       self._generate_admin_agent_resolution_html(user_name, user_email, ticket_id,
+                                                                  complaint_subject, agent_solution,
+                                                                  agent_name, agent_steps))
 
     # ------------------------------------------------------------------
     # ADVANCED PROFESSIONAL HTML TEMPLATES
@@ -347,7 +158,7 @@ class EmailService:
         ticket_id = complaint_data.get('ticket_id', 'N/A')
         category = complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
-        complaint_text = complaint_data.get('complaint_text', 'N/A')
+        complaint_data.get('complaint_text', 'N/A')
         sentiment = complaint_data.get('sentiment', 'Analyzing...')
         response = complaint_data.get('response', 'Processing your request...')
         solution = complaint_data.get('solution', 'Generating solution...')
@@ -357,7 +168,7 @@ class EmailService:
         priority_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981"}
         priority_bg = {"High": "#fee2e2", "Medium": "#fef3c7", "Low": "#d1fae5"}
         priority_color = priority_colors.get(priority, "#3b82f6")
-        priority_bg_color = priority_bg.get(priority, "#dbeafe")
+        priority_bg.get(priority, "#dbeafe")
         
         # Category icons and colors
         category_data = {
@@ -369,9 +180,9 @@ class EmailService:
             "Other": {"icon": "📋", "color": "#6b7280", "bg": "#f3f4f6"}
         }
         cat_info = category_data.get(category, category_data["Other"])
-        category_icon = cat_info["icon"]
-        category_color = cat_info["color"]
-        category_bg = cat_info["bg"]
+        cat_info["icon"]
+        cat_info["color"]
+        cat_info["bg"]
         
         return f"""
 <!DOCTYPE html>
@@ -725,9 +536,9 @@ class EmailService:
     
     def _generate_admin_notification_html(self, user_name: str, user_email: str, complaint_data: dict) -> str:
         user_name = user_name or "Valued Customer"
-        category = complaint_data.get('category', 'General')
+        complaint_data.get('category', 'General')
         priority = complaint_data.get('priority', 'Medium')
-        complaint_text = complaint_data.get('complaint_text', 'N/A')
+        complaint_data.get('complaint_text', 'N/A')
         sentiment = complaint_data.get('sentiment', 'N/A')
         response = complaint_data.get('response', 'N/A')
         solution = complaint_data.get('solution', 'N/A')
@@ -1192,7 +1003,7 @@ class EmailService:
                     ''' if user_comment else ''}
                     
                     <!-- Action Required (if not resolved) -->
-                    {f'''
+                    {'''
                     <tr>
                         <td style="padding: 0 30px 30px 30px;">
                             <div style="background-color: #fee2e2; border: 2px solid #ef4444; border-radius: 12px; padding: 25px; text-align: center;">
@@ -1206,7 +1017,7 @@ class EmailService:
                             </div>
                         </td>
                     </tr>
-                    ''' if not is_actually_resolved else f'''
+                    ''' if not is_actually_resolved else '''
                     <tr>
                         <td style="padding: 0 30px 30px 30px;">
                             <div style="background-color: #d1fae5; border: 2px solid #10b981; border-radius: 12px; padding: 25px; text-align: center;">
@@ -1250,44 +1061,6 @@ class EmailService:
 </body>
 </html>
 """
-
-    def send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str, 
-                             complaint_subject: str, agent_solution: str, agent_name: str, 
-                             agent_steps: list = None):
-        """Send agent-verified resolution to user in background"""
-        import threading
-        thread = threading.Thread(
-            target=self._worker_send_agent_resolution,
-            args=(user_email, user_name, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps)
-        )
-        thread.daemon = True
-        thread.start()
-        return True
-
-    def _worker_send_agent_resolution(self, user_email: str, user_name: str, ticket_id: str,
-                                      complaint_subject: str, agent_solution: str, agent_name: str, 
-                                      agent_steps: list = None):
-        """Background logic to send agent-verified resolution to user"""
-        try:
-            subject = f"✅ Agent Resolution: Ticket #{ticket_id} - Quickfix"
-            html_body = self._generate_agent_resolution_html(
-                user_name, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps
-            )
-            print(f"📧 Sending agent resolution to USER: {user_email}...")
-            self._dispatch_api(user_email, subject, html_body)
-            
-            # Also notify admin
-            admin_subject = f"📤 Agent Resolution Sent: Ticket #{ticket_id} - {agent_name}"
-            admin_html = self._generate_admin_agent_resolution_html(
-                user_name, user_email, ticket_id, complaint_subject, agent_solution, agent_name, agent_steps
-            )
-            print(f"📧 Sending agent resolution notification to ADMIN...")
-            self._dispatch_api(self.admin_email, admin_subject, admin_html)
-            
-        except Exception as e:
-            print(f"❌ Agent Resolution Email Error: {str(e)}") 
-            import traceback
-            traceback.print_exc()
 
     def _generate_agent_resolution_html(self, user_name: str, ticket_id: str, 
                                        complaint_subject: str, agent_solution: str, 

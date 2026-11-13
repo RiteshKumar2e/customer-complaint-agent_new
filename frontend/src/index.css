@@ -185,3 +185,15 @@ body.custom-cursor-active,
 body.custom-cursor-active * {
   /* cursor: none !important; */ /* Commented out to show default cursor */
 }
+/* ---- Brand logo (see components/Logo.jsx) ---- */
+.qf-logo { display: inline-flex; align-items: center; line-height: 0; flex-shrink: 0; }
+.qf-logo-button { background: none; border: 0; padding: 0; cursor: pointer; }
+.qf-logo-button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 4px; border-radius: 4px; }
+.qf-logo-img { width: auto; max-width: 100%; display: block; }
+.qf-logo-on-light { display: none; }
+body.light-theme .qf-logo-on-light { display: block; }
+body.light-theme .qf-logo-on-dark { display: none; }
+@media (max-width: 480px) { .qf-logo-img { max-height: 26px; } }
+.qf-area-badge { margin-left: 0.6rem; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+body.light-theme .qf-area-badge { background: #dbeafe; color: #1d4ed8; }
+.auth-logo { display: flex; justify-content: center; margin-bottom: 1rem; }

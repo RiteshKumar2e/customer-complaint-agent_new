@@ -1,0 +1,68 @@
+/* Admin console + notification bell. Dark by default, light under body.light-theme. */
+.qf-console, .qf-bell-panel {
+  --qf-bg: #0f172a; --qf-card: #111c33; --qf-border: #23314f; --qf-text: #e5e7eb; --qf-muted: #94a3b8;
+  --qf-accent: #3b82f6; --qf-danger: #f87171; --qf-ok: #34d399;
+}
+body.light-theme .qf-console, body.light-theme .qf-bell-panel {
+  --qf-bg: #f8fafc; --qf-card: #ffffff; --qf-border: #e2e8f0; --qf-text: #0f172a; --qf-muted: #64748b;
+  --qf-accent: #2563eb; --qf-danger: #dc2626; --qf-ok: #059669;
+}
+.qf-console { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem 3rem; color: var(--qf-text); }
+.qf-tabs { display: flex; gap: 0.25rem; overflow-x: auto; border-bottom: 1px solid var(--qf-border); margin-bottom: 1.25rem; }
+.qf-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--qf-muted); padding: 0.7rem 1rem; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.qf-tabs button.active { color: var(--qf-text); border-bottom-color: var(--qf-accent); }
+.qf-tabs button:focus-visible, .qf-button:focus-visible, .qf-link:focus-visible { outline: 2px solid var(--qf-accent); outline-offset: 2px; }
+.qf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.qf-stat { background: var(--qf-card); border: 1px solid var(--qf-border); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.qf-stat span { color: var(--qf-muted); font-size: 0.85rem; }
+.qf-stat strong { font-size: 1.6rem; }
+.qf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.qf-card { background: var(--qf-card); border: 1px solid var(--qf-border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; min-width: 0; }
+.qf-card h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.qf-counts { list-style: none; margin: 0; padding: 0; }
+.qf-counts li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--qf-border); text-transform: capitalize; overflow-wrap: anywhere; }
+.qf-counts li:last-child { border-bottom: 0; }
+.qf-bars { list-style: none; margin: 0; padding: 0; }
+.qf-bars li { display: grid; grid-template-columns: 3.5rem 1fr 2rem; align-items: center; gap: 0.5rem; padding: 0.2rem 0; }
+.qf-bar { height: 10px; background: var(--qf-accent); border-radius: 4px; min-width: 2px; }
+.qf-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.qf-toolbar input, .qf-toolbar select, .qf-table select { background: var(--qf-card); color: var(--qf-text); border: 1px solid var(--qf-border); border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit; min-width: 0; }
+.qf-toolbar input { flex: 1 1 220px; }
+.qf-button { background: var(--qf-accent); color: #fff; border: 0; border-radius: 8px; padding: 0.55rem 1rem; font: inherit; font-weight: 600; cursor: pointer; }
+.qf-link { background: none; border: 0; color: var(--qf-accent); cursor: pointer; font: inherit; padding: 0; }
+.qf-link:disabled, .qf-table select:disabled { opacity: 0.5; cursor: not-allowed; }
+.qf-table-wrap { overflow-x: auto; border: 1px solid var(--qf-border); border-radius: 12px; margin-bottom: 1rem; }
+.qf-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.qf-table th, .qf-table td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--qf-border); vertical-align: top; }
+.qf-table th { color: var(--qf-muted); font-weight: 600; background: var(--qf-card); }
+.qf-pager { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1rem 0; }
+.qf-pager button { background: var(--qf-card); color: var(--qf-text); border: 1px solid var(--qf-border); border-radius: 8px; padding: 0.4rem 0.8rem; cursor: pointer; }
+.qf-pager button:disabled { opacity: 0.4; cursor: default; }
+.qf-muted { color: var(--qf-muted); }
+.qf-small { font-size: 0.82rem; }
+.qf-error { color: var(--qf-danger); }
+.qf-notice { color: var(--qf-ok); }
+.qf-check { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0; }
+.qf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 720px) {
+  .qf-table thead { display: none; }
+  .qf-table, .qf-table tbody, .qf-table tr, .qf-table td { display: block; width: 100%; }
+  .qf-table tr { border-bottom: 1px solid var(--qf-border); padding: 0.5rem 0; }
+  .qf-table td { border: 0; padding: 0.3rem 0.75rem; }
+  .qf-table td::before { content: attr(data-label); display: block; color: var(--qf-muted); font-size: 0.75rem; }
+}
+
+/* Notification bell */
+.qf-bell { position: relative; }
+.qf-bell-button { position: relative; background: none; border: 0; color: inherit; cursor: pointer; padding: 0.4rem; border-radius: 8px; line-height: 0; }
+.qf-bell-button:focus-visible { outline: 2px solid #3b82f6; }
+.qf-bell-count { position: absolute; top: -2px; right: -4px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; padding: 0.05rem 0.35rem; line-height: 1.3; }
+.qf-bell-panel { position: absolute; right: 0; top: calc(100% + 8px); width: min(360px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto; background: var(--qf-card); color: var(--qf-text); border: 1px solid var(--qf-border); border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25); padding: 0.75rem; z-index: 1000; text-align: left; }
+.qf-bell-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.qf-bell-list { list-style: none; margin: 0; padding: 0; }
+.qf-bell-item { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; padding: 0.6rem; color: inherit; font: inherit; cursor: pointer; }
+.qf-bell-item.unread { background: rgba(59, 130, 246, 0.1); }
+.qf-bell-item:hover { background: rgba(148, 163, 184, 0.12); }
+.qf-bell-title { font-weight: 600; }
+.qf-bell-msg { font-size: 0.88rem; overflow-wrap: anywhere; }

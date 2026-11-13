@@ -1,36 +1,35 @@
-version: '3.8'
-
+# Local stack: API + web app. The database is Turso (external) — there is no
+# database container. Copy backend/.env.example to backend/.env first.
+#
+#   docker compose up --build                 # API on :8000, web on :5173
+#   docker compose --profile mail up --build  # + Mailpit SMTP catcher (UI on :8025)
 services:
   backend:
     build: ./backend
+    env_file: ./backend/.env
+    environment:
+      PORT: "8000"
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - db
+    restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     ports:
       - "5173:80"
-    environment:
-      - VITE_API_URL=http://localhost:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: complaints
+  # Optional local mail catcher. Point the backend at it with
+  # SMTP_HOST=mailpit SMTP_PORT=1025 SMTP_STARTTLS=false (development only).
+  mailpit:
+    image: axllent/mailpit:v1.20
+    profiles: ["mail"]
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - "8025:8025"

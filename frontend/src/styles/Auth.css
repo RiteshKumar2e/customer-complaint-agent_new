@@ -954,3 +954,11 @@ body.light-theme .terms-modal-content {
         align-self: flex-start;
     }
 }
+
+/* OTP / reset helpers */
+.success-message { color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 1.25rem; text-align: center; }
+.error-message { color: #ef4444; margin-bottom: 1rem; }
+.form-error { color: #ef4444; font-size: 0.85rem; margin-top: 0.35rem; }
+.auth-link-button { display: block; margin: 0.9rem auto 0; background: none; border: 0; color: #60a5fa; cursor: pointer; font: inherit; }
+.auth-link-button:disabled { color: #9ca3af; cursor: default; }
+.back-link { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }

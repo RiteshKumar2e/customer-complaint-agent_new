@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { registerUser } from "../api";
+import { registerUser, verifyRegistration, resendOTP, updateProfile, session, errorMessage } from "../api";
+import { digitsOnly, validateEmail, validateMobile, validatePassword } from "../utils/validation";
+import OTPModal from "./OTPModal";
 import confetti from "canvas-confetti";
 import { Eye, EyeOff } from "lucide-react";
 import "../styles/Auth.css";
 import "../styles/AuthAnimations.css";
+import Logo from "./Logo";
 
 const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }) => {
     const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
@@ -153,9 +156,9 @@ const TermsModal = ({ isOpen, onClose, onAccept, initialTab = "terms" }) => {
     );
 };
 
-export default function Signup({ onNavigate }) {
+export default function Signup({ onNavigate, onRegistered, prefill }) {
     const [formData, setFormData] = useState({
-        fullName: "", email: "", organization: "", phone: "", password: "", confirmPassword: "", profileImage: ""
+        fullName: prefill?.name || "", email: prefill?.email || "", organization: "", phone: "", password: "", confirmPassword: "", profileImage: ""
     });
     const [showPassword, setShowPassword] = useState(false);
     const [agree, setAgree] = useState(false);
@@ -171,6 +174,9 @@ export default function Signup({ onNavigate }) {
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [otpOpen, setOtpOpen] = useState(false);
+    const [pendingEmail, setPendingEmail] = useState("");
+    const verifiedRef = useRef(null);
 
     useEffect(() => {
         const handleMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -179,7 +185,8 @@ export default function Signup({ onNavigate }) {
     }, []);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: name === "phone" ? digitsOnly(value) : value });
         setIsTyping(true);
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 500);
@@ -188,8 +195,8 @@ export default function Signup({ onNavigate }) {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                setError("Image size should be less than 5MB");
+            if (file.size > 300 * 1024) {
+                setError("Profile image must be 300 KB or smaller");
                 return;
             }
             const reader = new FileReader();
@@ -208,30 +215,54 @@ export default function Signup({ onNavigate }) {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        if (formData.password !== formData.confirmPassword) return setError("Passwords do not match");
-        if (!agree) return setError("Agree to Terms first");
+        const name = formData.fullName.trim();
+        const problem =
+            (name.length < 2 && "Enter your full name") ||
+            validateEmail(formData.email) ||
+            validateMobile(formData.phone) ||
+            validatePassword(formData.password) ||
+            (formData.password !== formData.confirmPassword && "Passwords do not match") ||
+            (!agree && "Agree to Terms first");
+        if (problem) return setError(problem);
 
         setLoading(true);
         setError("");
         try {
-            await registerUser(
-                formData.email,
-                formData.fullName,
-                formData.password,
-                formData.phone,
-                formData.organization,
-                formData.profileImage
-            );
-            setSuccess(true);
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#8b5cf6', '#ffffff', '#ff8a3d']
+            const data = await registerUser({
+                fullName: name,
+                email: formData.email.trim().toLowerCase(),
+                phone: formData.phone,
+                password: formData.password,
+                organization: formData.organization.trim(),
             });
-            setTimeout(() => onNavigate("login"), 2500);
-        } catch { setError("Registration failed. Email might exist."); }
-        finally { setLoading(false); }
+            setPendingEmail(data.email);
+            setOtpOpen(true);
+        } catch (err) {
+            setError(errorMessage(err, "Registration failed. Please try again."));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerify = async (code) => {
+        const data = await verifyRegistration(pendingEmail, code);
+        session.save(data);
+        verifiedRef.current = data.user;
+        if (formData.profileImage) {
+            try {
+                verifiedRef.current = await updateProfile({ profile_image: formData.profileImage });
+                session.setUser(verifiedRef.current);
+            } catch {
+                // Optional; the account is already active.
+            }
+        }
+    };
+
+    const handleVerified = () => {
+        setOtpOpen(false);
+        setSuccess(true);
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#ffffff', '#111827'] });
+        setTimeout(() => (onRegistered ? onRegistered(verifiedRef.current) : onNavigate("login")), 1200);
     };
 
     const isHiding = isPasswordFocused && !showPassword; // Cover eyes with hands when typing password (hidden)
@@ -304,6 +335,7 @@ export default function Signup({ onNavigate }) {
 
                 <motion.div className="auth-form-container" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ type: "spring", stiffness: 100, damping: 20 }}>
                     <div className="auth-header">
+                        <div className="auth-logo"><Logo height={40} /></div>
                         <div className="auth-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg></div>
                         <h2 className="auth-title">Create Your Account</h2>
                         <p className="auth-subtitle">Join us in the decentralized AI grid</p>
@@ -410,7 +442,7 @@ export default function Signup({ onNavigate }) {
                                 <label>Phone Number</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                                    <input name="phone" placeholder="+91 00000 00000" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
+                                    <input name="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} pattern="[6-9][0-9]{9}" aria-label="10-digit mobile number" placeholder="10-digit mobile (e.g. 9876543210)" required value={formData.phone} onFocus={updateTargetPos} onBlur={() => setTargetPos(null)} onChange={handleChange} />
                                 </div>
                             </div>
                             <div className="form-group full-width">
@@ -463,6 +495,18 @@ export default function Signup({ onNavigate }) {
                     <div className="auth-footer">Already have an account? <span className="auth-link" onClick={() => onNavigate("login")}>Sign in</span></div>
                 </motion.div>
             </div>
+            <AnimatePresence>
+                {otpOpen && (
+                    <OTPModal
+                        isOpen={otpOpen}
+                        onClose={() => setOtpOpen(false)}
+                        email={pendingEmail}
+                        onVerify={handleVerify}
+                        onVerified={handleVerified}
+                        onResend={() => resendOTP(pendingEmail, "registration")}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }

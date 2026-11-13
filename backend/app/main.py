@@ -1,121 +1,104 @@
-from fastapi import FastAPI, Request
-import os
+"""QuickFix AI API entry point."""
+import asyncio
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from app.db.database import engine
-from app.db import models
-from app.api.routes import router as complaint_router
-from app.api.chat import router as chat_router
-from app.routes.feedback import router as feedback_router
-from app.routes.auth import router as auth_router
-from app.routes.agent_module import router as agent_router
 
-# Create database tables
-models.Base.metadata.create_all(bind=engine)
+from app.core.config import get_settings, validate_for_startup
+from app.core.errors import register_exception_handlers
+from app.core.logging import configure_logging, get_logger
+from app.core.middleware import RequestContextMiddleware
 
-# Run custom migrations (add missing columns)
-from app.db.database import run_migrations
-run_migrations()
+settings = get_settings()
+configure_logging(json_output=not settings.is_test)
+logger = get_logger("app.main")
+for warning in validate_for_startup(settings):  # raises ConfigError in production
+    logger.warning(warning)
 
-app = FastAPI(title="Quickfix Agentic AI")
+from app.db.database import check_database, engine  # noqa: E402  (after config validation)
+from app.db.migrations import pending_migrations, run_migrations  # noqa: E402
 
 
-@app.on_event("startup")
-async def resume_auto_resolution():
-    # Pending auto-resolutions are in-memory tasks, so a restart would drop them
-    import asyncio
-    from app.services.auto_resolver import auto_resolver
-    asyncio.create_task(auto_resolver.resume_pending())
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if settings.run_migrations_on_startup:
+        applied = await asyncio.to_thread(run_migrations, engine)
+        if applied:
+            logger.info("Applied migrations: %s", ", ".join(applied))
+    else:
+        pending = await asyncio.to_thread(pending_migrations, engine)
+        if pending:
+            raise RuntimeError("Database schema is out of date; run `python -m app.db.migrate` "
+                               f"(pending: {', '.join(m.version for m in pending)})")
+    if not settings.is_test:
+        from app.services.auto_resolver import auto_resolver
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    # NOTE: Do not call `await request.body()` here — the body stream is already
-    # consumed during request parsing, so re-reading it raises ClientDisconnect
-    # and crashes the handler (client sees a reset instead of a 422).
-    # FastAPI attaches the raw body to the exception as `exc.body`.
-    print(f"❌ VALIDATION ERROR: {exc.errors()}")
-    print(f"📋 REQUEST BODY: {exc.body}")
-    return JSONResponse(
-        status_code=422,
-        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
-    )
+        asyncio.create_task(auto_resolver.resume_pending())
+    yield
 
-IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 
-# Origins that are always allowed. FRONTEND_URL may hold several comma-separated
-# URLs so a single env var can cover apex + www + a staging domain.
-ALLOWED_ORIGINS = [
-    "https://riteshkr.online",
-    "http://riteshkr.online",
-    "https://www.riteshkr.online",
-    "http://www.riteshkr.online",
-]
-
-if not IS_PRODUCTION:
-    ALLOWED_ORIGINS += [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-    ]
-
-ALLOWED_ORIGINS += [
-    origin.strip().rstrip("/")
-    for origin in os.getenv("FRONTEND_URL", "").split(",")
-    if origin.strip()
-]
-
-# Deduplicate while keeping order. Never let "*" in here: it is meaningless
-# alongside allow_credentials=True and would make Starlette echo back any
-# origin that asks.
-ALLOWED_ORIGINS = list(dict.fromkeys(o for o in ALLOWED_ORIGINS if o != "*"))
-
-# Starlette matches allow_origins by exact string, so "https://*.vercel.app"
-# never matched anything. Preview deployments need a regex instead.
-ALLOWED_ORIGIN_REGEX = r"https://[a-z0-9-]+\.vercel\.app"
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["Content-Disposition"],
-    max_age=86400,
+app = FastAPI(
+    title="QuickFix AI API",
+    description="Complaint management with AI triage. Authenticate with `POST /auth/login` and send "
+                "`Authorization: Bearer <access_token>`.",
+    version="2.0.0",
+    lifespan=lifespan,
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
 )
 
+register_exception_handlers(app)
 
-@app.middleware("http")
-async def cross_origin_isolation_headers(request: Request, call_next):
-    response = await call_next(request)
-    # COOP only applies to top-level document responses, so it does nothing for
-    # the JSON this API returns - the header that matters for Google Sign-In is
-    # the one on the *frontend* origin (vercel.json / nginx.conf). This is kept
-    # only for the browsable pages FastAPI serves itself, i.e. /docs and /redoc.
-    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
-    # Responses are consumed by the frontend on a different origin, so the
-    # default "same-origin" CORP would block them.
-    response.headers.setdefault("Cross-Origin-Resource-Policy", "cross-origin")
-    response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    return response
+origins = list(settings.frontend_urls)
+if not settings.is_production:
+    origins += ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list(dict.fromkeys(o for o in origins if o and o != "*")),
+    allow_origin_regex=settings.cors_origin_regex,
+    allow_credentials=False,  # bearer tokens, no cookies
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["Content-Disposition", "X-Request-ID", "Retry-After"],
+    max_age=86400,
+)
+app.add_middleware(RequestContextMiddleware, max_body_bytes=settings.max_request_bytes,
+                   upload_paths_max_bytes=settings.max_upload_bytes)
 
-app.include_router(complaint_router)
-app.include_router(chat_router)
-app.include_router(feedback_router)
-app.include_router(auth_router)
-app.include_router(agent_router)
+from app.api.chat import router as chat_router  # noqa: E402
+from app.api.routes import router as complaint_router  # noqa: E402
+from app.routes.admin import router as admin_router  # noqa: E402
+from app.routes.agent_module import router as agent_router  # noqa: E402
+from app.routes.auth import router as auth_router  # noqa: E402
+from app.routes.feedback import router as feedback_router  # noqa: E402
+from app.routes.notifications import router as notifications_router  # noqa: E402
 
-@app.get("/")
+for router in (auth_router, complaint_router, agent_router, admin_router, notifications_router,
+               feedback_router, chat_router):
+    app.include_router(router)
+
+
+# Uptime monitors commonly probe with HEAD; GET-only routes answered 405.
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def root():
-    return {"status": "Quickfix Backend Running"}
+    return {"service": "quickfix-api", "status": "ok"}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["health"])
 def health():
-    # Deliberately does no DB or LLM work: this is the endpoint load tests and
-    # platform health checks hit, so it must measure the web tier alone.
+    """Liveness: the process is up. Does no database or AI work."""
     return {"status": "ok"}
+
+
+@app.api_route("/health/ready", methods=["GET", "HEAD"], tags=["health"])
+def ready():
+    """Readiness: Turso is reachable."""
+    try:
+        check_database()
+    except Exception:
+        logger.exception("Readiness check failed")
+        return JSONResponse(status_code=503, content={"status": "unavailable", "database": "unreachable"})
+    return {"status": "ok", "database": "ok"}

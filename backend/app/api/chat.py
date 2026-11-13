@@ -1,37 +1,23 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import traceback
+"""Public support chatbot (rate limited; no account data is exposed through it)."""
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, ConfigDict, Field
+
 from app.agents.chat_agent import handle_chat_message
-from app.memory.redis_store import save_high_priority
+from app.core.rate_limit import rate_limit
+
+router = APIRouter(prefix="/agent", tags=["chatbot"])
+
 
 class ChatRequest(BaseModel):
-    message: str
+    model_config = ConfigDict(extra="forbid")
+    message: str = Field(min_length=1, max_length=2000)
 
-router = APIRouter(prefix="/agent", tags=["Agent Chat"])
 
-@router.post("/chat")
+@router.post("/chat", dependencies=[Depends(rate_limit("chat", 20, 60))])
 async def chat(request: ChatRequest):
-    """
-    Async chat endpoint for high-concurrency AI assistance.
-    """
-    try:
-        message = request.message
-        result = await handle_chat_message(message)
-
-        if (result.get("type") == "complaint" and result.get("priority") == "High"):
-            # Background tasks or separate threads would be even better for scaling, 
-            # but keeping it simple and async for now as requested.
-            save_high_priority(
-                message,
-                {
-                    "category": result.get("category"),
-                    "action": result.get("action"),
-                }
-            )
-
-        return result
-
-    except Exception as e:
-        print("❌ CHAT ERROR:", e)
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    """Answer a question or give an instant (unsaved) complaint analysis."""
+    result = await handle_chat_message(request.message)
+    # Provenance fields are internal; the public chatbot only needs the answer.
+    for internal in ("ai_error", "injection_flags", "ai_attempts"):
+        result.pop(internal, None)
+    return result

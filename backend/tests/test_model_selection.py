@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from app.agents import gemini_client, groq_client as groq_module
+from app.agents import gemini_client
 from app.agents.groq_client import GroqClient, is_chat_model, rank_models
 
 # What this account's key listed on 2026-09-28
@@ -102,7 +102,7 @@ def test_retired_gemini_model_is_skipped(fresh_gemini, monkeypatch):
             return types.SimpleNamespace(text="ok from " + self.name)
 
     monkeypatch.setattr(gemini_client.genai, "GenerativeModel", FakeModel)
-    assert asyncio.run(gemini_client._generate_with_any_model("hi")) == "ok from gemini-2.5-flash"
+    assert asyncio.run(gemini_client._generate_with_any_model("hi")) == ("ok from gemini-2.5-flash", "gemini-2.5-flash")
     # second call goes straight to the working model
     tried.clear()
     asyncio.run(gemini_client._generate_with_any_model("hi"))

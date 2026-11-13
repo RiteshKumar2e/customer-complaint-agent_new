@@ -6,12 +6,16 @@ jest.mock("../api", () => ({
   validateSolution: jest.fn(),
   sendResolution: jest.fn(),
   logoutUser: jest.fn(),
+  listNotifications: jest.fn(() => Promise.resolve({ items: [], unread: 0 })),
+  markNotificationRead: jest.fn(),
+  markAllNotificationsRead: jest.fn(),
+  errorMessage: (e, f) => e?.response?.data?.detail || f,
 }));
 
 import * as api from "../api";
 import AgentModule from "../components/Agent/AgentModule";
 
-const USER = { email: "agent@x.com", full_name: "Agent", role: "Admin" };
+const USER = { email: "agent@x.com", full_name: "Agent", role: "agent" };
 const QUEUE_ITEM = {
   ticket_id: "QX-20260928-AB12", name: "Asha", email: "asha@x.com", subject: "Double charge",
   category: "Billing", priority: "High", sentiment: "Negative", created_at: "2026-09-28T10:00:00", status: "pending",
@@ -40,12 +44,12 @@ async function openTicket() {
 test("loads the queue for the signed-in agent", async () => {
   render(<AgentModule user={USER} onNavigate={jest.fn()} />);
   expect(await screen.findByText(QUEUE_ITEM.ticket_id)).toBeInTheDocument();
-  expect(api.getAgentQueue).toHaveBeenCalledWith("agent@x.com", expect.objectContaining({ status: "pending" }));
+  expect(api.getAgentQueue).toHaveBeenCalledWith(expect.objectContaining({ status: "pending" }));
 });
 
 test("opening a ticket pre-fills the AI solution and flattens object steps", async () => {
   await openTicket();
-  expect(api.getComplaintDetail).toHaveBeenCalledWith(QUEUE_ITEM.ticket_id, "agent@x.com");
+  expect(api.getComplaintDetail).toHaveBeenCalledWith(QUEUE_ITEM.ticket_id);
   expect(screen.getByDisplayValue("Master Intelligence — Done")).toBeInTheDocument();
   expect(screen.getByDisplayValue("Issue refund")).toBeInTheDocument();
 });
@@ -59,7 +63,7 @@ test("validation result is shown", async () => {
   expect(await screen.findByText("APPROVED")).toBeInTheDocument();
   expect(screen.getByText(/92\.0%/)).toBeInTheDocument();
   expect(api.validateSolution).toHaveBeenCalledWith(
-    "agent@x.com", QUEUE_ITEM.ticket_id, DETAIL.complaint.ai_solution, ["Master Intelligence — Done", "Issue refund"],
+    QUEUE_ITEM.ticket_id, DETAIL.complaint.ai_solution, ["Master Intelligence — Done", "Issue refund"],
   );
 });
 
@@ -80,7 +84,7 @@ test("delivering sends the edited solution and refreshes the queue", async () =>
 
   await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Resolution sent successfully!"));
   expect(api.sendResolution).toHaveBeenCalledWith(
-    "agent@x.com", QUEUE_ITEM.ticket_id, "1. Refund issued today.", ["Master Intelligence — Done", "Issue refund"],
+    QUEUE_ITEM.ticket_id, "1. Refund issued today.", ["Master Intelligence — Done", "Issue refund"],
   );
   expect(api.getAgentQueue).toHaveBeenCalledTimes(2);
 });

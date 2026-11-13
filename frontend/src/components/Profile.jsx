@@ -3,9 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Stars } from "@react-three/drei";
 import * as random from "maath/random/dist/maath-random.esm";
-import { updateProfile, deleteAllComplaints, submitFeedback, submitResolutionFeedback } from "../api";
+import { updateProfile, deleteAllComplaints, submitFeedback, submitResolutionFeedback, errorMessage } from "../api";
+import { digitsOnly, validateMobile, roleLabel } from "../utils/validation";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/Profile.css";
+import Logo from "./Logo";
+import NotificationBell from "./NotificationBell";
 
 // --- Internal 3D Components ---
 function ParticleGlobe({ isLight }) {
@@ -98,8 +101,9 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
         organization: user?.organization || "",
         bio: user?.bio || "",
         location: user?.location || "India",
-        role: user?.role || "Strategic Member"
+        job_title: user?.job_title || ""
     });
+    const [profileError, setProfileError] = useState("");
 
     // Feedback states
     const [feedbackForm, setFeedbackForm] = useState({
@@ -180,7 +184,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
             const base64String = reader.result;
             setUpdatingImage(true);
             try {
-                const updatedUser = await updateProfile(user.email, { profile_image: base64String });
+                const updatedUser = await updateProfile({ profile_image: base64String });
                 localStorage.setItem("user", JSON.stringify(updatedUser));
                 window.location.reload(); // Refresh to update user in App.jsx
             } catch (error) {
@@ -217,13 +221,18 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
         try {
-            const updatedUser = await updateProfile(user.email, profileForm);
+            setProfileError("");
+            const phoneError = validateMobile(profileForm.phone);
+            if (phoneError) {
+                setProfileError(phoneError);
+                return;
+            }
+            const updatedUser = await updateProfile(profileForm);
             localStorage.setItem("user", JSON.stringify(updatedUser));
             setIsEditingProfile(false);
             window.location.reload(); // App.jsx persistence will keep us on profile
         } catch (error) {
-            console.error("Error updating profile:", error);
-            alert("Failed to update profile");
+            setProfileError(errorMessage(error, "Failed to update profile"));
         }
     };
 
@@ -330,12 +339,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                             onClick={() => onNavigate("landing")}
                             style={{ cursor: "pointer" }}
                         >
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                                <path d="M2 17l10 5 10-5" />
-                                <path d="M2 12l10 5 10-5" />
-                            </svg>
-                            <span>QuickFix AI</span>
+                            <Logo height={30} />
                         </motion.div>
                     </div>
 
@@ -392,7 +396,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                             </svg>
                             Feedback
                         </motion.button>
-                        {user?.role === "Admin" && (
+                        {user?.role === "admin" && (
                             <motion.button
                                 className="nav-btn admin-panel-btn"
                                 onClick={() => onNavigate("admin")}
@@ -409,6 +413,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                     </nav>
 
                     <div className="header-right" ref={dropdownRef} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="profile-btn"
@@ -657,7 +662,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                     </div>
                                     <div className="profile-header-info">
                                         <h2>{user?.full_name || "User"}</h2>
-                                        <p className="user-role">{user?.role || "Strategic Member"}</p>
+                                        <p className="user-role">{user?.job_title || roleLabel(user?.role)}</p>
                                         <p className="user-email">{user?.email}</p>
                                         <div className="user-badges">
                                             <span className="badge">Active Member</span>
@@ -682,19 +687,25 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label>Phone</label>
+                                            <label htmlFor="profile-phone">Mobile number (10 digits)</label>
                                             <input
-                                                type="text"
+                                                id="profile-phone"
+                                                type="tel"
+                                                inputMode="numeric"
+                                                maxLength={10}
+                                                pattern="[6-9][0-9]{9}"
                                                 value={profileForm.phone}
-                                                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                                onChange={(e) => setProfileForm({ ...profileForm, phone: digitsOnly(e.target.value) })}
                                             />
+                                            {profileError && <p className="form-error" role="alert">{profileError}</p>}
                                         </div>
                                         <div className="form-group">
-                                            <label>Role</label>
+                                            <label>Job title</label>
                                             <input
                                                 type="text"
-                                                value={profileForm.role}
-                                                onChange={(e) => setProfileForm({ ...profileForm, role: e.target.value })}
+                                                maxLength={100}
+                                                value={profileForm.job_title}
+                                                onChange={(e) => setProfileForm({ ...profileForm, job_title: e.target.value })}
                                             />
                                         </div>
                                         <div className="form-group">
@@ -793,7 +804,7 @@ export default function Profile({ user, onNavigate, onLogout, complaints = [], s
                                                     </svg>
                                                     Network Role
                                                 </div>
-                                                <div className="detail-value">{user?.role || "Strategic Member"}</div>
+                                                <div className="detail-value">{user?.job_title || roleLabel(user?.role)}</div>
                                             </div>
 
                                             <div className="detail-row">

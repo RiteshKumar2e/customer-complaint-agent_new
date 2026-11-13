@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { submitComplaint, submitReview } from "../api";
+import { submitComplaint, submitReview, uploadAttachment, errorMessage } from "../api";
 import { showNotification } from "../utils/notifications";
 import "../styles/ComplaintForm.css";
 
@@ -7,7 +7,6 @@ export default function ComplaintForm({ onResult, user }) {
   const [formData, setFormData] = useState({
     name: user?.full_name || "",
     email: user?.email || "",
-    category: "Select Category",
     subject: "",
     description: ""
   });
@@ -18,8 +17,8 @@ export default function ComplaintForm({ onResult, user }) {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [ticketId, setTicketId] = useState("");
+  const [files, setFiles] = useState([]);
 
-  const categories = ["Technical", "Billing", "Delivery", "Service", "Security", "Other"];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,15 +27,14 @@ export default function ComplaintForm({ onResult, user }) {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.description.trim()) {
-      setError("All fields marked with * are required");
+    if (formData.subject.trim().length < 5) {
+      setError("Subject must be at least 5 characters");
       return false;
     }
-    if (formData.category === "Select Category") {
-      setError("Please select a valid category");
+    if (formData.description.trim().length < 20) {
+      setError("Please describe the problem in at least 20 characters");
       return false;
     }
-
     return true;
   };
 
@@ -48,48 +46,34 @@ export default function ComplaintForm({ onResult, user }) {
     setError("");
     setShowReview(false);
 
-    // Initial steps for visible solving
-    setSteps([
-      { name: "Initializing Multi-Agent Pipeline...", status: "active" },
-      { name: "Scaling Resources for High Traffic...", status: "waiting" },
-      { name: "AI Categorization & Priority Check...", status: "waiting" },
-      { name: "Orchestrating Solution Strategy...", status: "waiting" },
-      { name: "Finalizing Resolution Response...", status: "waiting" }
-    ]);
+    setSteps([{ name: "Analysing your complaint (AI triage)…", status: "active" }]);
 
     try {
-      const updateStep = (idx) => {
-        setSteps(prev => prev.map((s, i) =>
-          i === idx ? { ...s, status: 'done' } :
-            (i === idx + 1 ? { ...s, status: 'active' } : s)
-        ));
-      };
-
-      // Progress simulation for transparency
-      setTimeout(() => updateStep(0), 700);
-      setTimeout(() => updateStep(1), 1500);
-      setTimeout(() => updateStep(2), 2500);
-
-      const res = await submitComplaint(formData.name, formData.email, formData.subject, formData.description);
-
-      updateStep(3);
-      updateStep(4);
-
+      const res = await submitComplaint(formData.subject.trim(), formData.description.trim());
+      const uploadErrors = [];
+      for (const file of files) {
+        try {
+          await uploadAttachment(res.ticket_id, file);
+        } catch (uploadErr) {
+          uploadErrors.push(`${file.name}: ${errorMessage(uploadErr)}`);
+        }
+      }
+      setSteps((res.steps || []).map((step) => ({ name: `${step.step}: ${step.status}`, status: "done" })));
       setTicketId(res.ticket_id);
       if (typeof onResult === "function") onResult(res);
       setShowReview(true);
-
-      showNotification("success", "✅ Issue Resolved!", "AI agents completed the orchestration successfully.", "✨");
-
+      showNotification("success", "Complaint submitted", `Ticket ${res.ticket_id} was created. We'll keep you updated.`, "✅");
+      if (uploadErrors.length) setError(`Some attachments were not uploaded. ${uploadErrors.join(" ")}`);
+      setFiles([]);
       setFormData({
         name: user?.full_name || "",
         email: user?.email || "",
-        category: "Select Category",
         subject: "",
         description: ""
       });
     } catch (err) {
-      setError(err.response?.data?.detail || "System overload. Please try again.");
+      setSteps([]);
+      setError(errorMessage(err, "Could not submit your complaint. Please try again."));
     } finally {
       setTimeout(() => setLoading(false), 800);
     }
@@ -138,44 +122,49 @@ export default function ComplaintForm({ onResult, user }) {
       )}
 
       <div className="form-header">
-        <h2>📝 AI Multi-Agent Portal</h2>
-        <p>Enterprise-grade feedback system with high-concurrency support.</p>
+        <h2>Submit a complaint</h2>
+        <p>Our AI sorts it by category and urgency; a support agent reviews anything sensitive before replying.</p>
       </div>
 
       <form className="complaint-form" onSubmit={handleSubmit}>
         <div className="form-section-wrapper">
           <div className="form-group">
-            <label>Name</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-input" disabled={loading} />
+            <label htmlFor="cf-name">Name (from your account)</label>
+            <input id="cf-name" type="text" name="name" value={formData.name} className="form-input" readOnly />
           </div>
           <div className="form-group">
-            <label>Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-input" disabled={loading} />
+            <label htmlFor="cf-email">Email (from your account)</label>
+            <input id="cf-email" type="email" name="email" value={formData.email} className="form-input" readOnly />
           </div>
         </div>
 
         <div className="form-group">
-          <label>Category *</label>
-          <select name="category" value={formData.category} onChange={handleChange} className="form-select" disabled={loading}>
-            <option value="Select Category">Select Category</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <label htmlFor="cf-subject">Subject *</label>
+          <input id="cf-subject" type="text" name="subject" maxLength={200} value={formData.subject} onChange={handleChange} className="form-input" placeholder="What's the issue?" disabled={loading} />
         </div>
 
         <div className="form-group">
-          <label>Subject *</label>
-          <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-input" placeholder="What's the issue?" disabled={loading} />
+          <label htmlFor="cf-desc">Full description * (at least 20 characters)</label>
+          <textarea id="cf-desc" name="description" maxLength={5000} value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened..." rows="5" disabled={loading} />
         </div>
 
         <div className="form-group">
-          <label>Full Description *</label>
-          <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" placeholder="Tell our AI agents exactly what happened..." rows="5" disabled={loading} />
+          <label htmlFor="cf-files">Attachments (optional: up to 3 PNG, JPEG, PDF or TXT files, 2 MB each)</label>
+          <input id="cf-files" type="file" multiple accept=".png,.jpg,.jpeg,.pdf,.txt,image/png,image/jpeg,application/pdf,text/plain"
+            disabled={loading}
+            onChange={(e) => {
+              const picked = Array.from(e.target.files || []);
+              const tooBig = picked.find((f) => f.size > 2 * 1024 * 1024);
+              if (picked.length > 3) setError("You can attach at most 3 files");
+              else if (tooBig) setError(`${tooBig.name} is larger than 2 MB`);
+              else { setError(""); setFiles(picked); }
+            }} />
         </div>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <div className="error-msg" role="alert">{error}</div>}
 
         <button type="submit" className="launch-btn" disabled={loading}>
-          {loading ? "Orchestrating AI..." : "🚀 Launch Multi-Agent Cluster"}
+          {loading ? "Submitting…" : "Submit complaint"}
         </button>
       </form>
 

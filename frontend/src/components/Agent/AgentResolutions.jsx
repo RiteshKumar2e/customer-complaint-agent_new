@@ -3,6 +3,8 @@ import { getAllResolutions, logoutUser } from "../../api";
 import ThemeToggle from "../ThemeToggle";
 import "../../styles/AgentModule.css";
 import { motion } from "framer-motion";
+import Logo from "../Logo";
+import NotificationBell from "../NotificationBell";
 
 export default function AgentResolutions({ user, onNavigate }) {
     const [resolutions, setResolutions] = useState([]);
@@ -15,14 +17,14 @@ export default function AgentResolutions({ user, onNavigate }) {
     const fetchResolutions = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getAllResolutions(user.email, { search: filters.search });
+            const data = await getAllResolutions({ search: filters.search });
             setResolutions(data.resolutions || []);
         } catch (error) {
             console.error("Failed to fetch resolutions", error);
         } finally {
             setLoading(false);
         }
-    }, [user, filters.search]);
+    }, [filters.search]);
 
     useEffect(() => {
         if (user) {
@@ -43,12 +45,10 @@ export default function AgentResolutions({ user, onNavigate }) {
                     padding: '1rem 2rem'
                 }}>
                     <div className="logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit' }} onClick={() => onNavigate("landing")}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--agent-primary)" strokeWidth="3">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                        </svg>
-                        <span style={{ fontWeight: 800 }}>Quickfix Agent</span>
+                        <Logo height={28} /><span className="qf-area-badge">Agent</span>
                     </div>
                     <div className="agent-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                        <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
                         <button className="nav-btn" onClick={() => onNavigate("admin")} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             📊 Back to Dashboard
@@ -60,7 +60,7 @@ export default function AgentResolutions({ user, onNavigate }) {
                             📜 Resolution Log
                         </button>
                         <button className="nav-btn nav-btn-error" onClick={() => {
-                            logoutUser(user.email);
+                            logoutUser();
                             localStorage.removeItem("user");
                             window.location.reload();
                         }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

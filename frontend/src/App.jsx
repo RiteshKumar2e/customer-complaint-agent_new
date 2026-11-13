@@ -19,13 +19,16 @@ import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import CursorTrail from "./components/CursorTrail";
 import SignInPromptModal from "./components/SignInPromptModal";
-import { getAllComplaints, logoutUser } from "./api";
+import { getAllComplaints, logoutUser, getMe, session } from "./api";
+import { homePageFor } from "./utils/validation";
 import { motion, AnimatePresence } from "framer-motion";
 import "./App.css";
 import "./styles/Profile.css";
 // Sabse last import — sabhi buttons ke hover/ripple/glow effects hata kar
 // unhe normal button banata hai.
 import "./styles/ButtonReset.css";
+import Logo from "./components/Logo";
+import AdminConsole from "./components/Admin/AdminConsole";
 
 export default function App() {
   const [page, setPage] = useState(() => {
@@ -68,7 +71,10 @@ export default function App() {
   // These three are declared above the effects that call them. The session
   // timers below are registered once on mount, so they need a reference that
   // is already defined and stays stable for the life of the component.
-  const navigateTo = useCallback((newPage) => {
+  const [signupPrefill, setSignupPrefill] = useState(null);
+
+  const navigateTo = useCallback((newPage, prefill = null) => {
+    if (newPage === "signup") setSignupPrefill(prefill);
     setPage(newPage);
     if (newPage === "landing") {
       setResult(null);
@@ -76,29 +82,23 @@ export default function App() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    // Read the email from storage rather than `user` state: the session
-    // timers capture this function once, and on a mount-time expiry the
-    // state hasn't been populated yet.
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        const { email } = JSON.parse(savedUser);
-        if (email) {
-          logoutUser(email).catch(err => console.error("Logout log error:", err));
-        }
-      } catch {
-        // Malformed user in storage - nothing to log server-side
-      }
-    }
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("lastPage");
-    localStorage.removeItem("sessionTimestamp");
-    localStorage.removeItem("lastActivity");
+    // Revoke the session server-side (access + refresh token); clears storage either way.
+    logoutUser().catch(() => {});
+    session.clear();
     setUser(null);
     setIsAdminMode(false);
     navigateTo("landing");
   }, [navigateTo]);
+
+  // A refresh failure anywhere in the app ends the session cleanly.
+  useEffect(() => {
+    const onExpired = () => {
+      setUser(null);
+      setPage("login");
+    };
+    window.addEventListener("qf:session-expired", onExpired);
+    return () => window.removeEventListener("qf:session-expired", onExpired);
+  }, []);
 
   const loadComplaints = useCallback(async () => {
     if (!user?.email) return;
@@ -135,6 +135,11 @@ export default function App() {
       }
 
       setUser(JSON.parse(savedUser));
+      // The stored copy is only a cache: confirm identity and role with the server.
+      getMe().then((fresh) => {
+        session.setUser(fresh);
+        setUser(fresh);
+      }).catch(() => {});
 
       // Update last activity timestamp on mount
       localStorage.setItem("lastActivity", Date.now().toString());
@@ -252,20 +257,43 @@ export default function App() {
     }, 3000);
   };
 
+  // Route guard: which roles may open which page. The API enforces the same rules.
+  const PAGE_ROLES = {
+    profile: ["customer"],
+    form: ["customer"],
+    admin: ["admin"],
+    "login-history": ["admin"],
+    "admin-console": ["admin"],
+    "agent-queue": ["agent", "admin"],
+    "agent-resolutions": ["agent", "admin"],
+  };
+
   const renderPage = () => {
+    const allowed = PAGE_ROLES[page];
+    if (allowed) {
+      const current = user || session.user;
+      if (!current || !session.access) {
+        return <Login onNavigate={navigateTo} onLoginSuccess={(u) => { setUser(u); navigateTo(homePageFor(u)); }} isAdminMode={false} />;
+      }
+      if (!allowed.includes(current.role)) {
+        const home = homePageFor(current);
+        if (home !== page) setTimeout(() => navigateTo(home), 0);
+        return null;
+      }
+    }
     if (page === "landing") {
       return (
         <Landing
           user={user}
           onStart={() => {
             setIsAdminMode(false);
-            user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login");
+            user ? navigateTo(homePageFor(user)) : navigateTo("login");
           }}
           onAdminLogin={() => {
             setIsAdminMode(true);
             navigateTo("login");
           }}
-          onDashboard={() => user ? (user.role === "Admin" ? navigateTo("admin") : navigateTo("profile")) : navigateTo("login")}
+          onDashboard={() => user ? navigateTo(homePageFor(user)) : navigateTo("login")}
           onFeedback={() => setFeedbackOpen(true)}
           onNavigate={navigateTo}
         />
@@ -282,7 +310,7 @@ export default function App() {
           onLoginSuccess={(userData) => {
             setUser(userData);
             setIsAdminMode(false);
-            userData.role === "Admin" ? navigateTo("admin") : navigateTo("profile");
+            navigateTo(homePageFor(userData));
           }}
           isAdminMode={isAdminMode}
         />
@@ -290,7 +318,16 @@ export default function App() {
     }
 
     if (page === "signup") {
-      return <Signup onNavigate={navigateTo} />;
+      return (
+        <Signup
+          onNavigate={navigateTo}
+          prefill={signupPrefill}
+          onRegistered={(newUser) => {
+            setUser(newUser);
+            navigateTo(homePageFor(newUser));
+          }}
+        />
+      );
     }
 
     if (page === "forgot-password") {
@@ -334,10 +371,7 @@ export default function App() {
             <div className="header-content">
               <div className="header-left">
                 <div className="logo" onClick={() => navigateTo("admin")}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                  </svg>
-                  <span>Quickfix Admin</span>
+                  <Logo height={28} /><span className="qf-area-badge">Admin</span>
                 </div>
               </div>
               <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -358,6 +392,26 @@ export default function App() {
             </div>
           </header>
           <AdminLoginHistory />
+        </div>
+      );
+    }
+
+    if (page === "admin-console") {
+      return (
+        <div className="app-container">
+          <header className="profile-header">
+            <div className="header-content">
+              <div className="header-left">
+                <Logo height={28} onClick={() => navigateTo("admin")} /><span className="qf-area-badge">Admin</span>
+              </div>
+              <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <ThemeToggle className="navbar-theme-toggle" />
+                <button className="nav-btn" onClick={() => navigateTo("admin")}>Complaints</button>
+                <button className="nav-btn" onClick={handleLogout}>Logout</button>
+              </div>
+            </div>
+          </header>
+          <AdminConsole user={user || session.user} />
         </div>
       );
     }
@@ -388,10 +442,7 @@ export default function App() {
           <div className="header-content">
             <div className="header-left">
               <div className="logo" onClick={() => navigateTo("landing")}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                <span>Quickfix</span>
+                <Logo height={28} />
               </div>
             </div>
             <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

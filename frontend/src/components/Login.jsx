@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
-import { googleAuth, googleVerifyOTP, loginWithPassword, warmUpBackend } from "../api";
+import { googleAuth, googleVerifyOTP, loginWithPassword, warmUpBackend, verifyEmail, resendOTP, session, errorMessage } from "../api";
 import { installGooglePopupShield } from "../utils/googlePopupShield";
 import { Eye, EyeOff } from "lucide-react";
 import OTPModal from "./OTPModal";
 import "../styles/Auth.css";
 import "../styles/AuthAnimations.css";
+import Logo from "./Logo";
 
 const CharacterEyes = ({ mousePos, containerRef, isHiding, isClosed, targetPos }) => {
     const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
@@ -72,6 +73,8 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otpEmail, setOtpEmail] = useState("");
+    const otpModeRef = useRef("google");
+    const googleTokenRef = useRef(null);
     const [otpLoading, setOtpLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [activeField, setActiveField] = useState(null);
@@ -114,12 +117,6 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-
-        // 👑 Strict check for Admin Portal
-        if (isAdminMode && email.toLowerCase() !== "riteshkumar90359@gmail.com") {
-            setError("Access Violation: You are not authorized to access the Admin Neural Core.");
-            return;
-        }
 
         setLoading(true);
         setError("");
@@ -166,17 +163,23 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                 localStorage.removeItem("saved_creds");
             }
 
-            localStorage.setItem("token", data.access_token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            localStorage.setItem("sessionTimestamp", Date.now().toString());
-            localStorage.setItem("lastActivity", Date.now().toString());
+            session.save(data);
             onLoginSuccess(data.user);
         } catch (err) {
-            const detail = err.response?.data?.detail;
-            if (detail && detail.includes("Password is wrong")) {
-                setError("Password is wrong. Try 'Forgot Access' below or use Google Sign-In.");
+            if (err.response?.data?.code === "EMAIL_NOT_VERIFIED") {
+                // Accounts created before verification existed confirm their address once.
+                try {
+                    const normalized = email.trim().toLowerCase();
+                    await resendOTP(normalized, "verify_email");
+                    otpModeRef.current = "verify_email";
+                    setOtpEmail(normalized);
+                    setShowOTPModal(true);
+                    setError("");
+                } catch (sendErr) {
+                    setError(errorMessage(sendErr, "Could not send a verification code."));
+                }
             } else {
-                setError(detail || "Login failed. Please check your credentials.");
+                setError(errorMessage(err, "Login failed. Please check your credentials."));
             }
         } finally {
             setLoading(false);
@@ -203,34 +206,28 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
             setLoading(true);
             setError("");
             try {
-                // Fetch user info from Google
-                const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const userInfo = await userInfoResponse.json();
-
-                // 👑 Critical Admin Security Check
-                if (isAdminMode && userInfo.email.toLowerCase() !== "riteshkumar90359@gmail.com") {
-                    setError("Security Alert: Unauthorized account detected for administrative sync.");
-                    setLoading(false);
-                    return;
-                }
-
-                // Show modal IMMEDIATELY for instant feedback
-                setOtpEmail(userInfo.email);
+                googleTokenRef.current = tokenResponse.access_token;
+                const res = await googleAuth(tokenResponse.access_token);
+                otpModeRef.current = res.purpose === "verify_email" ? "verify_email" : "google";
+                otpContextRef.current = { email: res.email };
+                setOtpEmail(res.email);
                 setShowOTPModal(true);
-
-                // Keep the details around so "Resend OTP" can ask for a fresh code
-                otpContextRef.current = { email: userInfo.email, name: userInfo.name };
-
-                // Request the OTP right away. Location is only recorded at verify
-                // time, so waiting on the geolocation prompt here just delayed the email.
-                googleAuth(userInfo.email, userInfo.name).catch(err => {
-                    setError(err.response?.data?.detail || "Failed to trigger OTP email");
-                    setShowOTPModal(false);
-                });
             } catch (err) {
-                setError(err.response?.data?.detail || "Google sign-in failed");
+                if (err.response?.data?.code === "ACCOUNT_NOT_FOUND") {
+                    // New Google users must complete signup (mobile number + email OTP).
+                    let prefill = {};
+                    try {
+                        const info = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                        }).then((r) => r.json());
+                        prefill = { email: info.email, name: info.name };
+                    } catch {
+                        // Prefill is a convenience only.
+                    }
+                    onNavigate("signup", prefill);
+                } else {
+                    setError(errorMessage(err, "Google sign-in failed"));
+                }
             } finally {
                 setLoading(false);
             }
@@ -283,11 +280,10 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                 // Location is optional - keep the "India" default
             }
 
-            const response = await googleVerifyOTP(otpEmail, otp, loginLocation);
-            localStorage.setItem("token", response.access_token);
-            localStorage.setItem("user", JSON.stringify(response.user));
-            localStorage.setItem("sessionTimestamp", Date.now().toString());
-            localStorage.setItem("lastActivity", Date.now().toString());
+            const response = otpModeRef.current === "verify_email"
+                ? await verifyEmail(otpEmail, otp)
+                : await googleVerifyOTP(otpEmail, otp, loginLocation);
+            session.save(response);
             // Hand off to OTPModal - it plays the success animation and then
             // calls onVerified, which finishes the login below.
             verifiedUserRef.current = response.user;
@@ -298,9 +294,12 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     };
 
     const handleOTPResend = async () => {
-        const ctx = otpContextRef.current;
-        // Hitting /auth/google again regenerates the OTP and re-sends the email
-        await googleAuth(ctx?.email || otpEmail, ctx?.name);
+        if (otpModeRef.current === "verify_email" && !googleTokenRef.current) {
+            await resendOTP(otpEmail, "verify_email");
+        } else {
+            // Re-verifying the Google token issues and e-mails a fresh code.
+            await googleAuth(googleTokenRef.current);
+        }
     };
 
     const handleOTPVerified = () => {
@@ -402,6 +401,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
                 >
                     <div className="auth-header">
+                        <div className="auth-logo"><Logo height={40} /></div>
                         <motion.div
                             className="auth-brand-icon"
                             whileHover={{ rotate: 10, scale: 1.1 }}

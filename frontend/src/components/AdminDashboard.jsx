@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getAllComplaints, updateComplaintStatus, deleteComplaint, bulkDeleteComplaints } from "../api";
 import ThemeToggle from "./ThemeToggle";
 import "../styles/AdminDashboard.css";
+import Logo from "./Logo";
+import NotificationBell from "./NotificationBell";
 
 export default function AdminDashboard({ user, onNavigate, onLogout }) {
     const [complaints, setComplaints] = useState([]);
@@ -235,16 +237,12 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                             whileHover={{ scale: 1.05, rotate: 5 }}
                             onClick={() => onNavigate("landing")}
                         >
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                                <path d="M2 17l10 5 10-5" />
-                                <path d="M2 12l10 5 10-5" />
-                            </svg>
-                            <span>QuickFix Admin</span>
+                            <Logo height={30} /><span className="qf-area-badge">Admin</span>
                         </motion.div>
                     </div>
 
                     <div className="admin-header-right" ref={dropdownRef} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <NotificationBell />
                         <ThemeToggle className="navbar-theme-toggle" />
                         <motion.button
                             className="admin-profile-btn"
@@ -280,6 +278,9 @@ export default function AdminDashboard({ user, onNavigate, onLogout }) {
                                             <circle cx="12" cy="7" r="4" />
                                         </svg>
                                         My Profile
+                                    </button>
+                                    <button onClick={() => { onNavigate("admin-console"); setIsMenuOpen(false); }}>
+                                        Admin console: users, AI, audit, system
                                     </button>
                                     <button onClick={() => { onNavigate("login-history"); setIsMenuOpen(false); }}>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

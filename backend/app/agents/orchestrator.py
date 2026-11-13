@@ -1,21 +1,46 @@
-import asyncio
-from typing import Dict, List
-from .classifier import classify_complaint
-from .responder import generate_response
-from .priority import detect_priority
-from .action_recommender import recommend_action
-from .sentiment_analyzer import analyze_sentiment
-from .solution_suggester import suggest_solution
-from .satisfaction_predictor import predict_satisfaction
-from .complaint_matcher import find_similar_complaints
-from .anomaly_detector import check_anomaly
-from .kb_retrieval import get_kb_context
-from .reevaluator import reevaluate_response
-from .churn_predictor import predict_churn_risk
-from .urgency_model import analyze_complaint_urgency
-from app.agents.gemini_client import async_ask_ai
-import json
-import re
+"""
+Complaint analysis pipeline.
+
+What actually runs, in order:
+  1. Sanitise the complaint text and check it for prompt-injection phrasing.
+  2. Detect the writing language (English / Hindi / Hinglish / ...).
+  3. Retrieve relevant policy snippets from the knowledge base (TF-IDF RAG).
+  4. ONE structured LLM call (Groq, then Gemini) under a timeout, returning
+     category / priority / sentiment / satisfaction / response / solution.
+     Output must pass a strict schema; one repair retry on invalid output.
+  5. If no provider produces valid output: deterministic local analysis.
+  6. Local heuristics: churn risk (logistic regression), urgency (keywords +
+     TextBlob polarity), recommended action from priority.
+  7. Decide whether the resolution needs human approval before anything is
+     sent to the customer.
+
+The result includes provenance (provider, model, latency, fallback flag) so
+it can be stored with the complaint and in ai_execution_logs.
+"""
+from __future__ import annotations
+
+import time
+from typing import Dict, List, Optional
+
+from app.agents import local_analysis
+from app.agents.action_recommender import recommend_action
+from app.agents.churn_predictor import predict_churn_risk
+from app.agents.guardrails import (
+    ANALYSIS_SYSTEM_PROMPT,
+    OutputRejected,
+    detect_injection,
+    parse_analysis,
+    sanitize_user_text,
+    wrap_untrusted,
+)
+from app.agents.language_detector import detect_language
+from app.agents.llm import LLMUnavailable, complete
+from app.agents.urgency_model import analyze_complaint_urgency
+from app.core.config import get_settings
+from app.core.logging import get_logger
+from app.services.rag_engine import rag_engine
+
+logger = get_logger("app.ai.pipeline")
 
 ALLOWED = {
     "category": ("Billing", "Technical", "Delivery", "Service", "Security", "Other"),
@@ -23,151 +48,93 @@ ALLOWED = {
     "sentiment": ("Positive", "Neutral", "Negative", "Angry"),
     "satisfaction": ("High", "Medium", "Low"),
 }
-DEFAULTS = {"category": "Other", "priority": "Medium", "sentiment": "Neutral", "satisfaction": "Medium"}
 
 
-def _as_text(value) -> str:
-    """LLMs sometimes return lists/dicts where we expect prose (e.g. solution as a
-    list of steps). The DB columns and ComplaintResponse are strings, so a list
-    here used to make POST /complaint fail with a 500."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, (list, tuple)):
-        lines = [_as_text(v) for v in value]
-        lines = [l for l in lines if l]
-        if len(lines) > 1 and not any(re.match(r"^\s*(\d+[.)]|[-*•])\s", l) for l in lines):
-            lines = [f"{i}. {l}" for i, l in enumerate(lines, 1)]
-        return "\n".join(lines)
-    if isinstance(value, dict):
-        label = value.get("step") or value.get("title") or value.get("text") or value.get("description")
-        return _as_text(label) if label else json.dumps(value, ensure_ascii=False)
-    return str(value)
+def review_reasons(result: Dict, injection_flags: List[str]) -> List[str]:
+    """Why a human must approve before a resolution is sent to the customer."""
+    reasons = []
+    if injection_flags or result.get("suspicious"):
+        reasons.append("possible prompt injection")
+    if result.get("fallback_used"):
+        reasons.append("AI unavailable - offline analysis")
+    if result.get("category") == "Security":
+        reasons.append("security-related complaint")
+    if result.get("priority") == "High":
+        reasons.append("high priority")
+    if result.get("sentiment") == "Angry":
+        reasons.append("angry customer")
+    if result.get("churn_risk") == "Critical":
+        reasons.append("critical churn risk")
+    return reasons
 
 
-def _normalize(result: dict) -> dict:
-    for field, allowed in ALLOWED.items():
-        value = _as_text(result.get(field)).capitalize()
-        result[field] = value if value in allowed else DEFAULTS[field]
-    for field in ("response", "action", "solution", "similar_issues"):
-        result[field] = _as_text(result.get(field))
-    result["churn_risk"] = _as_text(result.get("churn_risk")) or "Low"
-    result["is_anomaly"] = bool(result.get("is_anomaly", False))
-    if not isinstance(result.get("urgency_data"), dict):
-        result["urgency_data"] = {}
-    if not isinstance(result.get("steps"), list):
-        result["steps"] = []
-    return result
+def _policy_topics(context: str) -> str:
+    topics = [line.split("]:")[0].lstrip("[") for line in context.split("\n\n") if line.startswith("[")]
+    return ", ".join(topics) if topics else ""
 
 
-async def run_agent_pipeline(text: str, user_language: str = 'english'):
-    return _normalize(await run_agentic_loop(text, user_language=user_language, iterations=0))
+async def _llm_analysis(text: str, language: str, kb_context: str):
+    s = get_settings()
+    system = ANALYSIS_SYSTEM_PROMPT.format(company=s.company_name, language=language)
+    prompt = f"POLICY CONTEXT (trusted):\n{kb_context}\n\nCUSTOMER COMPLAINT (untrusted):\n{wrap_untrusted(text)}"
+    first = await complete(prompt, system=system, json_mode=True, temperature=0.2)
+    try:
+        return parse_analysis(first.text), first, 1
+    except OutputRejected as exc:
+        logger.warning("AI output rejected (%s); retrying once", exc)
+    repair = (prompt + "\n\nYour previous reply was not valid. Reply with ONLY the JSON object described in the "
+              "output contract, using exactly the allowed enum values.")
+    second = await complete(repair, system=system, json_mode=True, temperature=0.0)
+    second.latency_ms += first.latency_ms
+    return parse_analysis(second.text), second, 2
 
-async def run_agentic_loop(text: str, user_language: str = 'english', iterations: int = 0):
-    """
-    ULTRA-TURBO AI Orchestration Engine.
-    Consolidates multiple agent calls into a single high-speed Master Agent call.
-    Reduces latency by ~70% and eliminates sequential API bottlenecks.
-    """
-    if not text or not text.strip():
+
+async def run_agent_pipeline(text: str, user_language: Optional[str] = None) -> Dict:
+    started = time.perf_counter()
+    clean = sanitize_user_text(text)
+    if not clean:
         raise ValueError("Empty complaint text")
 
-    steps = []
-    
-    # Phase 1: PARALLEL MASTER ANALYSIS
-    # We combine Category, Priority, Sentiment, Solution, and Satisfaction into ONE prompt.
-    master_prompt = f"""
-Analyze this customer complaint and return EXACT JSON only.
-Complaint: "{text}"
-Language: {user_language}
+    injection_flags = detect_injection(text)  # raw input: sanitising first would hide delimiter attacks
+    language = user_language or detect_language(clean)
+    kb_context = rag_engine.retrieve(clean)
+    steps = [{"step": "Input screening", "status": "flagged" if injection_flags else "clean"},
+             {"step": "Knowledge base retrieval", "status": "done"}]
 
-JSON format:
-{{
-  "category": "Billing|Technical|Delivery|Service|Security|Other",
-  "priority": "High|Medium|Low",
-  "sentiment": "Positive|Neutral|Negative|Angry",
-  "solution": "Detailed professional multi-step solution that directly resolves the user's issue with specific action steps and professional tone.",
-  "satisfaction": "High|Medium|Low",
-  "is_anomaly": false
-}}
-"""
-    
+    provider, model, fallback_used, error, attempts = "local", local_analysis.LOCAL_MODEL_NAME, False, None, 0
     try:
-        # Start Master Analysis, KB retrieval, and Similarity matching in parallel
-        # This reduces 5 sequential steps to just 2!
-        master_task = async_ask_ai(master_prompt)
-        kb_task = get_kb_context("General", text)
-        similar_task = find_similar_complaints(text, "Other")
-        
-        # Execute basic analysis
-        master_res_raw, kb_context, similar = await asyncio.gather(master_task, kb_task, similar_task)
-        
-        # Parse JSON from master agent with robust cleaning
-        try:
-            clean_json = re.sub(r'```json|```', '', master_res_raw).strip()
-            # Find the first { and last } to handle stray text
-            start = clean_json.find('{')
-            end = clean_json.rfind('}') + 1
-            if start != -1 and end != -1:
-                clean_json = clean_json[start:end]
-            analysis = json.loads(clean_json)
-        except:
-            # Emergency local fallback if AI fails to return JSON
-            analysis = {
-                "category": "Other", "priority": "Medium", "sentiment": "Neutral",
-                "solution": "We will investigate this immediately.", "satisfaction": "Medium",
-                "is_anomaly": False
-            }
-            
-        # Clean the LLM's fields before the downstream agents use them (a list
-        # sentiment used to crash the churn predictor and drop us into the fallback)
-        if not isinstance(analysis, dict):
-            analysis = {}
-        clean = _normalize(dict(analysis))
-        category = clean["category"]
-        priority = clean["priority"]
-        sentiment = clean["sentiment"]
-        solution = clean["solution"]
-        satisfaction = clean["satisfaction"]
-        is_anomaly = clean["is_anomaly"]
-        
-        steps.append({"step": "Master Intelligence", "status": "Turbo Analysis Done"})
+        analysis, llm_result, attempts = await _llm_analysis(clean, language, kb_context)
+        result = analysis.model_dump()
+        provider, model = llm_result.provider, llm_result.model
+        steps.append({"step": "LLM analysis", "status": f"{provider}:{model}"})
+    except (LLMUnavailable, OutputRejected) as exc:
+        error = str(exc)[:300]
+        fallback_used = True
+        result = local_analysis.analyze(clean, language)
+        result["suspicious"] = False
+        steps.append({"step": "LLM analysis", "status": "unavailable - offline analysis used"})
 
-        # Phase 2: Final Response Generation (Parallelized for Speed)
-        response_task = generate_response(category, f"Context: {kb_context}\nComplaint: {text}", user_language)
-        churn_task = predict_churn_risk(sentiment, text)
-        urgency_task = analyze_complaint_urgency(text)
-        
-        # Execute phase 2 tasks in parallel
-        response, churn_risk, urgency_analysis = await asyncio.gather(
-            response_task, churn_task, urgency_task
-        )
-        
-        action = recommend_action(priority) # This is a non-awaitable local logic usually
-        
-        steps.append({"step": "Processing Complete", "status": "Success"})
+    for field, allowed in ALLOWED.items():  # belt and braces before anything is stored
+        if result.get(field) not in allowed:
+            result[field] = local_analysis.analyze(clean, language)[field]
 
-        return {
-            "category": category,
-            "priority": priority,
-            "response": response,
-            "action": action,
-            "sentiment": sentiment,
-            "solution": solution,
-            "satisfaction": satisfaction,
-            "similar_issues": similar,
-            "steps": steps,
-            "is_anomaly": is_anomaly,
-            "churn_risk": churn_risk,
-            "urgency_data": urgency_analysis,
-            "agentic_refinement": False
-        }
-
-    except Exception as e:
-        print(f"❌ Turbo Orchestrator Error: {e}")
-        return {
-            "category": "Other", "priority": "Medium", "response": "Service is currently optimizing, please try in a moment.",
-            "action": "Manual Review", "sentiment": "Neutral", "solution": "", "satisfaction": "Medium",
-            "similar_issues": "", "steps": [{"step": "Error", "status": "Fallback"}]
-        }
+    result["churn_risk"] = await predict_churn_risk(result["sentiment"], clean)
+    result["urgency_data"] = await analyze_complaint_urgency(clean)
+    result["action"] = recommend_action(result["priority"])
+    result["similar_issues"] = _policy_topics(kb_context)
+    result["language"] = language
+    result["fallback_used"] = fallback_used
+    reasons = review_reasons(result, injection_flags)
+    result.update({
+        "steps": steps + [{"step": "Review gate", "status": "human approval required" if reasons else "auto-eligible"}],
+        "injection_flags": injection_flags,
+        "requires_human_review": bool(reasons),
+        "review_reason": "; ".join(reasons)[:255] or None,
+        "ai_provider": provider,
+        "ai_model": model,
+        "ai_latency_ms": int((time.perf_counter() - started) * 1000),
+        "ai_attempts": attempts,
+        "ai_error": error,
+    })
+    result.pop("suspicious", None)
+    return result

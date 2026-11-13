@@ -1,688 +1,305 @@
 """
-Agent Module API Routes
-Secure endpoints for human agents to review complaints and send verified solutions
+Support-agent workspace: queue, complaint review, AI validation and sending
+human-approved resolutions. Identity comes from the access token (the old
+`agent_email` parameter is ignored). Agents only reach complaints assigned to
+them; admins reach all.
 """
-
-from fastapi import APIRouter, HTTPException, Depends, Request, status, Body
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_
-from typing import Any, Optional, List
-from datetime import datetime
 import json
+from typing import Any, List, Optional
 
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import desc, or_, select
+from sqlalchemy.orm import Session
+
+from app.api.deps import require_staff
+from app.core.config import get_settings
+from app.core.errors import bad_request, forbidden
 from app.db.database import get_db, get_ist_time
 from app.db.models import (
-    User, Complaint, AgentResolution, 
-    ModelValidation, AgentAuditLog
+    ROLE_ADMIN,
+    STATUS_AWAITING_APPROVAL,
+    STATUS_IN_PROGRESS,
+    STATUS_OPEN,
+    STATUS_RESOLVED,
+    AgentAuditLog,
+    AgentResolution,
+    AIExecutionLog,
+    Complaint,
+    ModelValidation,
+    User,
 )
-from app.services.multi_model_validator import multi_model_validator
+from app.schemas.complaint import NoteRequest, ResolutionRequest
+from app.services import complaint_service as svc
+from app.services.activity import audit, notify, record_event
 from app.services.email_service import email_service
+from app.services.multi_model_validator import multi_model_validator
 
-router = APIRouter(prefix="/agent", tags=["agent-module"])
+router = APIRouter(prefix="/agent", tags=["agent-workspace"])
 
 
 def normalize_steps(steps: Optional[List[Any]]) -> Optional[List[str]]:
-    """
-    Coerce incoming steps to a list of plain strings.
-
-    The AI pipeline stores ai_analysis_steps as dicts ({"step": ..., "status": ...}),
-    and the agent UI pre-fills its step editor from that field, so the browser sends
-    those dicts straight back here. Steps are rendered as bare text in the resolution
-    email and the resolution log, so anything non-string is flattened on the way in.
-    """
+    """Coerce steps (strings or the pipeline's {"step","status"} dicts) to short plain strings."""
     if not steps:
         return None
-
     normalized = []
-    for step in steps:
+    for step in steps[:20]:
         if step is None:
             continue
-        if isinstance(step, str):
-            text = step.strip()
-        elif isinstance(step, dict):
+        if isinstance(step, dict):
             label = step.get("step") or step.get("title") or step.get("name") or ""
             detail = step.get("status") or step.get("description") or step.get("detail") or ""
-            text = " — ".join(part for part in (str(label).strip(), str(detail).strip()) if part)
-            if not text:
-                text = json.dumps(step, ensure_ascii=False)
+            text = " — ".join(p for p in (str(label).strip(), str(detail).strip()) if p) or json.dumps(step)
         else:
             text = str(step).strip()
-
         if text:
-            normalized.append(text)
-
+            normalized.append(text[:500])
     return normalized or None
 
-# ============================================
-# AUTHENTICATION & AUTHORIZATION
-# ============================================
 
-def require_agent_access(user_email: str, db: Session) -> User:
-    """
-    Verify that the user has agent access
-    Only admins and users with is_agent=True can access
-    """
-    user = db.query(User).filter(User.email == user_email).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    if user.role != "Admin" and not user.is_agent:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Agent role required."
-        )
-    
-    return user
+def _resolution_dict(resolution: Optional[AgentResolution]) -> Optional[dict]:
+    if resolution is None:
+        return None
+    return {
+        "id": resolution.id, "draft_solution": resolution.draft_solution, "final_solution": resolution.final_solution,
+        "steps": json.loads(resolution.steps) if resolution.steps else None,
+        "validation_status": resolution.validation_status, "confidence_score": resolution.confidence_score,
+        "status": resolution.status, "requires_approval": bool(resolution.requires_approval),
+        "agent_name": resolution.agent_name, "created_at": resolution.created_at,
+    }
 
-def log_agent_action(
-    db: Session,
-    agent_id: int,
-    action: str,
-    complaint_id: Optional[int] = None,
-    ticket_id: Optional[str] = None,
-    details: Optional[dict] = None,
-    request: Optional[Request] = None
-):
-    """Log agent action to audit trail"""
-    audit_log = AgentAuditLog(
-        agent_id=agent_id,
-        action=action,
-        complaint_id=complaint_id,
-        ticket_id=ticket_id,
-        details=details,
-        ip_address=request.client.host if request and request.client else None,
-        user_agent=request.headers.get("user-agent") if request else None,
-        timestamp=get_ist_time()
-    )
-    db.add(audit_log)
-    db.commit()
-
-# ============================================
-# COMPLAINT QUEUE ENDPOINTS
-# ============================================
 
 @router.get("/complaints/queue")
-def get_complaint_queue(
-    agent_email: str,
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
-    sentiment: Optional[str] = None,
-    category: Optional[str] = None,
-    search: Optional[str] = None,
-    sort_by: str = "created_at",
-    sort_order: str = "desc",
-    page: int = 1,
-    limit: int = 50,
-    db: Session = Depends(get_db)
+def complaint_queue(
+    status: Optional[str] = None, priority: Optional[str] = None, sentiment: Optional[str] = None,
+    category: Optional[str] = None, search: Optional[str] = Query(None, max_length=100),
+    sort_by: str = "created_at", sort_order: str = "desc", needs_review: Optional[bool] = None,
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    user: User = Depends(require_staff), db: Session = Depends(get_db),
 ):
-    """
-    Get structured queue of complaints for agent review
-    
-    Query Parameters:
-    - status: pending, under_review, resolved
-    - priority: High, Medium, Low
-    - sentiment: Positive, Neutral, Negative, Angry
-    - category: Technical, Billing, Delivery, Service, Security
-    - search: Search in ticket_id, name, email, subject, description
-    - sort_by: created_at, priority, sentiment
-    - sort_order: asc, desc
-    - page: Page number (default 1)
-    - limit: Items per page (default 50)
-    """
-    # Verify agent access
-    agent = require_agent_access(agent_email, db)
-    
-    # Build query
-    query = db.query(Complaint)
-    
-    # Apply filters
-    if status:
-        if status == "pending":
-            query = query.filter(Complaint.is_resolved == False)
-        elif status == "resolved":
-            query = query.filter(Complaint.is_resolved == True)
-    
-    if priority:
-        query = query.filter(Complaint.priority == priority)
-    
-    if sentiment:
-        query = query.filter(Complaint.sentiment == sentiment)
-    
-    if category:
-        query = query.filter(Complaint.category == category)
-    
-    if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            or_(
-                Complaint.ticket_id.like(search_term),
-                Complaint.name.like(search_term),
-                Complaint.email.like(search_term),
-                Complaint.subject.like(search_term),
-                Complaint.description.like(search_term)
-            )
-        )
-    
-    # Apply sorting
-    if sort_by == "priority":
-        # Custom priority sorting: High > Medium > Low
-        priority_order = {"High": 3, "Medium": 2, "Low": 1}
-        # This is a simplified approach; for complex sorting, use CASE in SQL
-        pass  # Will sort in Python after fetching
-    elif sort_by == "created_at":
-        if sort_order == "desc":
-            query = query.order_by(desc(Complaint.created_at))
-        else:
-            query = query.order_by(Complaint.created_at)
-    
-    # Get total count
-    total_count = query.count()
-    
-    # Apply pagination
-    offset = (page - 1) * limit
-    complaints = query.offset(offset).limit(limit).all()
-    
-    # Format response
-    complaint_list = []
-    for complaint in complaints:
-        # Check if there's an agent resolution
-        resolution = db.query(AgentResolution).filter(
-            AgentResolution.complaint_id == complaint.id
-        ).first()
-        
-        complaint_data = {
-            "id": complaint.id,
-            "ticket_id": complaint.ticket_id or f"#{complaint.id}",
-            "user_name": complaint.name,
-            "user_email": complaint.email,
-            "category": complaint.category,
-            "priority": complaint.priority,
-            "sentiment": complaint.sentiment,
-            "subject": complaint.subject,
-            "description": complaint.description or complaint.complaint_text,
-            "status": "resolved" if complaint.is_resolved else "pending",
-            "created_at": complaint.created_at.isoformat() if complaint.created_at else None,
-            "updated_at": complaint.updated_at.isoformat() if complaint.updated_at else None,
-            "agent_status": resolution.status if resolution else None,
-            "agent_name": resolution.agent_name if resolution else None,
-            "solution": complaint.solution, # Include current solution
-            "steps": json.loads(complaint.ai_analysis_steps) if complaint.ai_analysis_steps else [] # Include current steps
-        }
-        complaint_list.append(complaint_data)
-    
-    return {
-        "total": total_count,
-        "page": page,
-        "limit": limit,
-        "total_pages": (total_count + limit - 1) // limit,
-        "complaints": complaint_list
-    }
+    legacy = {"pending": None, "resolved": STATUS_RESOLVED}
+    status_filter = legacy.get(status, status) if status in legacy else status
+    sort = "priority" if sort_by == "priority" else ("oldest" if sort_order == "asc" else "newest")
+    result = svc.list_for_user(db, user, status=status_filter, priority=priority, category=category,
+                               sentiment=sentiment, search=search, needs_review=needs_review, sort=sort,
+                               page=page, page_size=limit)
+    if status == "pending":  # legacy filter meaning "not resolved"
+        result["items"] = [c for c in result["items"] if c["status"] in svc.ACTIVE_STATUSES]
+        result["complaints"] = result["items"]
+    ids = [c["id"] for c in result["items"]]
+    resolutions = {}
+    if ids:
+        for r in db.execute(select(AgentResolution).where(AgentResolution.complaint_id.in_(ids))).scalars():
+            resolutions[r.complaint_id] = r
+    for item in result["items"]:
+        res = resolutions.get(item["id"])
+        item["agent_status"] = res.status if res else None
+        item["agent_name"] = res.agent_name if res else None
+        item["user_name"], item["user_email"] = item["name"], item["email"]
+    result["limit"] = result["page_size"]
+    return result
+
 
 @router.get("/complaints/{ticket_id}")
-def get_complaint_detail(
-    ticket_id: str,
-    agent_email: str,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    """
-    Get detailed complaint information with full AI analysis
-    """
-    # Verify agent access
-    agent = require_agent_access(agent_email, db)
-    
-    # Get complaint
-    complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-    
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Complaint with ticket ID {ticket_id} not found"
-        )
-    
-    # Log action
-    log_agent_action(
-        db, agent.id, "view_complaint",
-        complaint_id=complaint.id,
-        ticket_id=ticket_id,
-        request=request
-    )
-    
-    # Get agent resolution if exists
-    resolution = db.query(AgentResolution).filter(
-        AgentResolution.complaint_id == complaint.id
-    ).first()
-    
-    # Format response
-    return {
-        "complaint": {
-            "id": complaint.id,
-            "ticket_id": complaint.ticket_id,
-            "user_name": complaint.name,
-            "user_email": complaint.email,
-            "user_id": complaint.id,  # Using complaint ID as user reference
-            "category": complaint.category,
-            "priority": complaint.priority,
-            "sentiment": complaint.sentiment,
-            "subject": complaint.subject,
-            "description": complaint.description or complaint.complaint_text,
-            "ai_response": complaint.response,
-            "ai_solution": complaint.solution,
-            "ai_steps": json.loads(complaint.ai_analysis_steps) if complaint.ai_analysis_steps else [],
-            "ai_action": complaint.action,
-            "satisfaction_prediction": complaint.satisfaction_prediction,
-            "similar_complaints": complaint.similar_complaints,
-            "created_at": complaint.created_at.isoformat() if complaint.created_at else None,
-            "updated_at": complaint.updated_at.isoformat() if complaint.updated_at else None,
-            "is_resolved": complaint.is_resolved
-        },
-        "agent_resolution": {
-            "id": resolution.id if resolution else None,
-            "draft_solution": resolution.draft_solution if resolution else None,
-            "final_solution": resolution.final_solution if resolution else None,
-            "steps": json.loads(resolution.steps) if resolution and resolution.steps else None,
-            "validation_status": resolution.validation_status if resolution else None,
-            "confidence_score": resolution.confidence_score if resolution else None,
-            "status": resolution.status if resolution else None,
-            "created_at": resolution.created_at.isoformat() if resolution and resolution.created_at else None
-        } if resolution else None
-    }
+def complaint_detail(ticket_id: str, request: Request, user: User = Depends(require_staff),
+                     db: Session = Depends(get_db)):
+    complaint = svc.get_for_user(db, user, ticket_id)
+    audit(db, user, "view_complaint", request, complaint)
+    db.commit()
+    resolution = db.execute(select(AgentResolution).where(AgentResolution.complaint_id == complaint.id)).scalar_one_or_none()
+    data = svc.serialize(db, user, [complaint])[0]
+    data.update({"user_name": complaint.name, "user_email": complaint.email, "ai_response": complaint.response,
+                 "ai_solution": complaint.solution, "ai_steps": data["steps"], "ai_action": complaint.action})
+    return {"complaint": data, "agent_resolution": _resolution_dict(resolution),
+            "history": svc.history(db, user, complaint), "attachments": svc.list_attachments(db, complaint)}
 
-# ============================================
-# VALIDATION ENDPOINTS
-# ============================================
+
+@router.post("/complaints/{ticket_id}/claim")
+def claim(ticket_id: str, request: Request, user: User = Depends(require_staff), db: Session = Depends(get_db)):
+    """Take ownership of an unassigned complaint (only when AGENT_CAN_VIEW_UNASSIGNED is enabled)."""
+    complaint = svc.get_for_user(db, user, ticket_id)
+    if complaint.assigned_agent_id not in (None, user.id):
+        raise bad_request("This complaint is already assigned to another agent.", "ALREADY_ASSIGNED")
+    if user.role != ROLE_ADMIN and not get_settings().agent_can_view_unassigned and complaint.assigned_agent_id is None:
+        raise forbidden()
+    complaint.assigned_agent_id, complaint.assigned_at = user.id, get_ist_time()
+    record_event(db, complaint, "assigned", user, note=f"Claimed by {user.full_name}")
+    if complaint.status == STATUS_OPEN:
+        svc.set_status(db, user, complaint, STATUS_IN_PROGRESS)
+    audit(db, user, "claim_complaint", request, complaint)
+    db.commit()
+    return {"message": "Complaint assigned to you", "ticket_id": ticket_id}
+
+
+@router.post("/complaints/{ticket_id}/notes")
+def add_note(ticket_id: str, data: NoteRequest, request: Request, user: User = Depends(require_staff),
+             db: Session = Depends(get_db)):
+    """Internal note (staff only) or a public reply that the customer sees in their timeline."""
+    complaint = svc.get_for_user(db, user, ticket_id)
+    record_event(db, complaint, "internal_note" if data.internal else "agent_reply", user, note=data.note)
+    if not data.internal:
+        notify(db, complaint.user_id, "agent_reply", f"New reply on {ticket_id}", data.note[:300], ticket_id)
+        if complaint.status == STATUS_OPEN:
+            svc.set_status(db, user, complaint, STATUS_IN_PROGRESS)
+    complaint.updated_at = get_ist_time()
+    audit(db, user, "add_note", request, complaint, {"internal": data.internal})
+    db.commit()
+    return {"message": "Note added"}
+
 
 @router.post("/validate-solution")
-async def validate_solution(
-    agent_email: str = Body(...),
-    ticket_id: str = Body(...),
-    draft_solution: str = Body(...),
-    steps: Optional[List[Any]] = Body(None),
-    request: Request = None,
-    db: Session = Depends(get_db)
-):
-    """
-    Validate agent's solution using multi-model validation
-    
-    Request Body:
-    {
-        "agent_email": "agent@example.com",
-        "ticket_id": "QF-2025-001",
-        "draft_solution": "Here is my proposed solution..."
-    }
-    """
-    steps = normalize_steps(steps)
+async def validate_solution(data: ResolutionRequest, request: Request, user: User = Depends(require_staff),
+                            db: Session = Depends(get_db)):
+    """Score a draft with the multi-model validator. Advisory only: a human decides what is sent."""
+    from fastapi.concurrency import run_in_threadpool
 
-    # Verify agent access
-    agent = require_agent_access(agent_email, db)
+    draft = data.text()
+    steps = normalize_steps(data.steps)
+    complaint = await run_in_threadpool(svc.get_for_user, db, user, data.ticket_id)
+    started = get_ist_time()
+    result = await multi_model_validator.validate_solution({
+        "category": complaint.category, "priority": complaint.priority, "sentiment": complaint.sentiment,
+        "subject": complaint.subject, "description": complaint.description or complaint.complaint_text,
+    }, draft)
 
-    # Get complaint
-    complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Complaint with ticket ID {ticket_id} not found"
-        )
-
-    # Prepare complaint data for validation
-    complaint_data = {
-        "category": complaint.category,
-        "priority": complaint.priority,
-        "sentiment": complaint.sentiment,
-        "subject": complaint.subject,
-        "description": complaint.description or complaint.complaint_text
-    }
-    
-    # Run multi-model validation
-    print(f"🔍 Starting validation for ticket {ticket_id}...")
-    validation_result = await multi_model_validator.validate_solution(
-        complaint_data,
-        draft_solution
-    )
-    
-    # Create or update agent resolution
-    resolution = db.query(AgentResolution).filter(
-        AgentResolution.complaint_id == complaint.id
-    ).first()
-    
-    if not resolution:
-        resolution = AgentResolution(
-            complaint_id=complaint.id,
-            ticket_id=ticket_id,
-            agent_id=agent.id,
-            agent_name=agent.full_name or agent.email,
-            draft_solution=draft_solution,
-            final_solution=draft_solution,  # Will be updated when sent
-            steps=json.dumps(steps) if steps else None,
-            validation_results=validation_result.get("validation_results"),
-            confidence_score=validation_result.get("confidence_score"),
-            validation_status=validation_result.get("approval_status"),
-            model_agreement_metrics=validation_result.get("model_agreement"),
-            status="validated" if validation_result.get("approval_status") == "approved" else "draft"
-        )
-        db.add(resolution)
-    else:
-        resolution.draft_solution = draft_solution
+    def persist():
+        resolution = db.execute(select(AgentResolution).where(AgentResolution.complaint_id == complaint.id)).scalar_one_or_none()
+        if resolution is None:
+            resolution = AgentResolution(complaint_id=complaint.id, ticket_id=complaint.ticket_id, agent_id=user.id,
+                                         agent_name=user.full_name or user.email, final_solution=draft)
+            db.add(resolution)
+        resolution.draft_solution = draft
         if steps:
             resolution.steps = json.dumps(steps)
-        resolution.validation_results = validation_result.get("validation_results")
-        resolution.confidence_score = validation_result.get("confidence_score")
-        resolution.validation_status = validation_result.get("approval_status")
-        resolution.model_agreement_metrics = validation_result.get("model_agreement")
-        resolution.status = "validated" if validation_result.get("approval_status") == "approved" else "draft"
+        resolution.validation_results = result.get("validation_results")
+        resolution.confidence_score = result.get("confidence_score")
+        resolution.validation_status = result.get("approval_status")
+        resolution.model_agreement_metrics = result.get("model_agreement")
+        if resolution.status not in ("sent", "delivered"):
+            resolution.status = "validated" if result.get("approval_status") == "approved" else "draft"
         resolution.updated_at = get_ist_time()
-    
-    db.commit()
-    db.refresh(resolution)
-    
-    # Store individual model validations
-    if validation_result.get("validation_results"):
-        # Clear old validations
-        db.query(ModelValidation).filter(
-            ModelValidation.resolution_id == resolution.id
-        ).delete()
-        
-        # Add new validations
-        for model_result in validation_result["validation_results"]:
-            for criterion, score in model_result["scores"].items():
-                model_validation = ModelValidation(
-                    resolution_id=resolution.id,
-                    model_name=model_result["model"],
-                    validation_type=criterion,
-                    score=score,
-                    feedback=model_result.get("feedback", ""),
-                    passed=score >= 0.70
-                )
-                db.add(model_validation)
-        
+        db.flush()
+        db.query(ModelValidation).filter(ModelValidation.resolution_id == resolution.id).delete()
+        for model_result in result.get("validation_results") or []:
+            for criterion, score in (model_result.get("scores") or {}).items():
+                db.add(ModelValidation(resolution_id=resolution.id, model_name=model_result["model"],
+                                       validation_type=criterion, score=score, feedback=model_result.get("feedback", ""),
+                                       passed=score >= 0.70))
+        db.add(AIExecutionLog(complaint_id=complaint.id, operation="solution_validation", provider="groq",
+                              model=",".join(r["model"] for r in result.get("validation_results") or [])[:120] or None,
+                              success=bool(result.get("validation_results")), fallback_used=False,
+                              latency_ms=int((get_ist_time() - started).total_seconds() * 1000),
+                              error=result.get("error")))
+        audit(db, user, "submit_validation", request, complaint,
+              {"confidence_score": result.get("confidence_score"), "approval_status": result.get("approval_status")})
         db.commit()
-    
-    # Log action
-    log_agent_action(
-        db, agent.id, "submit_validation",
-        complaint_id=complaint.id,
-        ticket_id=ticket_id,
-        details={
-            "confidence_score": validation_result.get("confidence_score"),
-            "approval_status": validation_result.get("approval_status")
-        },
-        request=request
-    )
-    
-    return {
-        "message": "Validation completed",
-        "resolution_id": resolution.id,
-        **validation_result
-    }
+        return resolution.id
 
-# ============================================
-# RESOLUTION ENDPOINTS
-# ============================================
+    resolution_id = await run_in_threadpool(persist)
+    return {"message": "Validation completed", "resolution_id": resolution_id, **result}
+
 
 @router.post("/send-resolution")
-def send_resolution(
-    agent_email: str = Body(...),
-    ticket_id: str = Body(...),
-    final_solution: str = Body(...),
-    steps: Optional[List[Any]] = Body(None),
-    request: Request = None,
-    db: Session = Depends(get_db)
-):
-    """
-    Send verified resolution to user
-    
-    Request Body:
-    {
-        "agent_email": "agent@example.com",
-        "ticket_id": "QF-2025-001",
-        "final_solution": "Final verified solution..."
-    }
-    """
-    steps = normalize_steps(steps)
-
-    # Verify agent access
-    agent = require_agent_access(agent_email, db)
-
-    # Get complaint
-    complaint = db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first()
-
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Complaint with ticket ID {ticket_id} not found"
-        )
-
-    # Get resolution
-    resolution = db.query(AgentResolution).filter(
-        AgentResolution.complaint_id == complaint.id
-    ).first()
-
-    # Allow human agents to send resolutions even if validation is not approved
-    # (Human-in-the-loop override)
-
+def send_resolution(data: ResolutionRequest, request: Request, user: User = Depends(require_staff),
+                    db: Session = Depends(get_db)):
+    """Send a human-approved resolution to the customer and resolve the complaint."""
+    final = data.text()
+    steps = normalize_steps(data.steps)
+    complaint = svc.get_for_user(db, user, data.ticket_id)
+    if complaint.status in (STATUS_RESOLVED,) and complaint.user_resolution_feedback is True:
+        raise bad_request("The customer has already confirmed this complaint is resolved.", "ALREADY_RESOLVED")
+    now = get_ist_time()
+    resolution = db.execute(select(AgentResolution).where(AgentResolution.complaint_id == complaint.id)).scalar_one_or_none()
     if resolution is None:
-        # Only /validate-solution creates this row, and validating is optional in
-        # the UI, so an agent who writes a solution and sends it straight away
-        # has no resolution yet. Create one rather than failing the send.
-        resolution = AgentResolution(
-            complaint_id=complaint.id,
-            ticket_id=ticket_id,
-            agent_id=agent.id,
-            agent_name=agent.full_name or agent.email,
-            draft_solution=final_solution,
-            final_solution=final_solution,
-            validation_status="skipped",
-        )
+        resolution = AgentResolution(complaint_id=complaint.id, ticket_id=complaint.ticket_id, agent_id=user.id,
+                                     agent_name=user.full_name or user.email, draft_solution=final,
+                                     final_solution=final, validation_status="skipped")
         db.add(resolution)
-
-    # Update resolution
-    resolution.final_solution = final_solution
+    resolution.final_solution = final
+    resolution.agent_id, resolution.agent_name = user.id, user.full_name or user.email
     if steps:
         resolution.steps = json.dumps(steps)
     resolution.status = "sent"
-    resolution.resolution_timestamp = get_ist_time()
-    resolution.updated_at = get_ist_time()
-    
-    # Mark complaint as resolved and update with verified data
-    complaint.is_resolved = True
-    complaint.solution = final_solution
-    if steps:
-        complaint.ai_analysis_steps = json.dumps(steps)
-    complaint.updated_at = get_ist_time()
-    
-    db.commit()
-    
-    # Send email to user
-    try:
-        email_service.send_agent_resolution(
-            user_email=complaint.email,
-            user_name=complaint.name,
-            ticket_id=ticket_id,
-            complaint_subject=complaint.subject or "Your Complaint",
-            agent_solution=final_solution,
-            agent_name=agent.full_name or agent.email,
-            agent_steps=steps
-        )
+    resolution.resolution_timestamp = now
+    resolution.approved_by_id, resolution.approved_at = user.id, now
+    resolution.updated_at = now
 
-        resolution.status = "delivered"
-        db.commit()
-        
-    except Exception as e:
-        print(f"❌ Failed to send email: {e}")
-        # Don't fail the request, just log the error
-    
-    # Log action
-    log_agent_action(
-        db, agent.id, "send_resolution",
-        complaint_id=complaint.id,
-        ticket_id=ticket_id,
-        details={"resolution_id": resolution.id},
-        request=request
-    )
-    
-    return {
-        "message": "Resolution sent successfully",
-        "ticket_id": ticket_id,
-        "resolution_id": resolution.id,
-        "status": resolution.status
-    }
+    old = complaint.status
+    complaint.solution = final
+    if steps:
+        complaint.ai_analysis_steps = json.dumps([{"step": s, "status": "action"} for s in steps])
+    complaint.status, complaint.is_resolved, complaint.resolved_at, complaint.updated_at = STATUS_RESOLVED, True, now, now
+    if complaint.assigned_agent_id is None and user.role != ROLE_ADMIN:
+        complaint.assigned_agent_id, complaint.assigned_at = user.id, now
+    db.flush()
+    record_event(db, complaint, "resolution_sent", user, from_status=old, to_status=STATUS_RESOLVED,
+                 note=final[:2000])
+    notify(db, complaint.user_id, "resolution", f"Resolution for {complaint.ticket_id}",
+           "A support agent has sent a resolution for your complaint. Please let us know if it worked.",
+           complaint.ticket_id)
+    audit(db, user, "send_resolution", request, complaint,
+          {"resolution_id": resolution.id, "was_awaiting_approval": old == STATUS_AWAITING_APPROVAL})
+    db.commit()
+    email_service.send_agent_resolution(user_email=complaint.email, user_name=complaint.name,
+                                        ticket_id=complaint.ticket_id,
+                                        complaint_subject=complaint.subject or "Your complaint",
+                                        agent_solution=final, agent_name=user.full_name or "Support team",
+                                        agent_steps=steps)
+    resolution.status = "delivered"
+    db.commit()
+    return {"message": "Resolution sent successfully", "ticket_id": complaint.ticket_id,
+            "resolution_id": resolution.id, "status": resolution.status}
+
 
 @router.get("/resolutions")
-def get_all_resolutions(
-    agent_email: str,
-    category: Optional[str] = None,
-    sentiment: Optional[str] = None,
-    search: Optional[str] = None,
-    min_confidence: Optional[float] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    page: int = 1,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """
-    Get all agent resolutions with filters
-    """
-    # Verify agent access
-    agent = require_agent_access(agent_email, db)
-    
-    # Build query
-    query = db.query(AgentResolution, Complaint).join(
-        Complaint, AgentResolution.complaint_id == Complaint.id
-    )
-    
-    # Apply filters
+def list_resolutions(category: Optional[str] = None, sentiment: Optional[str] = None,
+                     search: Optional[str] = Query(None, max_length=100), min_confidence: Optional[float] = None,
+                     page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+                     user: User = Depends(require_staff), db: Session = Depends(get_db)):
+    query = select(AgentResolution, Complaint).join(Complaint, AgentResolution.complaint_id == Complaint.id)
+    if user.role != ROLE_ADMIN:
+        query = query.where(or_(AgentResolution.agent_id == user.id, Complaint.assigned_agent_id == user.id))
     if category:
-        query = query.filter(Complaint.category == category)
-    
+        query = query.where(Complaint.category == category)
     if sentiment:
-        query = query.filter(Complaint.sentiment == sentiment)
-    
+        query = query.where(Complaint.sentiment == sentiment)
+    if min_confidence is not None:
+        query = query.where(AgentResolution.confidence_score >= min_confidence)
     if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            or_(
-                AgentResolution.ticket_id.like(search_term),
-                AgentResolution.agent_name.like(search_term),
-                AgentResolution.final_solution.like(search_term),
-                Complaint.name.like(search_term),
-                Complaint.email.like(search_term)
-            )
-        )
-    
-    if min_confidence:
-        query = query.filter(AgentResolution.confidence_score >= min_confidence)
-    
-    if start_date:
-        query = query.filter(AgentResolution.created_at >= start_date)
-    
-    if end_date:
-        query = query.filter(AgentResolution.created_at <= end_date)
-    
-    # Order by most recent
-    query = query.order_by(desc(AgentResolution.created_at))
-    
-    # Get total count
-    total_count = query.count()
-    
-    # Apply pagination
-    offset = (page - 1) * limit
-    results = query.offset(offset).limit(limit).all()
-    
-    # Format response
-    resolutions = []
-    for resolution, complaint in results:
-        resolutions.append({
-            "id": resolution.id,
-            "complaint_id": complaint.id,
-            "ticket_id": resolution.ticket_id,
-            "user_name": complaint.name,
-            "user_email": complaint.email,
-            "category": complaint.category,
-            "sentiment": complaint.sentiment,
-            "agent_name": resolution.agent_name,
-            "final_solution": resolution.final_solution[:200] + "..." if len(resolution.final_solution) > 200 else resolution.final_solution,
-            "confidence_score": resolution.confidence_score,
-            "validation_status": resolution.validation_status,
-            "resolution_timestamp": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
-            "sent_at": resolution.resolution_timestamp.isoformat() if resolution.resolution_timestamp else None,
-            "status": resolution.status,
-            "steps": json.loads(resolution.steps) if resolution.steps else []
-        })
-    
-    return {
-        "total": total_count,
-        "page": page,
-        "limit": limit,
-        "total_pages": (total_count + limit - 1) // limit,
-        "resolutions": resolutions
-    }
+        term = f"%{search}%"
+        query = query.where(or_(AgentResolution.ticket_id.like(term), AgentResolution.agent_name.like(term),
+                                Complaint.name.like(term), Complaint.subject.like(term)))
+    from sqlalchemy import func
+
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar_one()
+    rows = db.execute(query.order_by(desc(AgentResolution.created_at)).offset((page - 1) * limit).limit(limit)).all()
+    items = [{
+        "id": r.id, "complaint_id": c.id, "ticket_id": r.ticket_id, "user_name": c.name, "user_email": c.email,
+        "category": c.category, "sentiment": c.sentiment, "agent_name": r.agent_name,
+        "final_solution": r.final_solution if len(r.final_solution or "") <= 200 else r.final_solution[:200] + "...",
+        "confidence_score": r.confidence_score, "validation_status": r.validation_status, "status": r.status,
+        "requires_approval": bool(r.requires_approval),
+        "sent_at": r.resolution_timestamp, "resolution_timestamp": r.resolution_timestamp,
+        "steps": json.loads(r.steps) if r.steps else [],
+    } for r, c in rows]
+    return {"items": items, "resolutions": items, "total": total, "page": page, "limit": limit,
+            "total_pages": (total + limit - 1) // limit}
+
 
 @router.get("/audit-logs")
-def get_audit_logs(
-    agent_email: str,
-    action: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    page: int = 1,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
-    """
-    Get agent audit logs
-    """
-    # Verify agent access (admin only for viewing all logs)
-    agent = require_agent_access(agent_email, db)
-    
-    # Build query
-    query = db.query(AgentAuditLog)
-    
-    # Non-admins can only see their own logs
-    if agent.role != "Admin":
-        query = query.filter(AgentAuditLog.agent_id == agent.id)
-    
-    # Apply filters
+def audit_logs(action: Optional[str] = None, page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=200),
+               user: User = Depends(require_staff), db: Session = Depends(get_db)):
+    """Agents see their own activity (work history); admins see everyone's."""
+    from sqlalchemy import func
+
+    query = select(AgentAuditLog, User.full_name).outerjoin(User, User.id == AgentAuditLog.agent_id)
+    if user.role != ROLE_ADMIN:
+        query = query.where(AgentAuditLog.agent_id == user.id)
     if action:
-        query = query.filter(AgentAuditLog.action == action)
-    
-    if start_date:
-        query = query.filter(AgentAuditLog.timestamp >= start_date)
-    
-    if end_date:
-        query = query.filter(AgentAuditLog.timestamp <= end_date)
-    
-    # Order by most recent
-    query = query.order_by(desc(AgentAuditLog.timestamp))
-    
-    # Get total count
-    total_count = query.count()
-    
-    # Apply pagination
-    offset = (page - 1) * limit
-    logs = query.offset(offset).limit(limit).all()
-    
-    # Format response
-    audit_logs = []
-    for log in logs:
-        audit_logs.append({
-            "id": log.id,
-            "agent_id": log.agent_id,
-            "action": log.action,
-            "ticket_id": log.ticket_id,
-            "details": log.details,
-            "ip_address": log.ip_address,
-            "timestamp": log.timestamp.isoformat() if log.timestamp else None
-        })
-    
-    return {
-        "total": total_count,
-        "page": page,
-        "limit": limit,
-        "total_pages": (total_count + limit - 1) // limit,
-        "logs": audit_logs
-    }
+        query = query.where(AgentAuditLog.action == action)
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar_one()
+    rows = db.execute(query.order_by(desc(AgentAuditLog.timestamp)).offset((page - 1) * limit).limit(limit)).all()
+    items = [{"id": log.id, "agent_id": log.agent_id, "actor_name": name, "action": log.action,
+              "ticket_id": log.ticket_id, "details": log.details, "ip_address": log.ip_address,
+              "timestamp": log.timestamp} for log, name in rows]
+    return {"items": items, "logs": items, "total": total, "page": page, "limit": limit,
+            "total_pages": (total + limit - 1) // limit}
