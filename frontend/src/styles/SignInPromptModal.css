@@ -64,21 +64,10 @@ body.light-theme .signin-prompt-modal {
     z-index: 10;
 }
 
-.signin-prompt-close:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-    transform: rotate(90deg);
-}
-
 body.light-theme .signin-prompt-close {
     background: rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.1);
     color: rgba(0, 0, 0, 0.4);
-}
-
-.signin-prompt-close:hover {
-    transform: rotate(90deg) scale(1.1);
 }
 
 .signin-prompt-header {
@@ -244,11 +233,6 @@ body.light-theme .feature-content p {
     gap: 10px;
 }
 
-.btn-signin-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4);
-}
-
 .btn-signin-primary::after {
     content: '';
     position: absolute;
@@ -259,10 +243,6 @@ body.light-theme .feature-content p {
     background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
     opacity: 0;
     transition: opacity 0.3s;
-}
-
-.btn-signin-primary:hover::after {
-    opacity: 1;
 }
 
 .btn-signin-secondary {
@@ -278,20 +258,9 @@ body.light-theme .feature-content p {
     transition: all 0.2s;
 }
 
-.btn-signin-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
 body.light-theme .btn-signin-secondary {
     color: rgba(0, 0, 0, 0.6);
     border-color: rgba(0, 0, 0, 0.1);
-}
-
-body.light-theme .btn-signin-secondary:hover {
-    background: rgba(0, 0, 0, 0.03);
-    color: #000;
 }
 
 /* Scrollbar Styles */

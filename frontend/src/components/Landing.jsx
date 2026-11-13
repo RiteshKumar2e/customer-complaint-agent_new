@@ -403,11 +403,6 @@ export default function Landing({ user, onStart, onNavigate }) {
         </div>
 
         <div className="hero-content">
-          <div className="hero-badge">
-            <span className="badge-icon">✨</span>
-            <span>AI-Powered Innovation</span>
-          </div>
-
           <h1 className="hero-title">
             Quickfix -AI for Enterprise Support & Multi-Agent Control
           </h1>

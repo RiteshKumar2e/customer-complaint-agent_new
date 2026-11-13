@@ -127,11 +127,6 @@ body.light-theme .dashboard-nav {
   border: 1px solid var(--border-subtle);
 }
 
-.nav-btn.logout-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-primary);
-}
-
 .nav-btn.new-complaint {
   background: var(--accent-primary);
   color: white !important;
@@ -144,26 +139,10 @@ body.light-theme .nav-btn.new-complaint {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-body.light-theme .nav-btn.new-complaint:hover {
-  background: var(--accent-primary-hover);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
-}
-
-.nav-btn.new-complaint:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  filter: brightness(1.1);
-}
-
 .nav-btn.back-home {
   background: var(--bg-hover);
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-}
-
-.nav-btn.back-home:hover {
-  background: var(--bg-active);
-  border-color: var(--border-strong);
 }
 
 /* Dashboard Content */
@@ -629,15 +608,6 @@ body.light-theme .empty-cta {
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
 }
 
-body.light-theme .empty-cta:hover {
-  background: var(--accent-primary-hover);
-}
-
-.empty-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 35px rgba(34, 197, 94, 0.4);
-}
-
 /* Fade In Animation */
 .fade-in {
   animation: fadeIn 0.6s ease-out forwards;
@@ -907,14 +877,4 @@ body.light-theme .dashboard-modal {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
-}
-
-.modal-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-}
-
-.resolve-btn-dashboard:hover {
-  background: rgba(16, 185, 129, 0.1) !important;
-  transform: scale(1.05);
 }

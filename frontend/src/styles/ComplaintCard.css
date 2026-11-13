@@ -262,11 +262,6 @@ body.light-theme .similar-section {
     }
   }
 
-  .view-solution-btn:hover {
-    background: var(--accent-primary-hover);
-    transform: scale(1.05);
-  }
-
   .solution-text {
     overflow: hidden;
   }

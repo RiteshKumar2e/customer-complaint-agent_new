@@ -109,13 +109,6 @@ body.light-theme .notification-close {
     color: #1e293b;
 }
 
-.notification-close:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #ef4444;
-    transform: scale(1.08) rotate(90deg);
-}
-
 .notification-close:active {
     transform: scale(0.92) rotate(90deg);
 }

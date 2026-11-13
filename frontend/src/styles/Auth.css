@@ -607,12 +607,6 @@ body.light-theme .input-wrapper input:focus {
     left: 100%;
 }
 
-.auth-submit:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-    filter: brightness(1.1);
-}
-
 .auth-submit:active {
     transform: translateY(-1px);
 }
@@ -635,17 +629,6 @@ body.light-theme .input-wrapper input:focus {
 body.light-theme .google-btn {
     background: var(--bg-elevated);
     border: 1px solid var(--border-medium);
-}
-
-body.light-theme .google-btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-strong);
-}
-
-.google-btn:hover {
-    background: var(--bg-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
 }
 
 .divider {
@@ -679,10 +662,6 @@ body.light-theme .google-btn:hover {
     cursor: pointer;
     margin-left: 0.4rem;
     text-decoration: none;
-}
-
-.auth-link:hover {
-    text-decoration: underline;
 }
 
 /* Terms Modal Styles */
@@ -745,10 +724,6 @@ body.light-theme .terms-modal-content {
     cursor: pointer;
     transition: color 0.2s;
     line-height: 1;
-}
-
-.close-modal:hover {
-    color: var(--accent-error);
 }
 
 .terms-modal-tabs {
@@ -820,12 +795,6 @@ body.light-theme .terms-modal-content {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
-}
-
-.modal-accept-btn:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.1);
-    box-shadow: 0 8px 16px rgba(var(--accent-primary-rgb), 0.3);
 }
 
 /* Terms Row Enhancements */

@@ -192,11 +192,6 @@ body.light-theme .policy-footer {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
 /* Responsive design */
 @media (max-width: 768px) {
     .cookie-policy-page {

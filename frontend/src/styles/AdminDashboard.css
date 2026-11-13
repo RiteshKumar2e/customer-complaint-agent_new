@@ -74,11 +74,6 @@ body.light-theme .admin-header {
     position: relative;
 }
 
-.admin-profile-btn:hover {
-    background: var(--bg-active);
-    border-color: var(--accent-primary);
-}
-
 .admin-avatar {
     width: 36px;
     height: 36px;
@@ -142,17 +137,8 @@ body.light-theme .admin-header {
     text-align: left;
 }
 
-.admin-dropdown button:hover {
-    background: rgba(139, 92, 246, 0.15);
-    color: var(--admin-primary);
-}
-
 .admin-logout-btn {
     color: var(--admin-error) !important;
-}
-
-.admin-logout-btn:hover {
-    background: rgba(239, 68, 68, 0.15) !important;
 }
 
 .admin-dropdown-divider {
@@ -552,11 +538,6 @@ body.light-theme .admin-table thead {
     justify-content: center;
 }
 
-.admin-view-btn:hover {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--admin-primary);
-}
-
 /* Pagination */
 .admin-pagination {
     display: flex;
@@ -576,11 +557,6 @@ body.light-theme .admin-table thead {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-}
-
-.admin-pagination button:hover:not(:disabled) {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--admin-primary);
 }
 
 .admin-pagination button:disabled {
@@ -684,12 +660,6 @@ body.light-theme .admin-modal {
     color: var(--admin-text-primary);
     cursor: pointer;
     transition: all 0.3s ease;
-}
-
-.admin-modal-header button:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--admin-error);
-    color: var(--admin-error);
 }
 
 .admin-modal-content {

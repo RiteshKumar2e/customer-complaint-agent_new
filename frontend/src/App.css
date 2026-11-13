@@ -82,11 +82,6 @@ body.light-theme .header-brand h1 {
   transition: all 0.2s ease;
 }
 
-.header-btn:hover {
-  background: var(--bg-active);
-  border-color: var(--border-medium);
-}
-
 .header-btn:active {
   transform: scale(0.98);
 }

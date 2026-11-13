@@ -419,17 +419,6 @@ body.light-theme .navbar-theme-toggle {
   transition: width 0.3s ease;
 }
 
-/* Hide navigation from top bar on small screens handled by media query */
-
-
-.nav-links button:hover {
-  color: var(--accent-primary);
-}
-
-body.light-theme .nav-links button:hover {
-  color: var(--accent-primary);
-}
-
 body.light-theme .nav-links button::after {
   background: var(--accent-primary);
 }
@@ -503,12 +492,6 @@ body.light-theme .btn-user {
   box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
 }
 
-.btn-signin:hover,
-.btn-user:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-}
-
 .btn-admin {
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   color: #fff;
@@ -523,12 +506,6 @@ body.light-theme .btn-admin {
 body.light-theme .btn-admin.admin-special {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
-}
-
-.btn-admin:hover {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(147, 51, 234, 0.4);
 }
 
 /* Hero Section */
@@ -764,12 +741,6 @@ body.light-theme .hero-title {
   box-shadow: var(--shadow-md);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  filter: brightness(1.1);
-}
-
 /* Secondary */
 /* Dark Theme (Default) - Indigo */
 .btn-secondary {
@@ -789,14 +760,6 @@ body.light-theme .hero-title {
   justify-content: center;
 }
 
-.btn-secondary:hover {
-  background: #4f46e5 !important;
-  background-color: #4f46e5 !important;
-  transform: translateY(-2px);
-  border-color: #4338ca !important;
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4) !important;
-}
-
 /* Light Theme - Green */
 body.light-theme .btn-secondary {
   background: #22c55e !important;
@@ -804,14 +767,6 @@ body.light-theme .btn-secondary {
   border-color: #16a34a !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2) !important;
-}
-
-body.light-theme .btn-secondary:hover {
-  background: #16a34a !important;
-  background-color: #16a34a !important;
-  border-color: #15803d !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3) !important;
 }
 
 .connect-title {
@@ -1706,11 +1661,6 @@ body.light-theme .footer {
   text-align: left;
 }
 
-.footer-btn:hover {
-  color: var(--accent-primary);
-  transform: translateX(5px);
-}
-
 .footer-bottom {
   text-align: center;
   padding-top: 40px;
@@ -1727,10 +1677,6 @@ body.light-theme .footer-section p,
 body.light-theme .footer-btn,
 body.light-theme .footer-bottom {
   color: var(--text-secondary);
-}
-
-body.light-theme .footer-btn:hover {
-  color: var(--accent-primary);
 }
 
 /* Modal System */
@@ -1776,11 +1722,6 @@ body.light-theme .footer-btn:hover {
   justify-content: center;
   font-size: 1.5rem;
   transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: rotate(90deg);
 }
 
 .modal-body {
@@ -2512,17 +2453,6 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
     box-shadow: 0 4px 12px rgba(255, 138, 61, 0.3);
   }
 
-  .nav-links .mobile-auth-buttons .btn-admin:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
-    background: linear-gradient(135deg, #764ba2, #667eea);
-  }
-
-  .nav-links .mobile-auth-buttons .btn-admin.admin-special:hover {
-    box-shadow: 0 6px 16px rgba(255, 138, 61, 0.5);
-    background: linear-gradient(135deg, #ff6b1a, #ff8a3d);
-  }
-
   .nav-links .mobile-auth-buttons .btn-admin:active {
     transform: translateY(0);
   }
@@ -2548,14 +2478,8 @@ body.light-theme .goal-card:hover .goal-icon-wrapper {
   }
 
   .nav-links button:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #667eea;
     padding-left: 1.5rem;
-  }
-
-  body.light-theme .nav-links button:hover {
-    background: rgba(0, 0, 0, 0.02);
-  }
+}
 
   /* Overlay when menu is open */
   .landing-header.menu-open::before {
@@ -2656,16 +2580,6 @@ body.light-theme .btn-secondary {
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
   -webkit-appearance: none !important;
   appearance: none !important;
-}
-
-body.light-theme .hero-cta .btn-secondary:hover,
-body.light-theme .btn-secondary:hover {
-  background: #16a34a !important;
-  background-color: #16a34a !important;
-  background-image: linear-gradient(#16a34a, #16a34a) !important;
-  border-color: #15803d !important;
-  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4) !important;
-  transform: translateY(-2px) !important;
 }
 
 /* ============================================
@@ -2821,13 +2735,6 @@ body.light-theme .feature-modal-content {
   transition: all 0.3s ease;
 }
 
-.modal-close-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.2);
-  transform: rotate(90deg);
-}
-
 .modal-body {
   padding: 0 30px 40px;
 }
@@ -2912,12 +2819,6 @@ body.light-theme .modal-detail-item {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-}
-
-.btn-modal-action:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
-  filter: brightness(1.1);
 }
 
 /* Feature Card Clickable Enhancements */

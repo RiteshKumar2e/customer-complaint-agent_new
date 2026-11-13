@@ -84,12 +84,6 @@ body.light-theme .agent-header {
     gap: 0.5rem;
 }
 
-.nav-btn:hover {
-    background: var(--agent-glass-hover);
-    border-color: var(--agent-primary);
-    transform: translateY(-2px);
-}
-
 .nav-btn.active {
     background: var(--agent-primary);
     color: white;
@@ -103,12 +97,6 @@ body.light-theme .nav-btn {
     color: #1e293b;
 }
 
-body.light-theme .nav-btn:hover {
-    background: #f1f5f9;
-    border-color: var(--agent-primary);
-    color: var(--agent-primary);
-}
-
 body.light-theme .nav-btn.active {
     background: var(--agent-primary);
     color: #ffffff;
@@ -119,18 +107,8 @@ body.light-theme .nav-btn.active {
     color: var(--agent-error) !important;
 }
 
-.nav-btn-error:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--agent-error);
-}
-
 body.light-theme .nav-btn-error {
     color: #ef4444 !important;
-}
-
-body.light-theme .nav-btn-error:hover {
-    background: #fef2f2;
-    border-color: #ef4444;
 }
 
 .agent-module {
@@ -740,19 +718,10 @@ body.light-theme .status-under_review {
     box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
-}
-
 .btn-outline {
     background: transparent;
     border: 1px solid var(--agent-border);
     color: inherit;
-}
-
-.btn-outline:hover {
-    background: rgba(255, 255, 255, 0.05);
 }
 
 .btn-success {

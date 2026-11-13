@@ -208,29 +208,9 @@ body:not(.light-theme) .btn-download {
     color: white;
 }
 
-.btn-download.csv:hover {
-    background: linear-gradient(135deg, #15803d, #166534);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-}
-
-body:not(.light-theme) .btn-download.csv:hover {
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.5);
-}
-
 .btn-download.pdf {
     background: linear-gradient(135deg, #dc2626, #b91c1c);
     color: white;
-}
-
-.btn-download.pdf:hover {
-    background: linear-gradient(135deg, #b91c1c, #991b1b);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-body:not(.light-theme) .btn-download.pdf:hover {
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
 }
 
 /* Table Container */
@@ -517,15 +497,6 @@ body:not(.light-theme) .status-badge.success {
     justify-content: center;
 }
 
-.delete-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    transform: scale(1.1);
-}
-
-body:not(.light-theme) .delete-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
 .delete-btn svg {
     width: 20px;
     height: 20px;
@@ -705,18 +676,6 @@ body:not(.light-theme) .admin-pagination button {
     background: #334155;
     border: 1px solid #475569;
     color: #f1f5f9;
-}
-
-.admin-pagination button:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #6366f1;
-    color: #6366f1;
-}
-
-body:not(.light-theme) .admin-pagination button:hover:not(:disabled) {
-    background: #475569;
-    border-color: #818cf8;
-    color: #818cf8;
 }
 
 .admin-pagination button:disabled {

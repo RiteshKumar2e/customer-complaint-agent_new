@@ -24,22 +24,12 @@
     box-shadow: var(--shadow-lg);
 }
 
-.theme-toggle:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent-primary);
-    transform: translateY(-2px);
-}
-
 .theme-toggle:active {
     transform: translateY(0);
 }
 
 .theme-toggle svg {
     transition: transform 0.3s ease;
-}
-
-.theme-toggle:hover svg {
-    transform: rotate(20deg);
 }
 
 /* Responsive adjustments */
