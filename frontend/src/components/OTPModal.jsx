@@ -29,7 +29,7 @@ const BLUR_IN = {
 
 const RESEND_COOLDOWN = 60; // matches the server's resend cooldown
 
-export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, onResend, loading }) {
+export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified, onResend, loading, sending = false }) {
     const [otp, setOtp] = useState(EMPTY_OTP);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -350,9 +350,11 @@ export default function OTPModal({ isOpen, onClose, email, onVerify, onVerified,
                                     </svg>
                                 </motion.div>
                                 <h2>Let's verify your email</h2>
-                                <p>We've sent a 6-digit code to</p>
-                                <p className="otp-email">{email}</p>
-                                <p className="otp-hint">It'll auto-verify once entered.</p>
+                                <p>{sending ? "Sending a 6-digit code to" : "We've sent a 6-digit code to"}</p>
+                                <p className="otp-email">{email || "your Google email address"}</p>
+                                <p className="otp-hint" role="status" aria-live="polite">
+                                    {sending ? "Sending your code… it usually arrives within a few seconds." : "It'll auto-verify once entered."}
+                                </p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="otp-form">

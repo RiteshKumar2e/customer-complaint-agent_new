@@ -74,6 +74,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otpEmail, setOtpEmail] = useState("");
     const otpModeRef = useRef("google");
+    const [otpSending, setOtpSending] = useState(false);
     const googleTokenRef = useRef(null);
     const [otpLoading, setOtpLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
@@ -203,33 +204,34 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             releasePopupShield();
-            setLoading(true);
             setError("");
+            // Open the code popup immediately; the server verifies the Google token
+            // and emails the code in the background.
+            googleTokenRef.current = tokenResponse.access_token;
+            otpModeRef.current = "google";
+            setOtpEmail("");
+            setOtpSending(true);
+            setShowOTPModal(true);
+            const profile = fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+            }).then((r) => r.json()).catch(() => ({}));
+            profile.then((info) => { if (info?.email) setOtpEmail((current) => current || info.email); });
             try {
-                googleTokenRef.current = tokenResponse.access_token;
                 const res = await googleAuth(tokenResponse.access_token);
                 otpModeRef.current = res.purpose === "verify_email" ? "verify_email" : "google";
                 otpContextRef.current = { email: res.email };
                 setOtpEmail(res.email);
-                setShowOTPModal(true);
             } catch (err) {
+                setShowOTPModal(false);
                 if (err.response?.data?.code === "ACCOUNT_NOT_FOUND") {
                     // New Google users must complete signup (mobile number + email OTP).
-                    let prefill = {};
-                    try {
-                        const info = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                        }).then((r) => r.json());
-                        prefill = { email: info.email, name: info.name };
-                    } catch {
-                        // Prefill is a convenience only.
-                    }
-                    onNavigate("signup", prefill);
+                    const info = await profile;
+                    onNavigate("signup", info?.email ? { email: info.email, name: info.name } : {});
                 } else {
                     setError(errorMessage(err, "Google sign-in failed"));
                 }
             } finally {
-                setLoading(false);
+                setOtpSending(false);
             }
         },
         onError: () => {
@@ -581,6 +583,7 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
                         onVerified={handleOTPVerified}
                         onResend={handleOTPResend}
                         loading={otpLoading}
+                        sending={otpSending}
                     />
                 )}
             </AnimatePresence>
