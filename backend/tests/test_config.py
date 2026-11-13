@@ -70,8 +70,9 @@ def test_brevo_is_preferred_and_names_the_missing_sender(prod_env):
     prod_env.setenv("BREVO_SENDER_EMAIL", "")
     get_settings.cache_clear()
     assert get_settings().email_transport == "brevo"
-    warning = next(w for w in validate_for_startup(get_settings()) if "email" in w)
-    assert "BREVO_SENDER_EMAIL" in warning and "BREVO_API_KEY" not in warning.split("missing:")[1]
+    assert get_settings().email_configured  # sender is auto-detected from the Brevo account
+    warning = next(w for w in validate_for_startup(get_settings()) if "BREVO_SENDER_EMAIL" in w)
+    assert "first active verified sender" in warning
     prod_env.setenv("BREVO_SENDER_EMAIL", "support@example.com")
     prod_env.setenv("BREVO_SENDER_NAME", "Quickfix AI")
     get_settings.cache_clear()

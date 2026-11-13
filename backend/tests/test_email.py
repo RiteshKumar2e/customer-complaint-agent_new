@@ -157,3 +157,65 @@ def test_warm_ping_sends_no_email(monkeypatch):
     monkeypatch.setattr(email_transport._brevo, "post", lambda *a, **k: pytest.fail("warm-up must not send email"))
     assert email_transport.warm_brevo_connection() is True
     assert seen == [f"{email_transport.BREVO_API}/account"]
+
+
+def _brevo_env(monkeypatch, sender=""):
+    monkeypatch.setenv("EMAIL_TRANSPORT", "brevo")
+    monkeypatch.setenv("BREVO_API_KEY", "key-" + sender)
+    monkeypatch.setenv("BREVO_SENDER_EMAIL", sender)
+    monkeypatch.setenv("SMTP_FROM_EMAIL", "")
+    monkeypatch.setenv("SENDER_EMAIL", "")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    email_transport._sender_cache.clear()
+
+
+def test_brevo_sender_auto_detected_once(monkeypatch):
+    _brevo_env(monkeypatch)
+    gets, posts = [], []
+
+    class Senders:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"senders": [{"email": "old@x.com", "active": False}, {"email": "ok@x.com", "active": True}]}
+
+    class Sent:
+        status_code = 201
+
+    monkeypatch.setattr(email_transport._brevo, "get", lambda url, **kw: gets.append(url) or Senders())
+    monkeypatch.setattr(email_transport._brevo, "post", lambda url, **kw: posts.append(kw["json"]) or Sent())
+    email_transport.send("a@x.com", "s", "<p>h</p>", "h")
+    email_transport.send("b@x.com", "s", "<p>h</p>", "h")
+    assert [p["sender"]["email"] for p in posts] == ["ok@x.com", "ok@x.com"]
+    assert gets == [f"{email_transport.BREVO_API}/senders"]  # cached after the first lookup
+
+
+def test_no_active_brevo_sender_fails_clearly(monkeypatch):
+    _brevo_env(monkeypatch)
+
+    class Senders:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"senders": [{"email": "x@x.com", "active": False}]}
+
+    monkeypatch.setattr(email_transport._brevo, "get", lambda url, **kw: Senders())
+    monkeypatch.setattr(email_transport._brevo, "post", lambda *a, **k: pytest.fail("must not send"))
+    with pytest.raises(email_transport.EmailDeliveryError):
+        email_transport.send("a@x.com", "s", "<p>h</p>", "h")
+
+
+def test_explicit_sender_skips_lookup(monkeypatch):
+    _brevo_env(monkeypatch, sender="set@x.com")
+
+    class Sent:
+        status_code = 201
+
+    monkeypatch.setattr(email_transport._brevo, "get", lambda *a, **k: pytest.fail("no lookup needed"))
+    posts = []
+    monkeypatch.setattr(email_transport._brevo, "post", lambda url, **kw: posts.append(kw["json"]) or Sent())
+    email_transport.send("a@x.com", "s", "<p>h</p>", "h")
+    assert posts[0]["sender"]["email"] == "set@x.com"

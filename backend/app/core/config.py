@@ -153,7 +153,8 @@ class Settings:
     @property
     def email_configured(self) -> bool:
         if self.email_transport == "brevo":
-            return bool(self.brevo_api_key and self.smtp_from_email)
+            # The sender can be auto-detected from the Brevo account (see email_transport).
+            return bool(self.brevo_api_key)
         if self.email_transport == "console":
             return not self.is_production
         return bool(self.smtp_host and self.smtp_port and self.smtp_from_email)
@@ -290,6 +291,9 @@ def validate_for_startup(settings: Optional[Settings] = None) -> List[str]:
                 "CRITICAL: email delivery is not configured (transport=" + s.email_transport + "; missing: "
                 + ", ".join(missing) + "). Registration, OTP login and password reset return 503 until fixed."
             )
+        elif s.email_transport == "brevo" and not s.smtp_from_email:
+            warnings.append("BREVO_SENDER_EMAIL is not set; the first active verified sender in the Brevo "
+                            "account will be used.")
         if not _env("FRONTEND_URL"):
             warnings.append(
                 f"FRONTEND_URL is not set; CORS falls back to APP_URL-derived origins: {', '.join(s.frontend_urls) or 'none'}."

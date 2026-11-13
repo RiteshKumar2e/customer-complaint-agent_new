@@ -87,10 +87,37 @@ def _brevo_headers() -> dict:
             "Accept": "application/json"}
 
 
-def _send_brevo(msg: EmailMessage, to: str, subject: str, html: str, text: str, category: str = "") -> None:
+_sender_cache: dict = {}
+
+
+def brevo_sender() -> dict:
+    """
+    Sender for Brevo: BREVO_SENDER_EMAIL if set, otherwise the first *active,
+    verified* sender on the Brevo account (looked up once and cached).
+    """
     s = get_settings()
+    if s.smtp_from_email:
+        return {"name": s.smtp_from_name, "email": s.smtp_from_email}
+    if s.brevo_api_key in _sender_cache:
+        return _sender_cache[s.brevo_api_key]
+    try:
+        response = _brevo.get(f"{BREVO_API}/senders", headers=_brevo_headers(), timeout=(3.05, 8))
+    except requests.RequestException as exc:
+        raise EmailDeliveryError("Could not look up the Brevo sender") from exc
+    if response.status_code != 200:
+        raise EmailDeliveryError(f"Brevo sender lookup returned HTTP {response.status_code}")
+    active = [x for x in response.json().get("senders", []) if x.get("active") and x.get("email")]
+    if not active:
+        raise EmailDeliveryError("The Brevo account has no active verified sender; set BREVO_SENDER_EMAIL")
+    sender = {"name": s.smtp_from_name, "email": active[0]["email"]}
+    _sender_cache[s.brevo_api_key] = sender
+    log_event(logger, 20, "brevo sender auto-detected", sender=_mask(sender["email"]))
+    return sender
+
+
+def _send_brevo(msg: EmailMessage, to: str, subject: str, html: str, text: str, category: str = "") -> None:
     payload = {
-        "sender": {"name": s.smtp_from_name, "email": s.smtp_from_email},
+        "sender": brevo_sender(),
         "to": [{"email": to}],
         "subject": subject,
         "htmlContent": html,
@@ -109,8 +136,11 @@ def warm_brevo_connection() -> bool:
     if s.email_transport != "brevo" or not s.brevo_api_key:
         return False
     try:
-        return _brevo.get(f"{BREVO_API}/account", headers=_brevo_headers(), timeout=(3.05, 5)).status_code == 200
-    except requests.RequestException:
+        ok = _brevo.get(f"{BREVO_API}/account", headers=_brevo_headers(), timeout=(3.05, 5)).status_code == 200
+        if ok and not s.smtp_from_email:
+            brevo_sender()  # resolve once at startup instead of during the first OTP
+        return ok
+    except (requests.RequestException, EmailDeliveryError):
         return False
 
 
