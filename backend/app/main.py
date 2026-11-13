@@ -55,9 +55,12 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+LOCAL_DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173", "http://127.0.0.1:4173"]
 origins = list(settings.frontend_urls)
-if not settings.is_production:
-    origins += ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173"]
+if settings.cors_allow_localhost or not settings.is_production:
+    # Safe with bearer tokens: CORS only lets the page *call* the API; tokens a
+    # localhost page holds were obtained by logging in on that page itself.
+    origins += LOCAL_DEV_ORIGINS
 cors_origins = list(dict.fromkeys(o for o in origins if o and o != "*"))
 if settings.is_production and not cors_origins:
     logger.critical("No CORS origins configured: browsers will be blocked. Set FRONTEND_URL.")

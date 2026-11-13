@@ -115,3 +115,15 @@ def test_production_defaults_to_live_site_when_nothing_is_set(prod_env):
     prod_env.setenv("APP_URL", "")
     get_settings.cache_clear()
     assert get_settings().frontend_urls == ["https://riteshkr.online", "https://www.riteshkr.online"]
+
+
+def test_localhost_dev_origins_allowed_with_live_site(client):
+    for origin in ("http://localhost:5173", "http://testserver-frontend"):
+        res = client.options("/health", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+        assert res.headers.get("access-control-allow-origin") == origin
+
+
+def test_localhost_origins_can_be_disabled(prod_env):
+    prod_env.setenv("CORS_ALLOW_LOCALHOST", "false")
+    get_settings.cache_clear()
+    assert get_settings().cors_allow_localhost is False

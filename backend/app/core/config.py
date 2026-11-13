@@ -139,6 +139,7 @@ class Settings:
     auto_resolve_delay_seconds: int
     auto_resolve_min_confidence: float
     agent_can_view_unassigned: bool
+    cors_allow_localhost: bool
 
     extra: dict = field(default_factory=dict)
 
@@ -245,6 +246,8 @@ def get_settings() -> Settings:
         auto_resolve_delay_seconds=_env_int("AUTO_RESOLVE_DELAY_SECONDS", 300),
         auto_resolve_min_confidence=float(_env("AUTO_RESOLVE_MIN_CONFIDENCE", "0.75")),
         agent_can_view_unassigned=_env_bool("AGENT_CAN_VIEW_UNASSIGNED", False),
+        # Lets a locally running frontend (npm run dev) talk to this API, including in production.
+        cors_allow_localhost=_env_bool("CORS_ALLOW_LOCALHOST", True),
     )
 
 
