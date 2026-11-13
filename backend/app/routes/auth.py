@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_token_claims
+from fastapi.security import HTTPAuthorizationCredentials
+
+from app.api.deps import bearer_scheme, get_current_user
 from app.core.errors import conflict
 from app.core.rate_limit import rate_limit
-from app.core.security import AccessClaims
+from app.core.security import TokenError, decode_access_token
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.user import (
@@ -99,9 +101,21 @@ def refresh(data: RefreshRequest, request: Request, db: Session = Depends(get_db
 
 
 @router.post("/logout", response_model=MessageResponse)
-def logout(data: Optional[LogoutRequest] = None, claims: AccessClaims = Depends(get_token_claims),
-           user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    auth_service.logout(db, user, claims.jti, claims.expires_at, data.refresh_token if data else None)
+def logout(data: Optional[LogoutRequest] = None,
+           credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+           db: Session = Depends(get_db)):
+    """
+    Idempotent: always 200. Revokes the access token if it is still valid and the
+    refresh-token family if one is given; an already expired/revoked session is
+    simply "already signed out" rather than an error.
+    """
+    claims = None
+    if credentials and credentials.credentials:
+        try:
+            claims = decode_access_token(credentials.credentials)
+        except TokenError:
+            claims = None
+    auth_service.logout_any(db, claims, data.refresh_token if data else None)
     return {"message": "Signed out"}
 
 

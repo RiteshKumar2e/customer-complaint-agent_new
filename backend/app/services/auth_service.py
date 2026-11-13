@@ -155,6 +155,30 @@ def revoke_access_token(db: Session, jti: str, expires_at_epoch: int) -> None:
         synchronize_session=False)
 
 
+def logout_any(db: Session, claims, refresh_token: Optional[str]) -> None:
+    """Revoke whatever the client still holds; never fails for an already-ended session."""
+    now = get_ist_time()
+    user = db.get(User, claims.user_id) if claims is not None else None
+    if claims is not None:
+        revoke_access_token(db, claims.jti, claims.expires_at)
+    if refresh_token:
+        row = db.execute(select(RefreshToken).where(
+            RefreshToken.token_hash == hash_refresh_token(refresh_token))).scalar_one_or_none()
+        if row is not None and (user is None or row.user_id == user.id):
+            db.execute(update(RefreshToken).where(RefreshToken.family_id == row.family_id,
+                                                  RefreshToken.revoked_at.is_(None)).values(revoked_at=now))
+            user = user or db.get(User, row.user_id)
+    if user is not None:
+        last = db.execute(
+            select(LoginHistory).where(LoginHistory.user_id == user.id, LoginHistory.success.is_(True),
+                                       LoginHistory.logout_time.is_(None))
+            .order_by(LoginHistory.login_time.desc()).limit(1)
+        ).scalar_one_or_none()
+        if last is not None:
+            last.logout_time = now
+    db.commit()
+
+
 def logout(db: Session, user: User, jti: str, expires_at: int, refresh_token: Optional[str]) -> None:
     now = get_ist_time()
     revoke_access_token(db, jti, expires_at)

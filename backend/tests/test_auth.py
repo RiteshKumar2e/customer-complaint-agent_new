@@ -402,3 +402,15 @@ def test_google_unknown_email_is_sent_to_signup(client, db, monkeypatch):
     res = client.post("/auth/google", json={"access_token": "ya29.fake-token-value"})
     assert res.status_code == 404 and res.json()["code"] == "ACCOUNT_NOT_FOUND"
     assert db.execute(select(models.User)).first() is None
+
+
+def test_logout_is_idempotent_for_ended_sessions(client, db):
+    make_user(db, "twice@x.com")
+    tokens = login(client, "twice@x.com")
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+    body = {"refresh_token": tokens["refresh_token"]}
+    assert client.post("/auth/logout", json=body, headers=headers).status_code == 200
+    # already signed out (e.g. after a role change revoked the session): still 200, no error noise
+    assert client.post("/auth/logout", json=body, headers=headers).status_code == 200
+    assert client.post("/auth/logout").status_code == 200
+    assert client.get("/auth/me", headers=headers).status_code == 401
