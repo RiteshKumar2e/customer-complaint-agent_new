@@ -145,10 +145,11 @@ def _detect_transport() -> str:
         if explicit not in ("smtp", "brevo", "console"):
             raise ConfigError("EMAIL_TRANSPORT must be one of: smtp, brevo, console")
         return explicit
-    if _env("SMTP_HOST"):
-        return "smtp"
+    # Brevo (HTTPS API) is the project's provider; it also works on hosts that block SMTP ports.
     if _env("BREVO_API_KEY"):
         return "brevo"
+    if _env("SMTP_HOST"):
+        return "smtp"
     return "console"
 
 
@@ -168,7 +169,7 @@ def get_settings() -> Settings:
         jwt_secret = secrets.token_urlsafe(48)
         ephemeral = True
 
-    from_email = _env("SMTP_FROM_EMAIL") or _env("SENDER_EMAIL")
+    from_email = _env("BREVO_SENDER_EMAIL") or _env("SMTP_FROM_EMAIL") or _env("SENDER_EMAIL")
 
     return Settings(
         environment=environment,
@@ -198,7 +199,7 @@ def get_settings() -> Settings:
         smtp_username=_env("SMTP_USERNAME"),
         smtp_password=_env("SMTP_PASSWORD"),
         smtp_from_email=from_email,
-        smtp_from_name=_env("SMTP_FROM_NAME", "QuickFix Support"),
+        smtp_from_name=_env("BREVO_SENDER_NAME") or _env("SMTP_FROM_NAME", "Quickfix AI Support"),
         smtp_use_ssl=_env_bool("SMTP_USE_SSL", _env_int("SMTP_PORT", 587) == 465),
         smtp_starttls=_env_bool("SMTP_STARTTLS", _env_int("SMTP_PORT", 587) != 465),
         smtp_timeout=float(_env("SMTP_TIMEOUT", "15")),
@@ -249,10 +250,19 @@ def validate_for_startup(settings: Optional[Settings] = None) -> List[str]:
         # CORS falls back to APP_URL.
         warnings: List[str] = []
         if not s.email_configured:
+            missing = []
+            if s.email_transport == "console":
+                missing = ["BREVO_API_KEY", "BREVO_SENDER_EMAIL"]
+            else:
+                if s.email_transport == "brevo" and not s.brevo_api_key:
+                    missing.append("BREVO_API_KEY")
+                if s.email_transport == "smtp" and not s.smtp_host:
+                    missing.append("SMTP_HOST")
+                if not s.smtp_from_email:
+                    missing.append("BREVO_SENDER_EMAIL (a sender address verified in Brevo)")
             warnings.append(
-                "CRITICAL: email delivery is not configured (set SMTP_HOST/SMTP_PORT/SMTP_USERNAME/"
-                "SMTP_PASSWORD/SMTP_FROM_EMAIL, or EMAIL_TRANSPORT=brevo with BREVO_API_KEY and "
-                "SMTP_FROM_EMAIL). Registration, OTP login and password reset return 503 until fixed."
+                "CRITICAL: email delivery is not configured (transport=" + s.email_transport + "; missing: "
+                + ", ".join(missing) + "). Registration, OTP login and password reset return 503 until fixed."
             )
         if not _env("FRONTEND_URL"):
             warnings.append(

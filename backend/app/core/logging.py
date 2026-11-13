@@ -53,7 +53,7 @@ class JsonFormatter(logging.Formatter):
             payload[key] = value
         if record.exc_info:
             payload["exc"] = redact(self.formatException(record.exc_info))
-        return json.dumps(payload, ensure_ascii=False, default=str)
+        return json.dumps(payload, ensure_ascii=True, default=str)  # ASCII-safe on any console encoding
 
 
 _configured = False

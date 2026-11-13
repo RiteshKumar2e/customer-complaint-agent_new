@@ -62,6 +62,22 @@ def test_brevo_with_legacy_sender_email_counts_as_configured(prod_env):
     assert not any("email" in w.lower() for w in validate_for_startup(get_settings()))
 
 
+def test_brevo_is_preferred_and_names_the_missing_sender(prod_env):
+    prod_env.setenv("BREVO_API_KEY", "key")
+    prod_env.setenv("SMTP_HOST", "smtp.example.com")
+    prod_env.setenv("SENDER_EMAIL", "")
+    prod_env.setenv("SMTP_FROM_EMAIL", "")
+    prod_env.setenv("BREVO_SENDER_EMAIL", "")
+    get_settings.cache_clear()
+    assert get_settings().email_transport == "brevo"
+    warning = next(w for w in validate_for_startup(get_settings()) if "email" in w)
+    assert "BREVO_SENDER_EMAIL" in warning and "BREVO_API_KEY" not in warning.split("missing:")[1]
+    prod_env.setenv("BREVO_SENDER_EMAIL", "support@example.com")
+    prod_env.setenv("BREVO_SENDER_NAME", "Quickfix AI")
+    get_settings.cache_clear()
+    assert get_settings().email_configured and get_settings().smtp_from_name == "Quickfix AI"
+
+
 def test_app_url_fallback_helper():
     assert config._origins_from_app_url("https://www.a.com/x") == ["https://www.a.com", "https://a.com"]
     assert config._origins_from_app_url("http://localhost:5173") == ["http://localhost:5173"]
