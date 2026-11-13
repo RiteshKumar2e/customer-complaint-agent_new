@@ -33,14 +33,14 @@ def test_register_uses_few_round_trips(client):
     n, res = count_statements(lambda: client.post("/auth/register", json={
         "full_name": "Fast User", "email": "fast@x.com", "phone": next_phone(), "password": "Secure-pass-123"}))
     assert res.status_code == 202
-    assert n <= 9, f"register issued {n} statements"
+    assert n <= 4, f"register issued {n} statements"
 
 
 def test_resend_and_forgot_use_few_round_trips(client, db):
     make_user(db, "rt@x.com")
     n, res = count_statements(lambda: client.post("/auth/forgot-password", json={"email": "rt@x.com"}))
     assert res.status_code == 200
-    assert n <= 7, f"forgot-password issued {n} statements"
+    assert n <= 3, f"forgot-password issued {n} statements"
 
 
 def test_email_is_sent_concurrently_with_database_work(db, outbox, monkeypatch):

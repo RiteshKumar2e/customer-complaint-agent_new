@@ -46,19 +46,23 @@ def _latest(db: Session, email: str, purpose: str) -> Optional[EmailOTP]:
     ).scalar_one_or_none()
 
 
-def assert_can_issue(db: Session, email: str, purpose: str) -> None:
-    """Raise 429 if a new code may not be sent yet (cooldown / hourly cap). One round trip."""
-    s = get_settings()
-    now = get_ist_time()
-    window_start = now - timedelta(hours=1)
-    last, issued, oldest = db.execute(select(
+def limit_columns(email: str, purpose: str) -> list:
+    """Scalar subqueries (last code, codes this hour, oldest this hour) to embed in another SELECT."""
+    window_start = get_ist_time() - timedelta(hours=1)
+    return [
         select(func.max(EmailOTP.created_at))
         .where(EmailOTP.email == email, EmailOTP.purpose == purpose).scalar_subquery(),
         select(func.count(EmailOTP.id))
         .where(EmailOTP.email == email, EmailOTP.created_at >= window_start).scalar_subquery(),
         select(func.min(EmailOTP.created_at))
         .where(EmailOTP.email == email, EmailOTP.created_at >= window_start).scalar_subquery(),
-    )).one()
+    ]
+
+
+def enforce_limits(last, issued, oldest) -> None:
+    """Raise 429 for the resend cooldown or the hourly cap."""
+    s = get_settings()
+    now = get_ist_time()
     if last is not None:
         elapsed = (now - last).total_seconds()
         if elapsed < s.otp_resend_cooldown_seconds:
@@ -69,6 +73,11 @@ def assert_can_issue(db: Session, email: str, purpose: str) -> None:
         wait = int(3600 - (now - oldest).total_seconds()) + 1 if oldest else 3600
         raise too_many("Too many verification codes were requested for this email. Please try again later.",
                        retry_after=wait, code="OTP_RATE_LIMITED")
+
+
+def assert_can_issue(db: Session, email: str, purpose: str) -> None:
+    """Raise 429 if a new code may not be sent yet. One round trip."""
+    enforce_limits(*db.execute(select(*limit_columns(email, purpose))).one())
 
 
 def issue(db: Session, email: str, purpose: str, name: str = "", ip_address: Optional[str] = None,

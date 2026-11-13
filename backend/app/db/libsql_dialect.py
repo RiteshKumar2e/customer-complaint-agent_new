@@ -121,11 +121,21 @@ def _params(parameters) -> tuple:
     return tuple(_adapt(v) for v in parameters)
 
 
+def _is_driver_panic(exc: BaseException) -> bool:
+    # libsql is Rust/pyo3: a broken connection can raise pyo3's PanicException,
+    # which derives from BaseException and would bypass normal error handling.
+    return type(exc).__name__ == "PanicException"
+
+
 def _call(fn, *args):
     try:
         return fn(*args)
     except (ValueError, RuntimeError) as exc:
         raise translate_error(exc) from exc
+    except BaseException as exc:
+        if _is_driver_panic(exc):
+            raise OperationalError("database unavailable: driver panic on a broken connection") from exc
+        raise
 
 
 _TX_TRIGGER = re.compile(r"^\s*(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|SAVEPOINT)\b", re.I)
@@ -185,8 +195,9 @@ class Cursor:
     def close(self):
         try:
             self._raw.close()
-        except Exception:
-            pass
+        except BaseException as exc:  # noqa: BLE001 - closing must never raise
+            if not (isinstance(exc, Exception) or _is_driver_panic(exc)):
+                raise
 
     def __iter__(self):
         while True:
@@ -238,12 +249,14 @@ class Connection:
     def close(self):
         try:
             self.rollback()
-        except Exception:
-            pass
+        except BaseException as exc:  # noqa: BLE001 - closing must never raise
+            if not (isinstance(exc, Exception) or _is_driver_panic(exc)):
+                raise
         try:
             self._raw.close()
-        except Exception:
-            pass
+        except BaseException as exc:  # noqa: BLE001 - closing must never raise
+            if not (isinstance(exc, Exception) or _is_driver_panic(exc)):
+                raise
 
     # SQLAlchemy's SQLite dialect probes this; libsql has no user functions.
     def create_function(self, *args, **kwargs):  # pragma: no cover - never called
@@ -258,6 +271,10 @@ def connect(database: str, auth_token: str = "", timeout: float = 10.0, **_ignor
         raw = libsql.connect(database, **kwargs)
     except (ValueError, RuntimeError) as exc:
         raise translate_error(exc) from exc
+    except BaseException as exc:
+        if _is_driver_panic(exc):
+            raise OperationalError("database unavailable: driver panic while connecting") from exc
+        raise
     conn = Connection(raw)
     conn.execute("PRAGMA foreign_keys = ON")
     if "://" not in database:

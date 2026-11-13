@@ -15,6 +15,7 @@ from typing import Optional
 import requests
 from fastapi import Request
 from sqlalchemy import or_, select, update
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -197,24 +198,37 @@ def _assert_unique(db: Session, email: str, phone: str) -> None:
 
 
 def start_registration(db: Session, data, request: Optional[Request]) -> dict:
-    _assert_unique(db, data.email, data.phone)
-    otp_service.assert_can_issue(db, data.email, OTP_REGISTRATION)
+    # One round trip: email/phone uniqueness + OTP rate limits together.
+    email_taken, phone_taken, *limits = db.execute(select(
+        select(User.id).where(User.email == data.email).limit(1).scalar_subquery(),
+        select(User.id).where(User.phone == data.phone).limit(1).scalar_subquery(),
+        *otp_service.limit_columns(data.email, OTP_REGISTRATION),
+    )).one()
+    if email_taken is not None:
+        raise conflict("An account with this email already exists. Please sign in instead.", "EMAIL_TAKEN")
+    if phone_taken is not None:
+        raise conflict("This mobile number is already registered to another account.", "PHONE_TAKEN")
+    otp_service.enforce_limits(*limits)
 
     now = get_ist_time()
-    pending = db.execute(select(PendingRegistration).where(PendingRegistration.email == data.email)).scalar_one_or_none()
-    if pending is None:
-        pending = PendingRegistration(email=data.email)
-        db.add(pending)
-    pending.full_name = data.full_name
-    pending.phone = data.phone
-    pending.organization = data.organization
-    pending.password_hash = hash_password(data.password)
-    pending.created_at = now
-    pending.expires_at = now + PENDING_REGISTRATION_TTL
-    # The pending row is committed together with the OTP row inside issue().
+    values = dict(email=data.email, full_name=data.full_name, phone=data.phone, organization=data.organization,
+                  password_hash=hash_password(data.password), created_at=now,
+                  expires_at=now + PENDING_REGISTRATION_TTL)
+    upsert = sqlite_insert(PendingRegistration).values(**values)
+    db.execute(upsert.on_conflict_do_update(index_elements=[PendingRegistration.email],
+                                            set_={k: v for k, v in values.items() if k != "email"}))
+    # Committed together with the OTP row inside issue(); the email is already on its way by then.
     otp_service.issue(db, data.email, OTP_REGISTRATION, name=data.full_name, ip_address=client_ip(request),
                       check_limits=False)
     return otp_sent(data.email, "We sent a 6-digit verification code to your email. Enter it to activate your account.")
+
+
+def _user_with_limits(db: Session, email: str, purpose: str):
+    """One round trip: the account (if any) plus OTP rate-limit data for it."""
+    row = db.execute(select(User, *otp_service.limit_columns(email, purpose)).where(User.email == email)).first()
+    if row is None:
+        return None, None
+    return row[0], tuple(row[1:])
 
 
 def complete_registration(db: Session, email: str, code: str, request: Optional[Request]) -> dict:
@@ -265,13 +279,14 @@ def resend_otp(db: Session, email: str, purpose: str, request: Optional[Request]
         otp_service.issue(db, email, purpose, name=pending.full_name, ip_address=ip)
         return otp_sent(email, "A new verification code has been sent.")
 
-    user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    user, limits = _user_with_limits(db, email, purpose)
     if purpose == OTP_VERIFY_EMAIL:
         if user is None or user.email_verified or not user.is_active:
             return generic
     elif user is None or not user.is_active or (purpose == OTP_LOGIN and not user.email_verified):
         return generic
-    otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=ip)
+    otp_service.enforce_limits(*limits)
+    otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=ip, check_limits=False)
     return generic
 
 
@@ -391,7 +406,7 @@ def verify_google_access_token(access_token: str) -> dict:
 def start_google_login(db: Session, access_token: str, request: Optional[Request]) -> dict:
     identity = verify_google_access_token(access_token)
     email = identity["email"]
-    user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    user, limits = _user_with_limits(db, email, OTP_LOGIN)
     if user is None:
         raise not_found("No account uses this Google email yet. Please sign up first.", "ACCOUNT_NOT_FOUND")
     if not user.is_active:
@@ -399,7 +414,10 @@ def start_google_login(db: Session, access_token: str, request: Optional[Request
     # Even with Google's assertion, the account is unlocked only by an OTP sent to
     # the address on file — the same verification every other path requires.
     purpose = OTP_LOGIN if user.email_verified else OTP_VERIFY_EMAIL
-    otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=client_ip(request))
+    if purpose == OTP_LOGIN:
+        otp_service.enforce_limits(*limits)
+    otp_service.issue(db, email, purpose, name=user.full_name or "", ip_address=client_ip(request),
+                      check_limits=purpose != OTP_LOGIN)
     result = otp_sent(email, "We sent a 6-digit code to your Google email address.")
     result["purpose"] = purpose
     return result
@@ -410,10 +428,12 @@ def start_google_login(db: Session, access_token: str, request: Optional[Request
 # ---------------------------------------------------------------------------
 
 def request_password_reset(db: Session, email: str, request: Optional[Request]) -> dict:
-    user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    user, limits = _user_with_limits(db, email, OTP_PASSWORD_RESET)
     message = "If an account exists for this email, we sent a 6-digit reset code."
     if user is not None and user.is_active:
-        otp_service.issue(db, email, OTP_PASSWORD_RESET, name=user.full_name or "", ip_address=client_ip(request))
+        otp_service.enforce_limits(*limits)
+        otp_service.issue(db, email, OTP_PASSWORD_RESET, name=user.full_name or "", ip_address=client_ip(request),
+                          check_limits=False)
     return otp_sent(email, message)
 
 

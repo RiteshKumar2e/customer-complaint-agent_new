@@ -147,3 +147,30 @@ def test_datetime_round_trip():
         now = get_ist_time()
         s.execute(text("INSERT INTO t_dt VALUES (:v)"), {"v": now})
         assert s.execute(text("SELECT v FROM t_dt")).scalar().startswith(now.isoformat(" ")[:19])
+
+
+def test_idle_dead_connection_is_replaced_transparently():
+    engine.dispose()
+    with engine.connect() as conn:
+        record = conn.connection._connection_record
+        raw = conn.connection.dbapi_connection
+    record.info["last_used"] = 0  # idle for a long time
+    raw._raw.close()              # the server dropped it meanwhile
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT 1")).scalar() == 1
+
+
+def test_recently_used_connection_is_not_pinged():
+    from sqlalchemy import event as sa_event
+
+    statements = []
+    listener = lambda *a, **k: statements.append(a[2])  # noqa: E731
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    sa_event.listen(engine, "before_cursor_execute", listener)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 2"))
+    finally:
+        sa_event.remove(engine, "before_cursor_execute", listener)
+    assert statements == ["SELECT 2"]  # no extra ping round trip

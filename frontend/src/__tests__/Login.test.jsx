@@ -191,3 +191,15 @@ describe("remembered login", () => {
     expect(localStorage.getItem("saved_creds")).toBeNull();
   });
 });
+
+test("the OTP popup opens immediately, before the server has answered", async () => {
+  let finish;
+  api.googleAuth.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  renderLogin();
+  act(() => { googleOptions.onSuccess({ access_token: "t" }); });
+  expect(document.querySelector(".otp-input")).toBeInTheDocument();
+  expect(screen.getByText(/Sending your code/)).toBeInTheDocument();
+  await act(async () => { finish({ email: "g@x.com", purpose: "login", requires_otp: true }); });
+  expect(screen.getByText("g@x.com")).toBeInTheDocument();
+  expect(screen.queryByText(/Sending your code/)).not.toBeInTheDocument();
+});

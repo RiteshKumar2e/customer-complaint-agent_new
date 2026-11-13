@@ -17,7 +17,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Iterator, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from sqlalchemy import create_engine
+import time
+
+from sqlalchemy import create_engine, event, exc
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.core.config import ConfigError, get_settings
@@ -93,10 +95,34 @@ def build_engine():
         # Hrana streams expire server-side when idle; recycle before that and
         # ping on checkout so a stale connection is replaced, not surfaced.
         pool_recycle=240,
-        pool_pre_ping=True,
+        # A ping on *every* checkout costs a full round trip to Turso per request
+        # (~0.2-0.5 s when the app and database are on different continents).
+        # Only connections idle longer than IDLE_PING_SECONDS are pinged instead.
+        pool_pre_ping=False,
     )
+    _install_idle_ping(engine)
     logger.info("Database engine ready: Turso/libSQL @ %s", describe_target(database))
     return engine
+
+
+IDLE_PING_SECONDS = 20
+
+
+def _install_idle_ping(target_engine) -> None:
+    @event.listens_for(target_engine, "checkin")
+    def _remember_use(dbapi_connection, record):
+        record.info["last_used"] = time.monotonic()
+
+    @event.listens_for(target_engine, "checkout")
+    def _ping_if_idle(dbapi_connection, record, proxy):
+        last = record.info.get("last_used")
+        if last is None or time.monotonic() - last < IDLE_PING_SECONDS:
+            return  # brand-new or recently used: no extra round trip
+        try:
+            dbapi_connection.execute("SELECT 1").fetchone()
+        except Exception as error:  # includes driver panics, translated by the dialect
+            # The pool discards this connection and transparently opens a new one.
+            raise exc.DisconnectionError() from error
 
 
 engine = build_engine()
