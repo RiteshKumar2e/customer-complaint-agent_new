@@ -19,7 +19,13 @@ load_dotenv()
 
 
 def _env(name: str, default: str = "") -> str:
-    return (os.getenv(name) or default).strip()
+    value = (os.getenv(name) or default).strip()
+    # Hosting dashboards (Render's "add from .env") can keep an inline comment as
+    # part of the value, e.g. "https://a.com   # required". Drop " #..." so a
+    # pasted template cannot silently break CORS or other settings.
+    if " #" in value or "\t#" in value:
+        value = value.split(" #", 1)[0].split("\t#", 1)[0].strip()
+    return value
 
 
 def _env_int(name: str, default: int) -> int:
@@ -39,6 +45,24 @@ def _env_bool(name: str, default: bool) -> bool:
 
 def _env_list(name: str) -> List[str]:
     return [item.strip().rstrip("/") for item in _env(name).split(",") if item.strip()]
+
+
+# Current public web app. Used only when neither FRONTEND_URL nor APP_URL is set,
+# so the live site keeps working; set FRONTEND_URL to move to another domain.
+DEFAULT_PUBLIC_URL = "https://riteshkr.online"
+
+
+def _normalize_origins(values: List[str]) -> List[str]:
+    """'riteshkr.online' or 'https://riteshkr.online/app/' -> 'https://riteshkr.online' (CORS matches origins exactly)."""
+    from urllib.parse import urlsplit
+
+    origins = []
+    for value in values:
+        candidate = value if "://" in value else f"https://{value}"
+        parts = urlsplit(candidate)
+        if parts.scheme in ("http", "https") and parts.netloc and "*" not in parts.netloc:
+            origins.append(f"{parts.scheme}://{parts.netloc.lower()}")
+    return list(dict.fromkeys(origins))
 
 
 def _origins_from_app_url(app_url: str) -> List[str]:
@@ -206,7 +230,9 @@ def get_settings() -> Settings:
         brevo_api_key=_env("BREVO_API_KEY"),
         email_transport=_detect_transport(),
         admin_notification_email=_env("ADMIN_NOTIFICATION_EMAIL") or _env("ADMIN_EMAIL"),
-        frontend_urls=_env_list("FRONTEND_URL") or _origins_from_app_url(_env("APP_URL")),
+        frontend_urls=(_normalize_origins(_env_list("FRONTEND_URL"))
+                       or _origins_from_app_url(_env("APP_URL"))
+                       or (_origins_from_app_url(DEFAULT_PUBLIC_URL) if environment == "production" else [])),
         cors_origin_regex=_env("CORS_ORIGIN_REGEX") or None,
         max_request_bytes=_env_int("MAX_REQUEST_BYTES", 1_000_000),
         max_upload_bytes=_env_int("MAX_UPLOAD_BYTES", 2_000_000),

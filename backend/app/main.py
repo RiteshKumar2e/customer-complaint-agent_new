@@ -58,9 +58,13 @@ register_exception_handlers(app)
 origins = list(settings.frontend_urls)
 if not settings.is_production:
     origins += ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173"]
+cors_origins = list(dict.fromkeys(o for o in origins if o and o != "*"))
+if settings.is_production and not cors_origins:
+    logger.critical("No CORS origins configured: browsers will be blocked. Set FRONTEND_URL.")
+logger.info("CORS allowed origins: %s", ", ".join(cors_origins) or "(none)")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(dict.fromkeys(o for o in origins if o and o != "*")),
+    allow_origins=cors_origins,
     allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=False,  # bearer tokens, no cookies
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],

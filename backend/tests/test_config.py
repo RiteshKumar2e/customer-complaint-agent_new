@@ -82,3 +82,35 @@ def test_app_url_fallback_helper():
     assert config._origins_from_app_url("https://www.a.com/x") == ["https://www.a.com", "https://a.com"]
     assert config._origins_from_app_url("http://localhost:5173") == ["http://localhost:5173"]
     assert config._origins_from_app_url("") == []
+
+
+def test_inline_comments_from_pasted_templates_are_ignored(prod_env):
+    prod_env.setenv("FRONTEND_URL", "https://riteshkr.online,https://www.riteshkr.online   # REQUIRED in production")
+    prod_env.setenv("EMAIL_TRANSPORT", "brevo  # brevo | smtp | console")
+    get_settings.cache_clear()
+    assert get_settings().frontend_urls == ["https://riteshkr.online", "https://www.riteshkr.online"]
+    assert get_settings().email_transport == "brevo"
+
+
+def test_origins_are_normalized(prod_env):
+    prod_env.setenv("FRONTEND_URL", "riteshkr.online, https://WWW.riteshkr.online/app/, https://*.bad.com, ftp://x.com")
+    get_settings.cache_clear()
+    assert get_settings().frontend_urls == ["https://riteshkr.online", "https://www.riteshkr.online"]
+
+
+def test_cors_preflight_allows_configured_origin_only(client):
+    ok = client.options("/auth/google", headers={"Origin": "http://testserver-frontend",
+                                                 "Access-Control-Request-Method": "POST",
+                                                 "Access-Control-Request-Headers": "content-type"})
+    assert ok.status_code == 200
+    assert ok.headers["access-control-allow-origin"] == "http://testserver-frontend"
+    bad = client.options("/auth/google", headers={"Origin": "https://evil.example",
+                                                  "Access-Control-Request-Method": "POST"})
+    assert "access-control-allow-origin" not in bad.headers
+
+
+def test_production_defaults_to_live_site_when_nothing_is_set(prod_env):
+    prod_env.setenv("FRONTEND_URL", "")
+    prod_env.setenv("APP_URL", "")
+    get_settings.cache_clear()
+    assert get_settings().frontend_urls == ["https://riteshkr.online", "https://www.riteshkr.online"]
