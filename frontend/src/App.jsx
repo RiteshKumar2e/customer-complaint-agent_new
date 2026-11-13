@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Landing from "./components/Landing";
 import chatbotImg from "./assets/chatbot.png";
 import ComplaintForm from "./components/ComplaintForm";
@@ -10,12 +10,6 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
-import Profile from "./components/Profile";
-import AdminDashboard from "./components/AdminDashboard";
-import AdminLoginHistory from "./components/Admin/AdminLoginHistory";
-import AgentModule from "./components/Agent/AgentModule";
-import AgentResolutions from "./components/Agent/AgentResolutions";
-import CookiePolicy from "./components/CookiePolicy";
 import ThemeToggle from "./components/ThemeToggle";
 import CursorTrail from "./components/CursorTrail";
 import SignInPromptModal from "./components/SignInPromptModal";
@@ -30,7 +24,16 @@ import "./styles/ButtonReset.css";
 // Mobile layout fixes - must stay the last stylesheet.
 import "./styles/Mobile.css";
 import Logo from "./components/Logo";
-import AdminConsole from "./components/Admin/AdminConsole";
+import NotFound from "./components/NotFound";
+
+// Role dashboards load on demand so the landing/login pages stay light.
+const Profile = lazy(() => import("./components/Profile"));
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const AdminLoginHistory = lazy(() => import("./components/Admin/AdminLoginHistory"));
+const AgentModule = lazy(() => import("./components/Agent/AgentModule"));
+const AgentResolutions = lazy(() => import("./components/Agent/AgentResolutions"));
+const AdminConsole = lazy(() => import("./components/Admin/AdminConsole"));
+const CookiePolicy = lazy(() => import("./components/CookiePolicy"));
 
 export default function App() {
   const [page, setPage] = useState(() => {
@@ -214,15 +217,13 @@ export default function App() {
     if (window.location.pathname === "/reset-password") {
       setPage("reset-password");
     } else if (window.location.pathname === "/dashboard") {
-      const savedUserCheck = localStorage.getItem("user");
-      if (savedUserCheck) {
-        setPage("profile");
-      } else {
-        setPage("landing");
-      }
+      const savedUserCheck = session.user;
+      setPage(savedUserCheck ? homePageFor(savedUserCheck) : "landing");
     } else if (window.location.pathname === "/feedback") {
       setPage("landing");
       setFeedbackOpen(true);
+    } else if (!["/", "/index.html", ""].includes(window.location.pathname)) {
+      setPage("not-found");
     }
 
     return () => {
@@ -238,7 +239,7 @@ export default function App() {
   }, [handleLogout]);
 
   useEffect(() => {
-    localStorage.setItem("lastPage", page);
+    if (page !== "not-found") localStorage.setItem("lastPage", page);
   }, [page]);
 
   useEffect(() => {
@@ -299,6 +300,12 @@ export default function App() {
           onFeedback={() => setFeedbackOpen(true)}
           onNavigate={navigateTo}
         />
+      );
+    }
+
+    if (page === "not-found") {
+      return (
+        <NotFound onHome={() => { window.history.replaceState(null, "", "/"); navigateTo("landing"); }} />
       );
     }
 
@@ -479,7 +486,9 @@ export default function App() {
         <ThemeToggle className="fixed" />
       )}
 
-      {renderPage()}
+      <Suspense fallback={<div className="qf-page-loading" role="status">Loading…</div>}>
+        {renderPage()}
+      </Suspense>
 
       {/* Sign-In Prompt Modal (Triggered after 15s on Landing Page) */}
       {page === "landing" && !user && (

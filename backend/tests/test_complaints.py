@@ -180,3 +180,15 @@ def test_request_size_limit(client, db):
     res = client.post("/auth/login", content=b'{"email":"' + b"a" * 1_100_000 + b'"}',
                       headers={"Content-Type": "application/json"})
     assert res.status_code == 413
+
+
+def test_feedback_honeypot_silently_drops_bots(client, monkeypatch):
+    from app.services.email_service import email_service
+
+    sent = []
+    monkeypatch.setattr(email_service, "send_raw_to_admin", lambda *a, **k: sent.append(a) or True)
+    body = {"name": "Bot", "email": "bot@example.com", "rating": 5, "message": "buy cheap stuff"}
+    res = client.post("/feedback", json={**body, "website": "http://spam.example"})
+    assert res.status_code == 200 and res.json()["delivered"] is False and not sent
+    res = client.post("/feedback", json=body)
+    assert res.status_code == 200 and sent

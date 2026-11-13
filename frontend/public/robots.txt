@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /reset-password
+
+Sitemap: https://riteshkr.online/sitemap.xml

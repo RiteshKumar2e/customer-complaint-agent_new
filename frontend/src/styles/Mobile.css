@@ -65,3 +65,13 @@ p, li, td, h1, h2, h3, h4, .detail-value, .complaint-description { overflow-wrap
   .app-container > .form-content-wrapper,
   .app-container > .admin-login-history { padding-top: 1rem !important; }
 }
+
+/* 404 page */
+.qf-notfound { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.75rem; padding: 2rem 1rem; text-align: center; background: var(--bg-primary, #0b1120); color: var(--text-primary, #e5e7eb); }
+.qf-notfound-code { font-size: 4rem; font-weight: 800; margin: 0.5rem 0 0; color: #3b82f6; line-height: 1; }
+.qf-notfound h1 { margin: 0; font-size: 1.6rem; }
+.qf-notfound p { margin: 0; color: var(--text-secondary, #94a3b8); }
+.qf-notfound .qf-button { margin-top: 1rem; background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 0.7rem 1.2rem; font-weight: 600; cursor: pointer; }
+
+.qf-page-loading { min-height: 60vh; display: flex; align-items: center; justify-content: center; color: #94a3b8; }

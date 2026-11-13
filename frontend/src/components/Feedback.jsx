@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { submitFeedback } from "../api";
 import "../styles/Feedback.css";
 
@@ -11,6 +11,7 @@ export default function Feedback({ onClose }) {
         message: ""
     });
     const [loading, setLoading] = useState(false);
+    const honeypotRef = useRef(null);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
 
@@ -44,7 +45,8 @@ export default function Feedback({ onClose }) {
                 email: formData.email,
                 rating: parseInt(formData.rating),
                 recommendation: parseInt(formData.recommendation),
-                message: formData.message
+                message: formData.message,
+                website: honeypotRef.current?.value || undefined,
             });
 
             setSuccess(true);
@@ -93,6 +95,9 @@ export default function Feedback({ onClose }) {
                 </div>
 
                 <form className="feedback-form" onSubmit={handleSubmit}>
+                    {/* Honeypot for bots: invisible and skipped by keyboard/screen readers. */}
+                    <input ref={honeypotRef} type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                        style={{ position: "absolute", left: "-10000px", width: 1, height: 1, opacity: 0 }} />
                     <div className="form-row">
                         <div className="form-group">
                             <label htmlFor="name">Name *</label>

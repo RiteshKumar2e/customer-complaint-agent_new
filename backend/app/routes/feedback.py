@@ -1,5 +1,6 @@
 """Public product-feedback form. Rate limited; all input is escaped before it reaches email HTML."""
 import html
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -19,6 +20,8 @@ class FeedbackRequest(BaseModel):
     rating: int = Field(ge=1, le=5)
     recommendation: int = Field(default=8, ge=0, le=10)
     message: str = Field(min_length=1, max_length=3000)
+    # Honeypot: hidden in the UI, so only bots fill it in.
+    website: Optional[str] = Field(default=None, max_length=200)
 
     @field_validator("email", mode="before")
     @classmethod
@@ -49,6 +52,9 @@ def _feedback_html(f: FeedbackRequest) -> str:
 @router.post("/feedback", dependencies=[Depends(rate_limit("feedback", 5, 600))])
 def submit_feedback(feedback: FeedbackRequest):
     """Forward feedback to the configured ADMIN_NOTIFICATION_EMAIL."""
+    if feedback.website:
+        # Looks successful to the bot; nothing is sent.
+        return {"status": "success", "delivered": False, "message": "Thank you for your feedback!"}
     queued = email_service.send_raw_to_admin(f"New feedback - {feedback.rating}/5", _feedback_html(feedback))
     return {"status": "success", "delivered": queued,
             "message": "Thank you for your feedback!"}
