@@ -169,15 +169,19 @@ export default function Login({ onNavigate, onLoginSuccess, isAdminMode }) {
         } catch (err) {
             if (err.response?.data?.code === "EMAIL_NOT_VERIFIED") {
                 // Accounts created before verification existed confirm their address once.
+                const normalized = email.trim().toLowerCase();
+                otpModeRef.current = "verify_email";
+                setOtpEmail(normalized);
+                setOtpSending(true);
+                setShowOTPModal(true);
+                setError("");
                 try {
-                    const normalized = email.trim().toLowerCase();
                     await resendOTP(normalized, "verify_email");
-                    otpModeRef.current = "verify_email";
-                    setOtpEmail(normalized);
-                    setShowOTPModal(true);
-                    setError("");
                 } catch (sendErr) {
+                    setShowOTPModal(false);
                     setError(errorMessage(sendErr, "Could not send a verification code."));
+                } finally {
+                    setOtpSending(false);
                 }
             } else {
                 setError(errorMessage(err, "Login failed. Please check your credentials."));
