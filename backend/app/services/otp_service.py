@@ -15,6 +15,7 @@ Rules (all enforced from Turso data, so they hold across restarts/instances):
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from typing import Optional
 
@@ -32,6 +33,9 @@ from app.services.email_transport import EmailDeliveryError
 
 logger = get_logger("app.otp")
 
+# OTP emails are dispatched here so the provider call overlaps the database writes.
+_mail_pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="otp-mail")
+
 
 def _latest(db: Session, email: str, purpose: str) -> Optional[EmailOTP]:
     return db.execute(
@@ -43,37 +47,50 @@ def _latest(db: Session, email: str, purpose: str) -> Optional[EmailOTP]:
 
 
 def assert_can_issue(db: Session, email: str, purpose: str) -> None:
-    """Raise 429 if a new code may not be sent yet (cooldown / hourly cap)."""
+    """Raise 429 if a new code may not be sent yet (cooldown / hourly cap). One round trip."""
     s = get_settings()
     now = get_ist_time()
-    last = _latest(db, email, purpose)
+    window_start = now - timedelta(hours=1)
+    last, issued, oldest = db.execute(select(
+        select(func.max(EmailOTP.created_at))
+        .where(EmailOTP.email == email, EmailOTP.purpose == purpose).scalar_subquery(),
+        select(func.count(EmailOTP.id))
+        .where(EmailOTP.email == email, EmailOTP.created_at >= window_start).scalar_subquery(),
+        select(func.min(EmailOTP.created_at))
+        .where(EmailOTP.email == email, EmailOTP.created_at >= window_start).scalar_subquery(),
+    )).one()
     if last is not None:
-        elapsed = (now - last.created_at).total_seconds()
+        elapsed = (now - last).total_seconds()
         if elapsed < s.otp_resend_cooldown_seconds:
             wait = int(s.otp_resend_cooldown_seconds - elapsed) + 1
             raise too_many(f"Please wait {wait} seconds before requesting a new code.", retry_after=wait,
                            code="OTP_COOLDOWN")
-
-    window_start = now - timedelta(hours=1)
-    issued = db.execute(
-        select(func.count(EmailOTP.id)).where(EmailOTP.email == email, EmailOTP.created_at >= window_start)
-    ).scalar_one()
-    if issued >= s.otp_max_per_hour:
-        oldest = db.execute(
-            select(func.min(EmailOTP.created_at)).where(EmailOTP.email == email, EmailOTP.created_at >= window_start)
-        ).scalar_one()
+    if (issued or 0) >= s.otp_max_per_hour:
         wait = int(3600 - (now - oldest).total_seconds()) + 1 if oldest else 3600
         raise too_many("Too many verification codes were requested for this email. Please try again later.",
                        retry_after=wait, code="OTP_RATE_LIMITED")
 
 
-def issue(db: Session, email: str, purpose: str, name: str = "", ip_address: Optional[str] = None) -> None:
-    """Create, persist and email a new code. Commits. Raises 429/503 on failure."""
+def issue(db: Session, email: str, purpose: str, name: str = "", ip_address: Optional[str] = None,
+          check_limits: bool = True) -> None:
+    """
+    Create, persist and email a new code. Commits (together with any pending
+    changes the caller made on `db`). Raises 429/503 on failure.
+
+    Speed: the email is handed to the provider on a worker thread *before* the
+    database writes, so the request costs max(DB time, provider time) rather
+    than their sum. The code is useless until its row is committed, and if the
+    provider rejects the message the row is deleted again, so the security rules
+    are unchanged: a failed send never leaves a usable code behind.
+    """
     if purpose not in OTP_PURPOSES:
         raise ValueError(f"unknown OTP purpose {purpose}")
     s = get_settings()
-    assert_can_issue(db, email, purpose)
+    if check_limits:
+        assert_can_issue(db, email, purpose)
     now = get_ist_time()
+    code = generate_otp()
+    sending = _mail_pool.submit(auth_emails.send_otp_email, email, code, purpose, name)
 
     db.execute(
         update(EmailOTP)
@@ -81,17 +98,21 @@ def issue(db: Session, email: str, purpose: str, name: str = "", ip_address: Opt
                EmailOTP.consumed_at.is_(None), EmailOTP.invalidated_at.is_(None))
         .values(invalidated_at=now)
     )
-    code = generate_otp()
     record = EmailOTP(
         email=email, purpose=purpose, code_hash=hash_otp(email, purpose, code),
         created_at=now, expires_at=now + timedelta(seconds=s.otp_ttl_seconds), attempts=0,
         ip_address=(ip_address or "")[:64] or None,
     )
     db.add(record)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        log_event(logger, 40, "otp row could not be stored; emailed code is unusable", purpose=purpose)
+        raise
 
     try:
-        auth_emails.send_otp_email(email, code, purpose, name)
+        sending.result()
     except EmailDeliveryError:
         # The code never reached the user: discard it so it cannot be used and
         # does not count against their hourly allowance.

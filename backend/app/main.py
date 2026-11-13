@@ -34,8 +34,11 @@ async def lifespan(app: FastAPI):
                                f"(pending: {', '.join(m.version for m in pending)})")
     if not settings.is_test:
         from app.services.auto_resolver import auto_resolver
+        from app.services.email_transport import keep_brevo_warm
 
         asyncio.create_task(auto_resolver.resume_pending())
+        if settings.email_transport == "brevo":
+            asyncio.create_task(keep_brevo_warm())
     yield
 
 

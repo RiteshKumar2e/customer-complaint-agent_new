@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { registerUser, verifyRegistration, resendOTP, updateProfile, session, errorMessage } from "../api";
+import { registerUser, verifyRegistration, resendOTP, updateProfile, session, errorMessage, warmUpBackend } from "../api";
 import { digitsOnly, validateEmail, validateMobile, validatePassword } from "../utils/validation";
 import OTPModal from "./OTPModal";
 import confetti from "canvas-confetti";
@@ -177,6 +177,9 @@ export default function Signup({ onNavigate, onRegistered, prefill }) {
     const [otpOpen, setOtpOpen] = useState(false);
     const [pendingEmail, setPendingEmail] = useState("");
     const verifiedRef = useRef(null);
+
+    // Wake a sleeping backend while the user types, so the OTP request is fast.
+    useEffect(() => { warmUpBackend(); }, []);
 
     useEffect(() => {
         const handleMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });

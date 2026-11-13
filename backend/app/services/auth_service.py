@@ -14,7 +14,7 @@ from typing import Optional
 
 import requests
 from fastapi import Request
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -186,9 +186,13 @@ def revoke_all_sessions(db: Session, user: User) -> None:
 # ---------------------------------------------------------------------------
 
 def _assert_unique(db: Session, email: str, phone: str) -> None:
-    if db.execute(select(User.id).where(User.email == email)).first():
+    """One round trip: which of email / phone is already taken."""
+    taken = db.execute(
+        select(User.email, User.phone).where(or_(User.email == email, User.phone == phone)).limit(2)
+    ).all()
+    if any(row.email == email for row in taken):
         raise conflict("An account with this email already exists. Please sign in instead.", "EMAIL_TAKEN")
-    if db.execute(select(User.id).where(User.phone == phone)).first():
+    if taken:
         raise conflict("This mobile number is already registered to another account.", "PHONE_TAKEN")
 
 
@@ -207,9 +211,9 @@ def start_registration(db: Session, data, request: Optional[Request]) -> dict:
     pending.password_hash = hash_password(data.password)
     pending.created_at = now
     pending.expires_at = now + PENDING_REGISTRATION_TTL
-    db.commit()
-
-    otp_service.issue(db, data.email, OTP_REGISTRATION, name=data.full_name, ip_address=client_ip(request))
+    # The pending row is committed together with the OTP row inside issue().
+    otp_service.issue(db, data.email, OTP_REGISTRATION, name=data.full_name, ip_address=client_ip(request),
+                      check_limits=False)
     return otp_sent(data.email, "We sent a 6-digit verification code to your email. Enter it to activate your account.")
 
 

@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("../api", () => ({
+  warmUpBackend: jest.fn(),
   forgotPassword: jest.fn(),
   resetPassword: jest.fn(),
   adminOverview: jest.fn(),

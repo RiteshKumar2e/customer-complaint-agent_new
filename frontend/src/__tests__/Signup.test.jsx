@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("../api", () => ({
+  warmUpBackend: jest.fn(),
   registerUser: jest.fn(),
   verifyRegistration: jest.fn(),
   resendOTP: jest.fn(),

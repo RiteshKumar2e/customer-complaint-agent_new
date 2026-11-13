@@ -107,3 +107,53 @@ def test_public_send_escapes(outbox, monkeypatch):
 
 def test_html_to_text():
     assert html_to_text("<p>Hello<br>World</p><style>x{}</style>") == "Hello\nWorld"
+
+
+def test_brevo_uses_pooled_session_and_tags(monkeypatch):
+    monkeypatch.setenv("EMAIL_TRANSPORT", "brevo")
+    monkeypatch.setenv("BREVO_API_KEY", "key")
+    monkeypatch.setenv("BREVO_SENDER_EMAIL", "support@example.com")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    calls = []
+
+    class Resp:
+        status_code = 201
+
+    monkeypatch.setattr(email_transport._brevo, "post", lambda url, **kw: calls.append((url, kw)) or Resp())
+    email_transport.send("to@x.com", "Code", "<p>123456</p>", "123456", category="otp:registration")
+    url, kw = calls[0]
+    assert url.endswith("/smtp/email") and kw["json"]["tags"] == ["otp"]
+    assert kw["json"]["sender"]["email"] == "support@example.com" and kw["headers"]["api-key"] == "key"
+    assert kw["timeout"][0] <= 3.05  # fail fast on connect
+
+
+def test_brevo_rejection_raises(monkeypatch):
+    monkeypatch.setenv("EMAIL_TRANSPORT", "brevo")
+    monkeypatch.setenv("BREVO_API_KEY", "key")
+    monkeypatch.setenv("BREVO_SENDER_EMAIL", "support@example.com")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    class Resp:
+        status_code = 401
+
+    monkeypatch.setattr(email_transport._brevo, "post", lambda url, **kw: Resp())
+    with pytest.raises(email_transport.EmailDeliveryError):
+        email_transport.send("to@x.com", "Code", "<p>x</p>", "x")
+
+
+def test_warm_ping_sends_no_email(monkeypatch):
+    monkeypatch.setenv("EMAIL_TRANSPORT", "brevo")
+    monkeypatch.setenv("BREVO_API_KEY", "key")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    seen = []
+
+    class Resp:
+        status_code = 200
+
+    monkeypatch.setattr(email_transport._brevo, "get", lambda url, **kw: seen.append(url) or Resp())
+    monkeypatch.setattr(email_transport._brevo, "post", lambda *a, **k: pytest.fail("warm-up must not send email"))
+    assert email_transport.warm_brevo_connection() is True
+    assert seen == [f"{email_transport.BREVO_API}/account"]

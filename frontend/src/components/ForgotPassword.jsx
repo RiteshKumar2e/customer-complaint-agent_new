@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { forgotPassword, resetPassword, errorMessage } from "../api";
+import { forgotPassword, resetPassword, errorMessage, warmUpBackend } from "../api";
 import { validateEmail, validatePassword } from "../utils/validation";
 import "../styles/Auth.css";
 import Logo from "./Logo";
@@ -18,6 +18,8 @@ export default function ForgotPassword({ onNavigate }) {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [resendAt, setResendAt] = useState(0);
+
+    useEffect(() => { warmUpBackend(); }, []);
 
     const requestCode = async (e) => {
         e?.preventDefault();
