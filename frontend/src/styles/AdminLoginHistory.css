@@ -849,3 +849,33 @@ body:not(.light-theme) .admin-spinner {
         padding-top: 124px;
     }
 }
+
+/* ---- Phones: accordion list instead of a sideways-scrolling table ---- */
+.lh-mobile { display: none; list-style: none; margin: 0; padding: 0; }
+
+@media (max-width: 768px) {
+  .lh-desktop { display: none !important; }
+  .lh-mobile { display: flex; flex-direction: column; gap: 0.6rem; }
+  .table-container, .login-table-container { overflow-x: visible !important; }
+
+  .lh-mobile li { border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; background: rgba(15, 23, 42, 0.55); overflow: hidden; }
+  .lh-mobile li.failed-row { border-color: rgba(239, 68, 68, 0.45); }
+  .lh-mobile summary { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 0.9rem; cursor: pointer; list-style: none; }
+  .lh-mobile summary::-webkit-details-marker { display: none; }
+  .lh-mobile summary:focus-visible { outline: 2px solid #3b82f6; outline-offset: -2px; border-radius: 12px; }
+  .lh-sum-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .lh-sum-main .user-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lh-sum-time { font-size: 0.78rem; opacity: 0.7; }
+  .lh-sum-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
+  .lh-sum-badges .method-badge, .lh-sum-badges .status-badge { font-size: 0.65rem; padding: 0.15rem 0.45rem; }
+  .lh-chevron { flex-shrink: 0; opacity: 0.6; transition: transform 0.2s ease; }
+  .lh-mobile details[open] .lh-chevron { transform: rotate(180deg); }
+
+  .lh-details { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 0.9rem; margin: 0; padding: 0.2rem 0.9rem 0.8rem; font-size: 0.85rem; }
+  .lh-details dt { opacity: 0.65; }
+  .lh-details dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+  .lh-delete { margin: 0 0.9rem 0.9rem; width: calc(100% - 1.8rem); padding: 0.55rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.5); background: transparent; color: #f87171; font-weight: 600; cursor: pointer; }
+
+  body.light-theme .lh-mobile li { background: #ffffff; border-color: #e2e8f0; }
+  body.light-theme .lh-delete { color: #dc2626; }
+}

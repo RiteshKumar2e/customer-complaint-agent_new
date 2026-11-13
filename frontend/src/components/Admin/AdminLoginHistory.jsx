@@ -4,6 +4,10 @@ import autoTable from 'jspdf-autotable';
 import api from '../../api';
 import '../../styles/AdminLoginHistory.css';
 
+const formatIST = (value) => (value ? new Date(value).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short',
+}) : '');
+
 export default function AdminLoginHistory() {
     const [loginHistory, setLoginHistory] = useState([]);
     const [stats, setStats] = useState(null);
@@ -328,7 +332,8 @@ export default function AdminLoginHistory() {
                         <p>No login records found</p>
                     </div>
                 ) : (
-                    <table className="login-table">
+                    <>
+                    <table className="login-table lh-desktop">
                         <thead>
                             <tr>
                                 <th>User</th>
@@ -411,6 +416,45 @@ export default function AdminLoginHistory() {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Phones: one tappable row per login that opens like a dropdown. */}
+                    <ul className="lh-mobile" aria-label="Login history">
+                        {loginHistory.map((record) => (
+                            <li key={record.id} className={record.success ? '' : 'failed-row'}>
+                                <details>
+                                    <summary>
+                                        <span className="lh-sum-main">
+                                            <span className="user-name">{record.user_name || 'N/A'}</span>
+                                            <span className="lh-sum-time">{formatIST(record.login_time)}</span>
+                                        </span>
+                                        <span className="lh-sum-badges">
+                                            <span className={`method-badge ${getMethodBadgeClass(record.login_method)}`}>
+                                                {record.login_method.toUpperCase()}
+                                            </span>
+                                            <span className={`status-badge ${record.success ? 'success' : 'failed'}`}>
+                                                {record.success ? 'OK' : 'FAILED'}
+                                            </span>
+                                        </span>
+                                        <svg className="lh-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+                                    </summary>
+                                    <dl className="lh-details">
+                                        <dt>Email</dt><dd>{record.email}</dd>
+                                        <dt>Contact no</dt><dd>{record.phone || 'N/A'}</dd>
+                                        <dt>Device</dt><dd>{record.device_type || 'Desktop'}</dd>
+                                        <dt>IP address</dt><dd>{record.ip_address || 'N/A'}</dd>
+                                        <dt>Location</dt><dd>{record.login_location || 'India'}</dd>
+                                        {record.failure_reason && (<><dt>Reason</dt><dd>{record.failure_reason}</dd></>)}
+                                        <dt>Login</dt><dd>{formatIST(record.login_time)}</dd>
+                                        <dt>Logout</dt><dd>{record.logout_time ? formatIST(record.logout_time) : <span className="active-session">Active Now</span>}</dd>
+                                    </dl>
+                                    <button type="button" className="lh-delete" onClick={() => handleDelete(record.id)}>
+                                        Delete record
+                                    </button>
+                                </details>
+                            </li>
+                        ))}
+                    </ul>
+                    </>
                 )}
             </div>
 
