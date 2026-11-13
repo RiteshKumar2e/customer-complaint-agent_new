@@ -36,16 +36,16 @@ def _otp_html(code: str, heading: str, intro: str, name: str, minutes: int, comp
 <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
 <title>{e(heading)}</title>
 <style>
-  @media (max-width:520px) {{ .qf-card {{ padding:28px 20px !important; }} .qf-code {{ font-size:30px !important; letter-spacing:8px !important; }} }}
+  @media (max-width:520px) {{ .qf-card {{ padding:24px 20px 28px 20px !important; }} .qf-pad {{ padding-left:20px !important; padding-right:20px !important; }} .qf-outer {{ padding:20px 10px !important; }} .qf-code {{ font-size:30px !important; letter-spacing:8px !important; }} }}
 </style>
 </head>
 <body style="margin:0;padding:0;background:#f4f5f7;-webkit-text-size-adjust:100%;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{e(heading)} &ndash; this code expires in {minutes} minutes.&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;">
-  <tr><td align="center" style="padding:40px 16px;">
+  <tr><td align="center" class="qf-outer" style="padding:40px 16px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
       <tr><td style="height:4px;background:#2563eb;line-height:4px;font-size:0;">&nbsp;</td></tr>
-      <tr><td style="padding:28px 40px 0 40px;">
+      <tr><td class="qf-pad" style="padding:28px 40px 0 40px;">
         <img src="{e(app_url)}/logo-email.png" alt="{e(company)}" height="32" style="display:block;height:32px;width:auto;border:0;font:700 18px {_FONT};color:#111827;">
       </td></tr>
       <tr><td class="qf-card" style="padding:28px 40px 36px 40px;font-family:{_FONT};color:#374151;">
@@ -65,7 +65,7 @@ def _otp_html(code: str, heading: str, intro: str, name: str, minutes: int, comp
           For your security, never share this code with anyone. {e(company)} will never ask you for it.
         </p>
       </td></tr>
-      <tr><td style="padding:20px 40px;border-top:1px solid #f0f1f3;font-family:{_FONT};font-size:12px;line-height:18px;color:#9ca3af;">
+      <tr><td class="qf-pad" style="padding:20px 40px;border-top:1px solid #f0f1f3;font-family:{_FONT};font-size:12px;line-height:18px;color:#9ca3af;">
         Didn't request this? You can safely ignore this email &ndash; someone may have entered your address by mistake.<br>
         {year_line} &middot; This is an automated message, please don't reply.
       </td></tr>
