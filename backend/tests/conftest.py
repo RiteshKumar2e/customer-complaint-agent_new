@@ -83,7 +83,7 @@ class Outbox(list):
 
     def last_code(self, address):
         for message in reversed(self.to(address)):
-            match = re.search(r"Your code: (\d{6})", message["text"])
+            match = re.search(r"^ {4}(\d{6})$", message["text"], re.M)
             if match:
                 return match.group(1)
         raise AssertionError(f"no OTP email for {address}")

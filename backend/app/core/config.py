@@ -198,9 +198,10 @@ def get_settings() -> Settings:
 
     return Settings(
         environment=environment,
-        app_name=_env("APP_NAME", "QuickFix Complaint Desk"),
-        company_name=_env("COMPANY_NAME", "QuickFix"),
-        app_url=_env("APP_URL", "http://localhost:5173").rstrip("/"),
+        app_name=_env("APP_NAME", "Quickfix AI"),
+        company_name=_env("COMPANY_NAME", "Quickfix AI"),
+        # Used for links and the logo in emails, so it must be publicly reachable in production.
+        app_url=_env("APP_URL", DEFAULT_PUBLIC_URL if environment == "production" else "http://localhost:5173").rstrip("/"),
         turso_database_url=_env("TURSO_DATABASE_URL"),
         turso_auth_token=_env("TURSO_AUTH_TOKEN"),
         db_connect_timeout=float(_env("DB_CONNECT_TIMEOUT", "10")),

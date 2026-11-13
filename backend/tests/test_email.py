@@ -243,3 +243,17 @@ def test_brevo_error_reason_is_reported(monkeypatch):
 def test_ready_reports_email_status(client):
     body = client.get("/health/ready").json()
     assert body["database"] == "ok" and body["email"] in ("ok", "not_configured")
+
+
+def test_otp_code_appears_exactly_once_and_logo_is_public(monkeypatch):
+    import re
+
+    monkeypatch.setenv("APP_URL", "")
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    subject, html_body, text_body = auth_emails.render_otp_email("472928", "verify_email", "Ritesh Kumar")
+    visible_html = re.sub(r"<[^>]+>", "", html_body)
+    assert visible_html.count("472928") == 1 and text_body.count("472928") == 1
+    assert "472928" not in subject and subject == "Your Quickfix AI verification code"
+    assert 'src="https://riteshkr.online/logo-email.png"' in html_body and 'alt="Quickfix AI"' in html_body
