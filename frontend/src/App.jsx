@@ -86,6 +86,16 @@ export default function App() {
     }
   }, []);
 
+  // Keep the address bar clean: never leave a "#section" in the URL. If an old
+  // link points at a section, scroll to it once, then drop the hash.
+  useEffect(() => {
+    const { hash, pathname, search } = window.location;
+    if (!hash) return;
+    const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (target) setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 300);
+    window.history.replaceState(window.history.state, "", pathname + search);
+  }, []);
+
   const handleLogout = useCallback(() => {
     // Revoke the session server-side (access + refresh token); clears storage either way.
     logoutUser().catch(() => {});
